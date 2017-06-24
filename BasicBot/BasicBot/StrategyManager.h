@@ -75,8 +75,6 @@ namespace MyBot
 
 
 	public:
-		//kyj
-		BWAPI::Unitset _cbUnitSet;
 		/// static singleton 객체를 리턴합니다
 		static StrategyManager &	Instance();
 

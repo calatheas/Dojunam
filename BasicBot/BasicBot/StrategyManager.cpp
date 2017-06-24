@@ -24,7 +24,7 @@ void StrategyManager::setOpeningBookBuildOrder(){
 	std::string str_build_order;
 	if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran){
 		//_main_strategy = "Terran_MarineRush";
-		_main_strategy = "Terran_Boinic";
+		_main_strategy = "Terran_Bionic";
 		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV SCV Academy SCV SCV Marine Supply_Depot Marine Marine Marine Marine Marine Marine Marine Stim_Packs Medic Medic Firebat Firebat";
 		str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
 		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks Refinery SCV SCV SCV SCV Factory Factory SCV SCV SCV SCV Machine_Shop Machine_Shop Supply_Depot Tank_Siege_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode";
@@ -618,21 +618,20 @@ void StrategyManager::executeCombat()
 	// 공격 모드가 아닐 때에는 전투유닛들을 아군 진영 길목에 집결시켜서 방어
 	if (isFullScaleAttackStarted == false)		
 	{
-		BWTA::Chokepoint* firstChokePoint = BWTA::getNearestChokepoint(InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().selfPlayer)->getTilePosition());
-		_cbUnitSet.clear();
+		//BWTA::Chokepoint* firstChokePoint = BWTA::getNearestChokepoint(InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().selfPlayer)->getTilePosition());
+		BWTA::Chokepoint* secondChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
+		
 		for (auto & unit : BWAPI::Broodwar->self()->getUnits())
 		{
-			//kyj
-			if ((unit->getType() == InformationManager::Instance().getBasicCombatUnitType()) && unit->isIdle()) {
-				CommandUtil::attackMove(unit, firstChokePoint->getCenter());
+			if (UnitUtil::IsCombatUnit(unit) && unit->isIdle()) {
+				CommandUtil::attackMove(unit, secondChokePoint->getCenter());
 				
 			}
 		}
 
 		// 전투 유닛이 2개 이상 생산되었고, 적군 위치가 파악되었으면 총공격 모드로 전환
-		//kyj
-		if (BWAPI::Broodwar->self()->completedUnitCount(InformationManager::Instance().getAdvancedCombatUnitType()) > 12) {
-		//if (BWAPI::Broodwar->self()->completedUnitCount(InformationManager::Instance().getBasicCombatUnitType()) > 2) {
+		//if (BWAPI::Broodwar->self()->completedUnitCount(InformationManager::Instance().getAdvancedCombatUnitType()) > 12) {
+		if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) > 100) {
 
 			if (InformationManager::Instance().enemyPlayer != nullptr
 				&& InformationManager::Instance().enemyRace != BWAPI::Races::Unknown
@@ -675,14 +674,13 @@ void StrategyManager::executeCombat()
 					if (unit->getType().isBuilding()) continue;
 					// 모든 일꾼은 제외
 					if (unit->getType().isWorker()) continue;
-					//kyj
-					_cbUnitSet.insert(unit);
+					
 					// canAttack 유닛은 attackMove Command 로 공격을 보냅니다
-					//if (unit->canAttack()) {
-					//	if (unit->isIdle()) {
-					//		CommandUtil::attackMove(unit, targetBaseLocation->getPosition());
-					//	}
-					//}
+					if (unit->canAttack()) {
+						if (unit->isIdle()) {
+							CommandUtil::attackMove(unit, targetBaseLocation->getPosition());
+						}
+					}
 				}
 			}
 		}
@@ -711,7 +709,11 @@ const MetaPairVector StrategyManager::getBuildOrderGoal()
 
 bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran){
-
+		if (_main_strategy == "Terran_Bionic"){
+			if (numUnits["Marines"] > 36){
+				_main_strategy = "Terran_Bionic_Tank";
+			}
+		}
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
 
@@ -719,7 +721,7 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Zerg){
 
 	}
-	return true;
+	return false;
 }
 
 const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
@@ -817,37 +819,35 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 
 	std::map<std::string, int> numUnits;
 
-	numUnits["numWorkers"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV);
-	numUnits["numCC"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
-	numUnits["numMarines"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Marine);
-	numUnits["numMedics"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Medic);
-	numUnits["numFirebats"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Firebat);
-	numUnits["numWraith"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Wraith);
-	numUnits["numVultures"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture);
-	numUnits["numGoliath"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Goliath);
-	numUnits["numTanks"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
-	numUnits["numBay"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay);
+	numUnits["Workers"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV);
+	numUnits["CC"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
+	numUnits["Marines"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Marine);
+	numUnits["Medics"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Medic);
+	numUnits["Firebats"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Firebat);
+	numUnits["Wraith"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Wraith);
+	numUnits["Vultures"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture);
+	numUnits["Goliath"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Goliath);
+	numUnits["Tanks"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
+	numUnits["Bay"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay);
 	
-	if (changeMainStrategy(numUnits)){
-		return goal;
-	}
+	changeMainStrategy(numUnits);
 
 	if (_main_strategy == "Terran_MarineRush")
 	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["numMarines"] + 8));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["Marines"] + 8));
 
-		if (numUnits["numMarines"] > 5 && numUnits["numBay"] == 0)
+		if (numUnits["Marines"] > 5 && numUnits["Bay"] == 0)
 		{
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Engineering_Bay, 1));
 		}
 	}
-	else if (_main_strategy == "Terran_Boinic")
+	else if (_main_strategy == "Terran_Bionic")
 	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["numMarines"] + 7));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, numUnits["numMedics"] + 2));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, numUnits["numFirebats"] + 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["Marines"] + 7));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, numUnits["Medics"] + 2));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, numUnits["Firebats"] + 1));
 
-		if (numUnits["numMarines"] > 5 && numUnits["numBay"] == 0)
+		if (numUnits["Marines"] > 5 && numUnits["Bay"] == 0)
 		{
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Engineering_Bay, 1));
 		}
@@ -856,24 +856,27 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Stim_Packs, 1));
 		}
 	}
-	else if (_main_strategy == "Terran_Boinic_Mechanic")
+	else if (_main_strategy == "Terran_Bionic_Tank")
 	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["numMarines"] + 5));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, numUnits["numMedics"] + 1));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, numUnits["numFirebats"] + 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["Marines"] + 5));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, numUnits["Medics"] + 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, numUnits["Firebats"] + 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, numUnits["Tanks"]+1));
 
+		if (BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode)){
+			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
+		}
 	}
-	
 
 	else if (_main_strategy == "Terran_4RaxMarines")
 	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["numMarines"] + 8));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["Marines"] + 8));
 	}
 	else if (_main_strategy == "Terran_VultureRush")
 	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, numUnits["numVultures"] + 8));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, numUnits["Vultures"] + 8));
 
-		if (numUnits["numVultures"] > 8)
+		if (numUnits["Vultures"] > 8)
 		{
 			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, 4));
@@ -882,7 +885,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	else if (_main_strategy == "Terran_TankPush")
 	{
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, 6));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Goliath, numUnits["numGoliath"] + 6));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Goliath, numUnits["Goliath"] + 6));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 	}
 	else
@@ -892,8 +895,8 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 
 	if (shouldExpandNow())
 	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numUnits["numCC"] + 1));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numUnits["numWorkers"] + 10));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numUnits["CC"] + 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numUnits["Workers"] + 10));
 	}
 
 	return goal;

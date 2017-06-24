@@ -71,8 +71,6 @@ void GameCommander::onFrame()
 	StrategyManager::Instance().update();
 
 	if (isToFindError) std::cout << "h)";
-
-	CombatCommander::Instance().update(StrategyManager::Instance()._cbUnitSet);
 }
 
 void GameCommander::onUnitShow(BWAPI::Unit unit)			

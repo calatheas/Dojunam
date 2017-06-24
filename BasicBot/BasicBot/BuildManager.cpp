@@ -236,13 +236,19 @@ void BuildManager::update()
 		{
 			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret) < 2)
 			{
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), true);
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), true);
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstChokePoint, true);
+				if (InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self()) != nullptr){
+					buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstExpansionLocation, true);
+				}
 			}
 
 			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay) == 0)
 			{
 				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Engineering_Bay), true);
+			}
+
+			for (int i = 0; i < UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center); ++i){
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
 			}
 		}
 
@@ -252,6 +258,9 @@ void BuildManager::update()
 		}
 
 		_enemyCloakedDetected = true;
+	}
+
+	if (_enemyCloakedDetected){
 	}
 }
 
