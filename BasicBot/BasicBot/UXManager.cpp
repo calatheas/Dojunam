@@ -740,6 +740,8 @@ void UXManager::drawWorkerMiningStatusOnMap()
 
 void UXManager::drawScoutInformation(int x, int y)
 {
+		//djn ssh
+	/*
 	int currentScoutStatus = ScoutManager::Instance().getScoutStatus();
 	std::string scoutStatusString;
 
@@ -795,22 +797,22 @@ void UXManager::drawScoutInformation(int x, int y)
 						currentScoutTargetDistance);
 
 				}
-				/*
-				else if (currentScoutStatus == ScoutStatus::MoveAroundEnemyBaseLocation) {
+				
+				//else if (currentScoutStatus == ScoutStatus::MoveAroundEnemyBaseLocation) {
 
-				std::vector<BWAPI::Position> vertices = ScoutManager::Instance().getEnemyRegionVertices();
-				for (size_t i(0); i < vertices.size(); ++i)
-				{
-				BWAPI::Broodwar->drawCircleMap(vertices[i], 4, BWAPI::Colors::Green, false);
-				BWAPI::Broodwar->drawTextMap(vertices[i], "%d", i);
-				}
+//				std::vector<BWAPI::Position> vertices = ScoutManager::Instance().getEnemyRegionVertices();
+	//			for (size_t i(0); i < vertices.size(); ++i)
+		//		{
+			//	BWAPI::Broodwar->drawCircleMap(vertices[i], 4, BWAPI::Colors::Green, false);
+				//BWAPI::Broodwar->drawTextMap(vertices[i], "%d", i);
+				//}
 
-				BWAPI::Broodwar->drawCircleMap(scoutMoveTo, 5, BWAPI::Colors::Red, true);
-				}
-				*/
+				//BWAPI::Broodwar->drawCircleMap(scoutMoveTo, 5, BWAPI::Colors::Red, true);
+				//}
+				
 			}
 		}
-	}
+	}*/
 }
 
 void UXManager::drawUnitTargetOnMap() 
