@@ -57,6 +57,8 @@ namespace MyBot
 		/// buildQueue 의 Dead lock 여부를 판단하기 위해, 가장 우선순위가 높은 BuildOrderItem 의 producer 가 존재하게될 것인지 여부를 리턴합니다
 		bool				isProducerWillExist(BWAPI::UnitType producerType);
 		void			    performBuildOrderSearch();
+				//@djn ssh
+		void        queueGasSteal();
 	};
 
 
