@@ -25,6 +25,8 @@ namespace MyBot
 		BWAPI::Unitset          _combatUnits;
 				//djn ssh
 		BWAPI::Unitset          _scoutUnits;
+						//djn ssh
+				bool                    _initialScoutSet;
 	public:
 		//@도주남 김지훈 .// 기존 알버타에선 정찰유닛및 전투유닛 셋팅해 주는 부분이지만 일단 전투유닛만 넣는 것으로 한다.
 		void handleUnitAssignments();
