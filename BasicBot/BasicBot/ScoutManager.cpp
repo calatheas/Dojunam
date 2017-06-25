@@ -1,15 +1,18 @@
 #include "ScoutManager.h"
 #include "BuildManager.h"
-#include "MapTools.h"
 
 using namespace MyBot;
 
 ScoutManager::ScoutManager()
-	: currentScoutUnit(nullptr)
-	, currentScoutStatus(ScoutStatus::NoScout)
-	, currentScoutTargetBaseLocation(nullptr)
-	, currentScoutTargetPosition(BWAPI::Positions::None)
-	, currentScoutFreeToVertexIndex(-1)
+	: _workerScout(nullptr)
+	, _numWorkerScouts(0)
+	, _scoutUnderAttack(false)
+	, _gasStealStatus("None")
+	, _scoutStatus("None")
+	, _didGasSteal(false)
+	, _gasStealFinished(false)
+	, _currentRegionVertexIndex(-1)
+	, _previousScoutHP(0)
 {
 }
 
@@ -21,181 +24,341 @@ ScoutManager & ScoutManager::Instance()
 
 void ScoutManager::update()
 {
-
-	if (BWAPI::Broodwar->getFrameCount() % 6 != 0) return;
-
-
-	assignScoutIfNeeded();
-	moveScoutUnit();
-
+	if (!Config::Modules::UsingScoutManager)
+	{
+		return;
+	}
+	// calculate enemy region vertices if we haven't yet
+	if (_enemyRegionVertices.empty())
+	{
+		calculateEnemyRegionVertices();
+	}
+	moveScouts();
+	drawScoutInformation(200, 320);
 }
 
-
-void ScoutManager::assignScoutIfNeeded()
+void ScoutManager::setWorkerScout(BWAPI::Unit unit)
 {
-	//djn ssh
-	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-
-	if (enemyBaseLocation == nullptr)
+	// if we have a previous worker scout, release it back to the worker manager
+	if (_workerScout)
 	{
-		bool isScout = false;
-		for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
-		{
-			if (WorkerManager::Instance().getWorkerData().getWorkerJob(unit) == 7)
-				isScout = true;
-		}
-		if (isScout == false)
-		{
-			int mineral_count_flag = 0;
-			for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
-			{
-				if (WorkerManager::Instance().getWorkerData().getWorkerJob(unit) == 0)
-					mineral_count_flag++;
-			}
-			if (mineral_count_flag % 9 == 0)
-			{
-				for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
-				{
-					if (unit->isGatheringMinerals())
-						currentScoutUnit = unit;
-					WorkerManager::Instance().setScoutWorker(currentScoutUnit);
-					break;
-				}
-			}
-		}
+		WorkerManager::Instance().finishedWithWorker(_workerScout);
 	}
-	/*
-	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 
-	if (enemyBaseLocation == nullptr)
-	{
-		if (!currentScoutUnit || currentScoutUnit->exists() == false || currentScoutUnit->getHitPoints() <= 0)
-		{
-			currentScoutUnit = nullptr;
-			currentScoutStatus = ScoutStatus::NoScout;
-
-
-			BWAPI::Unit firstBuilding = nullptr;
-
-			for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-			{
-				if (unit->getType().isBuilding() == true && unit->getType().isResourceDepot() == false)
-				{
-					firstBuilding = unit;
-					break;
-				}
-			}
-
-			if (firstBuilding)
-			{
-				// grab the closest worker to the first building to send to scout
-				BWAPI::Unit unit = WorkerManager::Instance().getClosestMineralWorkerTo(firstBuilding->getPosition());
-
-				// if we find a worker (which we should) add it to the scout units
-				if (unit)
-				{
-					// set unit as scout unit
-					currentScoutUnit = unit;
-					WorkerManager::Instance().setScoutWorker(currentScoutUnit);
-
-					//WorkerManager::Instance().setIdleWorker(currentScoutUnit);
-				}
-			}
-		}
-	}
-	*/
+	_workerScout = unit;
+	WorkerManager::Instance().setScoutWorker(_workerScout);
 }
 
-
-void ScoutManager::moveScoutUnit()
+void ScoutManager::drawScoutInformation(int x, int y)
 {
-	if (!currentScoutUnit || currentScoutUnit->exists() == false || currentScoutUnit->getHitPoints() <= 0)
+	if (!Config::Debug::DrawScoutInfo)
 	{
-		currentScoutUnit = nullptr;
-		currentScoutStatus = ScoutStatus::NoScout;
 		return;
 	}
 
-	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().enemyPlayer);
-	BWTA::BaseLocation * myBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self());
-
-	if (enemyBaseLocation == nullptr)
+	BWAPI::Broodwar->drawTextScreen(x, y, "ScoutInfo: %s", _scoutStatus.c_str());
+	BWAPI::Broodwar->drawTextScreen(x, y + 10, "GasSteal: %s", _gasStealStatus.c_str());
+	for (size_t i(0); i < _enemyRegionVertices.size(); ++i)
 	{
-		if (currentScoutTargetBaseLocation == nullptr || currentScoutUnit->getDistance(currentScoutTargetBaseLocation->getPosition()) < 5 * TILE_SIZE)
-		{
-			currentScoutStatus = ScoutStatus::MovingToAnotherBaseLocation;
-
-			int closestDistance = INT_MAX;
-			int tempDistance = 0;
-			BWTA::BaseLocation * closestBaseLocation = nullptr;
-			for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
-			{
-				if (BWAPI::Broodwar->isExplored(startLocation->getTilePosition()) == false)
-				{
-					tempDistance = (int)(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getGroundDistance(startLocation) + 0.5);
-
-					if (tempDistance > 0 && tempDistance < closestDistance) {
-						closestBaseLocation = startLocation;
-						closestDistance = tempDistance;
-					}
-				}
-			}
-
-			if (closestBaseLocation) {
-				// assign a scout to go scout it
-				CommandUtil::move(currentScoutUnit, closestBaseLocation->getPosition());
-				currentScoutTargetBaseLocation = closestBaseLocation;
-			}
-		}
-
+		BWAPI::Broodwar->drawCircleMap(_enemyRegionVertices[i], 4, BWAPI::Colors::Green, false);
+		BWAPI::Broodwar->drawTextMap(_enemyRegionVertices[i], "%d", i);
 	}
-	// if we know where the enemy region is
-	else
-	{
-		// if scout is exist, move scout into enemy region
-		if (currentScoutUnit) {
-
-			currentScoutTargetBaseLocation = enemyBaseLocation;
-
-			if (BWAPI::Broodwar->isExplored(currentScoutTargetBaseLocation->getTilePosition()) == false)
-			{
-				currentScoutStatus = ScoutStatus::MovingToAnotherBaseLocation;
-
-				currentScoutTargetPosition = currentScoutTargetBaseLocation->getPosition();
-
-				CommandUtil::move(currentScoutUnit, currentScoutTargetPosition);
-			}
-			else {
-
-				//currentScoutStatus = ScoutStatus::MoveAroundEnemyBaseLocation;
-				//currentScoutTargetPosition = getScoutFleePositionFromEnemyRegionVertices();
-				//CommandUtil::move(currentScoutUnit, myBaseLocation->getPosition());
-
-				WorkerManager::Instance().setIdleWorker(currentScoutUnit);
-				currentScoutStatus = ScoutStatus::NoScout;
-				currentScoutTargetPosition = myBaseLocation->getPosition();
-			}
-		}
-	}
-
 }
 
-BWAPI::Position ScoutManager::getScoutFleePositionFromEnemyRegionVertices()
+void ScoutManager::moveScouts()
 {
-	// calculate enemy region vertices if we haven't yet
-	if (enemyBaseRegionVertices.empty()) {
-		calculateEnemyRegionVertices();
+	if (!_workerScout || !_workerScout->exists() || !(_workerScout->getHitPoints() > 0))
+	{
+		return;
 	}
 
-	if (enemyBaseRegionVertices.empty()) {
-		return BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
+	int scoutHP = _workerScout->getHitPoints() + _workerScout->getShields();
+
+	gasSteal();
+
+	// get the enemy base location, if we have one
+	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+
+	int scoutDistanceThreshold = 30;
+
+	if (_workerScout->isCarryingGas())
+	{
+		BWAPI::Broodwar->drawCircleMap(_workerScout->getPosition(), 10, BWAPI::Colors::Purple, true);
 	}
+
+	// if we initiated a gas steal and the worker isn't idle, 
+	bool finishedConstructingGasSteal = _workerScout->isIdle() || _workerScout->isCarryingGas();
+	if (!_gasStealFinished && _didGasSteal && !finishedConstructingGasSteal)
+	{
+		return;
+	}
+	// check to see if the gas steal is completed
+	else if (_didGasSteal && finishedConstructingGasSteal)
+	{
+		_gasStealFinished = true;
+	}
+
+	// if we know where the enemy region is and where our scout is
+	if (_workerScout && enemyBaseLocation)
+	{
+		int scoutDistanceToEnemy = MapTools::Instance().getGroundDistance(_workerScout->getPosition(), enemyBaseLocation->getPosition());
+		bool scoutInRangeOfenemy = scoutDistanceToEnemy <= scoutDistanceThreshold;
+
+		// we only care if the scout is under attack within the enemy region
+		// this ignores if their scout worker attacks it on the way to their base
+		if (scoutHP < _previousScoutHP)
+		{
+			_scoutUnderAttack = true;
+		}
+
+		if (!_workerScout->isUnderAttack() && !enemyWorkerInRadius())
+		{
+			_scoutUnderAttack = false;
+		}
+
+		// if the scout is in the enemy region
+		if (scoutInRangeOfenemy)
+		{
+			// get the closest enemy worker
+			BWAPI::Unit closestWorker = closestEnemyWorker();
+
+			// if the worker scout is not under attack
+			if (!_scoutUnderAttack)
+			{
+				// if there is a worker nearby, harass it
+				if (Config::Strategy::ScoutHarassEnemy && (!Config::Strategy::GasStealWithScout || _gasStealFinished) && closestWorker && (_workerScout->getDistance(closestWorker) < 800))
+				{
+					_scoutStatus = "Harass enemy worker";
+					_currentRegionVertexIndex = -1;
+					Micro::SmartAttackUnit(_workerScout, closestWorker);
+				}
+				// otherwise keep moving to the enemy region
+				else
+				{
+					_scoutStatus = "Following perimeter";
+					followPerimeter();
+				}
+
+			}
+			// if the worker scout is under attack
+			else
+			{
+				_scoutStatus = "Under attack inside, fleeing";
+				followPerimeter();
+			}
+		}
+		// if the scout is not in the enemy region
+		else if (_scoutUnderAttack)
+		{
+			_scoutStatus = "Under attack inside, fleeing";
+
+			followPerimeter();
+		}
+		else
+		{
+			_scoutStatus = "Enemy region known, going there";
+
+			// move to the enemy region
+			followPerimeter();
+		}
+
+	}
+
+	// for each start location in the level
+	if (!enemyBaseLocation)
+	{
+		_scoutStatus = "Enemy base unknown, exploring";
+
+		for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
+		{
+			// if we haven't explored it yet
+			if (!BWAPI::Broodwar->isExplored(startLocation->getTilePosition()))
+			{
+				// assign a zergling to go scout it
+				Micro::SmartMove(_workerScout, BWAPI::Position(startLocation->getTilePosition()));
+				return;
+			}
+		}
+	}
+
+	_previousScoutHP = scoutHP;
+}
+
+void ScoutManager::followPerimeter()
+{
+	BWAPI::Position fleeTo = getFleePosition();
+
+	if (Config::Debug::DrawScoutInfo)
+	{
+		BWAPI::Broodwar->drawCircleMap(fleeTo, 5, BWAPI::Colors::Red, true);
+	}
+
+	Micro::SmartMove(_workerScout, fleeTo);
+}
+
+void ScoutManager::gasSteal()
+{
+	if (!Config::Strategy::GasStealWithScout)
+	{
+		_gasStealStatus = "Not using gas steal";
+		return;
+	}
+
+	if (_didGasSteal)
+	{
+		return;
+	}
+
+	if (!_workerScout)
+	{
+		_gasStealStatus = "No worker scout";
+		return;
+	}
+
+	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+	if (!enemyBaseLocation)
+	{
+		_gasStealStatus = "No enemy base location found";
+		return;
+	}
+
+	BWAPI::Unit enemyGeyser = getEnemyGeyser();
+	if (!enemyGeyser)
+	{
+		_gasStealStatus = "No enemy geyser found";
+		false;
+	}
+
+	if (!_didGasSteal)
+	{
+		BuildManager::Instance().queueGasSteal();
+		_didGasSteal = true;
+		Micro::SmartMove(_workerScout, enemyGeyser->getPosition());
+		_gasStealStatus = "Did Gas Steal";
+	}
+}
+
+BWAPI::Unit ScoutManager::closestEnemyWorker()
+{
+	BWAPI::Unit enemyWorker = nullptr;
+	double maxDist = 0;
+
+
+	BWAPI::Unit geyser = getEnemyGeyser();
+
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+	{
+		if (unit->getType().isWorker() && unit->isConstructing())
+		{
+			return unit;
+		}
+	}
+
+	// for each enemy worker
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+	{
+		if (unit->getType().isWorker())
+		{
+			double dist = unit->getDistance(geyser);
+
+			if (dist < 800 && dist > maxDist)
+			{
+				maxDist = dist;
+				enemyWorker = unit;
+			}
+		}
+	}
+
+	return enemyWorker;
+}
+
+BWAPI::Unit ScoutManager::getEnemyGeyser()
+{
+	BWAPI::Unit geyser = nullptr;
+	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+
+	for (auto & unit : enemyBaseLocation->getGeysers())
+	{
+		geyser = unit;
+	}
+
+	return geyser;
+}
+
+bool ScoutManager::enemyWorkerInRadius()
+{
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+	{
+		if (unit->getType().isWorker() && (unit->getDistance(_workerScout) < 300))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ScoutManager::immediateThreat()
+{
+	BWAPI::Unitset enemyAttackingWorkers;
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+	{
+		if (unit->getType().isWorker() && unit->isAttacking())
+		{
+			enemyAttackingWorkers.insert(unit);
+		}
+	}
+
+	if (_workerScout->isUnderAttack())
+	{
+		return true;
+	}
+
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+	{
+		double dist = unit->getDistance(_workerScout);
+		double range = unit->getType().groundWeapon().maxRange();
+
+		if (unit->getType().canAttack() && !unit->getType().isWorker() && (dist <= range + 32))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int ScoutManager::getClosestVertexIndex(BWAPI::Unit unit)
+{
+	int closestIndex = -1;
+	double closestDistance = 10000000;
+
+	for (size_t i(0); i < _enemyRegionVertices.size(); ++i)
+	{
+		double dist = unit->getDistance(_enemyRegionVertices[i]);
+		if (dist < closestDistance)
+		{
+			closestDistance = dist;
+			closestIndex = i;
+		}
+	}
+
+	return closestIndex;
+}
+
+BWAPI::Position ScoutManager::getFleePosition()
+{
+	UAB_ASSERT_WARNING(!_enemyRegionVertices.empty(), "We should have an enemy region vertices if we are fleeing");
+
+	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 
 	// if this is the first flee, we will not have a previous perimeter index
-	if (currentScoutFreeToVertexIndex == -1)
+	if (_currentRegionVertexIndex == -1)
 	{
 		// so return the closest position in the polygon
-		int closestPolygonIndex = getClosestVertexIndex(currentScoutUnit);
+		int closestPolygonIndex = getClosestVertexIndex(_workerScout);
+
+		UAB_ASSERT_WARNING(closestPolygonIndex != -1, "Couldn't find a closest vertex");
 
 		if (closestPolygonIndex == -1)
 		{
@@ -204,36 +367,43 @@ BWAPI::Position ScoutManager::getScoutFleePositionFromEnemyRegionVertices()
 		else
 		{
 			// set the current index so we know how to iterate if we are still fleeing later
-			currentScoutFreeToVertexIndex = closestPolygonIndex;
-			return enemyBaseRegionVertices[closestPolygonIndex];
+			_currentRegionVertexIndex = closestPolygonIndex;
+			return _enemyRegionVertices[closestPolygonIndex];
 		}
 	}
 	// if we are still fleeing from the previous frame, get the next location if we are close enough
 	else
 	{
-		double distanceFromCurrentVertex = enemyBaseRegionVertices[currentScoutFreeToVertexIndex].getDistance(currentScoutUnit->getPosition());
+		double distanceFromCurrentVertex = _enemyRegionVertices[_currentRegionVertexIndex].getDistance(_workerScout->getPosition());
 
 		// keep going to the next vertex in the perimeter until we get to one we're far enough from to issue another move command
 		while (distanceFromCurrentVertex < 128)
 		{
-			currentScoutFreeToVertexIndex = (currentScoutFreeToVertexIndex + 1) % enemyBaseRegionVertices.size();
+			_currentRegionVertexIndex = (_currentRegionVertexIndex + 1) % _enemyRegionVertices.size();
 
-			distanceFromCurrentVertex = enemyBaseRegionVertices[currentScoutFreeToVertexIndex].getDistance(currentScoutUnit->getPosition());
+			distanceFromCurrentVertex = _enemyRegionVertices[_currentRegionVertexIndex].getDistance(_workerScout->getPosition());
 		}
 
-		return enemyBaseRegionVertices[currentScoutFreeToVertexIndex];
+		return _enemyRegionVertices[_currentRegionVertexIndex];
 	}
+
 }
 
 void ScoutManager::calculateEnemyRegionVertices()
 {
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-	if (!enemyBaseLocation) {
+	//UAB_ASSERT_WARNING(enemyBaseLocation, "We should have an enemy base location if we are fleeing");
+
+	if (!enemyBaseLocation)
+	{
 		return;
 	}
 
 	BWTA::Region * enemyRegion = enemyBaseLocation->getRegion();
-	if (!enemyRegion) {
+	//UAB_ASSERT_WARNING(enemyRegion, "We should have an enemy region if we are fleeing");
+
+	if (!enemyRegion)
+	{
 		return;
 	}
 
@@ -264,7 +434,7 @@ void ScoutManager::calculateEnemyRegionVertices()
 			surrounded = false;
 		}
 
-		// push the tiles that aren't surrounded 
+		// push the tiles that aren't surrounded
 		if (!surrounded && BWAPI::Broodwar->isBuildable(tp))
 		{
 			if (Config::Debug::DrawScoutInfo)
@@ -274,7 +444,7 @@ void ScoutManager::calculateEnemyRegionVertices()
 				int x2 = (tp.x + 1) * 32 - 2;
 				int y2 = (tp.y + 1) * 32 - 2;
 
-				BWAPI::Broodwar->drawTextMap(x1 + 3, y1 + 2, "%d", BWTA::getGroundDistance(tp, BWAPI::Broodwar->self()->getStartLocation()));
+				BWAPI::Broodwar->drawTextMap(x1 + 3, y1 + 2, "%d", MapTools::Instance().getGroundDistance(BWAPI::Position(tp), basePosition));
 				BWAPI::Broodwar->drawBoxMap(x1, y1, x2, y2, BWAPI::Colors::Green, false);
 			}
 
@@ -282,10 +452,11 @@ void ScoutManager::calculateEnemyRegionVertices()
 		}
 	}
 
+
 	std::vector<BWAPI::Position> sortedVertices;
 	BWAPI::Position current = *unsortedVertices.begin();
 
-	enemyBaseRegionVertices.push_back(current);
+	_enemyRegionVertices.push_back(current);
 	unsortedVertices.erase(current);
 
 	// while we still have unsorted vertices left, find the closest one remaining to current
@@ -364,42 +535,5 @@ void ScoutManager::calculateEnemyRegionVertices()
 		sortedVertices = temp;
 	}
 
-	enemyBaseRegionVertices = sortedVertices;
-}
-
-int ScoutManager::getClosestVertexIndex(BWAPI::Unit unit)
-{
-	int closestIndex = -1;
-	double closestDistance = 10000000;
-
-	for (size_t i(0); i < enemyBaseRegionVertices.size(); ++i)
-	{
-		double dist = unit->getDistance(enemyBaseRegionVertices[i]);
-		if (dist < closestDistance)
-		{
-			closestDistance = dist;
-			closestIndex = i;
-		}
-	}
-
-	return closestIndex;
-}
-BWAPI::Unit ScoutManager::getScoutUnit()
-{
-	return currentScoutUnit;
-}
-
-int ScoutManager::getScoutStatus()
-{
-	return currentScoutStatus;
-}
-
-BWTA::BaseLocation * ScoutManager::getScoutTargetBaseLocation()
-{
-	return currentScoutTargetBaseLocation;
-}
-
-std::vector<BWAPI::Position> & ScoutManager::getEnemyRegionVertices()
-{
-	return enemyBaseRegionVertices;
+	_enemyRegionVertices = sortedVertices;
 }
