@@ -12,6 +12,7 @@ namespace MyBot
 	/// 일꾼 유닛들의 상태를 관리하고 컨트롤하는 class
 	class WorkerManager
 	{
+	public:
 		/// 각 Worker 에 대한 WorkerJob 상황을 저장하는 자료구조 객체
 		WorkerData  workerData;
 
@@ -32,7 +33,7 @@ namespace MyBot
 
 		WorkerManager();
 
-	public:
+
 		// kyj
 		void        finishedWithWorker(BWAPI::Unit unit);
 		//////////////////////////////////////////////////////////////////////
