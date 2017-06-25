@@ -335,9 +335,24 @@ void ConstructionManager::checkForStartedConstruction()
 				// if we are protoss, give the worker back to worker manager
 				else if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss)
                 {
+					/*
                     WorkerManager::Instance().setIdleWorker(b.constructionWorker);
 
                     b.constructionWorker = nullptr;
+					*/
+					//djn ssh
+					// if this was the gas steal unit then it's the scout worker so give it back to the scout manager
+					//if (b.isGasSteal)
+					//{
+					//	ScoutManager::Instance().setWorkerScout(b.constructionWorker);
+					//}
+					// otherwise tell the worker manager we're finished with this unit
+					//else
+					//{
+						WorkerManager::Instance().finishedWithWorker(b.constructionWorker);
+					//}
+
+					b.constructionWorker = nullptr;
                 }
 
                 // free this space
@@ -423,7 +438,9 @@ void ConstructionManager::checkForCompletedBuildings()
 			// if we are terran, give the worker back to worker manager
             if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran)
             {
-                WorkerManager::Instance().setIdleWorker(b.constructionWorker);
+				//djn ssh
+               // WorkerManager::Instance().setIdleWorker(b.constructionWorker);
+				WorkerManager::Instance().finishedWithWorker(b.constructionWorker);
             }
 
             // remove this unit from the under construction vector
