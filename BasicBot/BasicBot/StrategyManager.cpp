@@ -631,7 +631,7 @@ void StrategyManager::executeCombat()
 
 		// 전투 유닛이 2개 이상 생산되었고, 적군 위치가 파악되었으면 총공격 모드로 전환
 		//if (BWAPI::Broodwar->self()->completedUnitCount(InformationManager::Instance().getAdvancedCombatUnitType()) > 12) {
-		if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) > 100) {
+		if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) > 50) {
 
 			if (InformationManager::Instance().enemyPlayer != nullptr
 				&& InformationManager::Instance().enemyRace != BWAPI::Races::Unknown
@@ -643,48 +643,49 @@ void StrategyManager::executeCombat()
 
 	}
 	// 공격 모드가 되면, 모든 전투유닛들을 적군 Main BaseLocation 로 공격 가도록 합니다
-	else {
-		//std::cout << "enemy OccupiedBaseLocations : " << InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer).size() << std::endl;
-		
-		if (InformationManager::Instance().enemyPlayer != nullptr
-			&& InformationManager::Instance().enemyRace != BWAPI::Races::Unknown
-			&& InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer).size() > 0)
-		{
-			// 공격 대상 지역 결정
-			BWTA::BaseLocation * targetBaseLocation = nullptr;
-			double closestDistance = 100000000;
+	//@도주남 김지훈 일단 아래 모두 주석처리해봄
+	//else {
+	//	//std::cout << "enemy OccupiedBaseLocations : " << InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer).size() << std::endl;
+	//	
+	//	if (InformationManager::Instance().enemyPlayer != nullptr
+	//		&& InformationManager::Instance().enemyRace != BWAPI::Races::Unknown
+	//		&& InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer).size() > 0)
+	//	{
+	//		// 공격 대상 지역 결정
+	//		BWTA::BaseLocation * targetBaseLocation = nullptr;
+	//		double closestDistance = 100000000;
 
-			for (BWTA::BaseLocation * baseLocation : InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer)) {
+	//		for (BWTA::BaseLocation * baseLocation : InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer)) {
 
-				double distance = BWTA::getGroundDistance(
-					InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().selfPlayer)->getTilePosition(), 
-					baseLocation->getTilePosition());
+	//			double distance = BWTA::getGroundDistance(
+	//				InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().selfPlayer)->getTilePosition(), 
+	//				baseLocation->getTilePosition());
 
-				if (distance < closestDistance) {
-					closestDistance = distance;
-					targetBaseLocation = baseLocation;
-				}
-			}
+	//			if (distance < closestDistance) {
+	//				closestDistance = distance;
+	//				targetBaseLocation = baseLocation;
+	//			}
+	//		}
 
-			if (targetBaseLocation != nullptr) {
-				//공격유닛 결정
-				for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-				{
-					// 건물은 제외
-					if (unit->getType().isBuilding()) continue;
-					// 모든 일꾼은 제외
-					if (unit->getType().isWorker()) continue;
-					
-					// canAttack 유닛은 attackMove Command 로 공격을 보냅니다
-					if (unit->canAttack()) {
-						if (unit->isIdle()) {
-							CommandUtil::attackMove(unit, targetBaseLocation->getPosition());
-						}
-					}
-				}
-			}
-		}
-	}
+	//		if (targetBaseLocation != nullptr) {
+	//			//공격유닛 결정
+	//			for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+	//			{
+	//				// 건물은 제외
+	//				if (unit->getType().isBuilding()) continue;
+	//				// 모든 일꾼은 제외
+	//				if (unit->getType().isWorker()) continue;
+	//				
+	//				// canAttack 유닛은 attackMove Command 로 공격을 보냅니다
+	//				if (unit->canAttack()) {
+	//					if (unit->isIdle()) {
+	//						CommandUtil::attackMove(unit, targetBaseLocation->getPosition());
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 const MetaPairVector StrategyManager::getBuildOrderGoal()

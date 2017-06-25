@@ -21,7 +21,15 @@ namespace MyBot
 		/// 디버깅용 플래그 : 어느 Manager 가 에러를 일으키는지 알기위한 플래그
 		bool isToFindError;
 
+		//@도주남 김지훈 // 전투유닛들의 유닛 셋을 가지고 있는다.
+		BWAPI::Unitset          _combatUnits;
 	public:
+		//@도주남 김지훈 .// 기존 알버타에선 정찰유닛및 전투유닛 셋팅해 주는 부분이지만 일단 전투유닛만 넣는 것으로 한다.
+		void handleUnitAssignments();
+		//@도주남 김지훈 .// 전투 플레그가 뜨면 전투 유닛을 셋팅해준다.
+		void setCombatUnits();
+		//@도주남 김지훈 .//유닛셋에 유닛을 넣어준다.
+		void assignUnit(BWAPI::Unit unit, BWAPI::Unitset & set);
 
 		GameCommander();
 		~GameCommander();

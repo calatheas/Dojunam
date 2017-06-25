@@ -1,5 +1,6 @@
 #include "CombatCommander.h"
 #include "UnitUtil.h"
+#include "MedicManager.h"
 
 using namespace MyBot;
 
@@ -94,19 +95,20 @@ void CombatCommander::updateIdleSquad()
 void CombatCommander::updateAttackSquads()
 {
     Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
-
+	//@도주남 김지훈 테란에서만 적용됨 // scv 빼고 전투유닛이 40 넘으면 공격시작
+	if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) - BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_SCV) > 20)
     for (auto & unit : _combatUnits)
     {
-        if (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) < 30)
-        {
-            continue;
-        }
+        //if (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) < 30)
+        //{
+        //    continue;
+        //}
 
         // get every unit of a lower priority and put it into the attack squad
-        if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
-        {
+        //if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
+        //{
             _squadData.assignUnitToSquad(unit, mainAttackSquad);
-        }
+        //}
     }
 
     SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
@@ -473,8 +475,8 @@ void CombatCommander::drawSquadInformation(int x, int y)
 BWAPI::Position CombatCommander::getMainAttackLocation()
 {
     BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-
-    // First choice: Attack an enemy region if we can see units inside it
+	
+	// First choice: Attack an enemy region if we can see units inside it
     if (enemyBaseLocation)
     {
         BWAPI::Position enemyBasePosition = enemyBaseLocation->getPosition();

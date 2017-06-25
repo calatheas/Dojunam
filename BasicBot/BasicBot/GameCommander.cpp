@@ -71,6 +71,9 @@ void GameCommander::onFrame()
 	StrategyManager::Instance().update();
 
 	if (isToFindError) std::cout << "h)";
+	//@도주남 김지훈 전투유닛 셋팅
+	handleUnitAssignments();
+	CombatCommander::Instance().update(_combatUnits);
 }
 
 void GameCommander::onUnitShow(BWAPI::Unit unit)			
@@ -137,3 +140,50 @@ void GameCommander::onReceiveText(BWAPI::Player player, std::string text)
 {
 }
 
+//@도주남 김지훈 
+void GameCommander::handleUnitAssignments()
+{
+	//_validUnits.clear();
+	_combatUnits.clear();
+
+	// filter our units for those which are valid and usable
+	//setValidUnits();
+
+	// set each type of unit
+	//setScoutUnits();
+	setCombatUnits();
+}
+
+//@도주남 김지훈 // 전투유닛을 setting 해주는 부분 기존 로직과 다르게 적용함.
+void GameCommander::setCombatUnits()
+{
+	int combatunitCount = 0;
+	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+	{
+		if (UnitUtil::IsValidUnit(unit))
+			if (UnitUtil::IsCombatUnit(unit) && !unit->getType().isWorker())
+			{
+				//unit->getOrder
+				BWAPI::UnitCommand currentCommand(unit->getLastCommand());
+
+				//@도주남 김지훈 일꾼이 아니면 넣는다.
+				//if (currentCommand.getType() == BWAPI::UnitCommandTypes::Attack_Move)
+				{
+					assignUnit(unit, _combatUnits);
+					combatunitCount++;
+				}
+			}
+	}
+	//if (combatunitCount!=0)
+	//	std::cout << "공격 유닛 [" << combatunitCount  <<"]명 셋팅 !" << std::endl;
+}
+
+
+void GameCommander::assignUnit(BWAPI::Unit unit, BWAPI::Unitset & set)
+{
+	//@도주남 김지훈 다른 유닛set에 포함되였는지를 확인하고 제거해주는 로직이 존재 하지만, 지금 전투유닛만 쓸꺼니까 필요없음;
+//    if (_scoutUnits.contains(unit)) { _scoutUnits.erase(unit); }
+//    else if (_combatUnits.contains(unit)) { _combatUnits.erase(unit); }
+
+    set.insert(unit);
+}
