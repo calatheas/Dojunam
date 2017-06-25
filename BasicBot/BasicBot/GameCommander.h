@@ -23,6 +23,8 @@ namespace MyBot
 
 		//@도주남 김지훈 // 전투유닛들의 유닛 셋을 가지고 있는다.
 		BWAPI::Unitset          _combatUnits;
+				//djn ssh
+		BWAPI::Unitset          _scoutUnits;
 	public:
 		//@도주남 김지훈 .// 기존 알버타에선 정찰유닛및 전투유닛 셋팅해 주는 부분이지만 일단 전투유닛만 넣는 것으로 한다.
 		void handleUnitAssignments();
@@ -74,6 +76,8 @@ namespace MyBot
 		/// 유닛(건물/지상유닛/공중유닛)이 Hide 될 때 발생하는 이벤트를 처리합니다
 		/// 보이던 유닛이 Hide 될 때 발생합니다
 		void onUnitHide(BWAPI::Unit unit);
+				//djn ssh
+		void setScoutUnits();
 	};
 
 }
