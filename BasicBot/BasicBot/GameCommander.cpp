@@ -150,8 +150,47 @@ void GameCommander::handleUnitAssignments()
 	//setValidUnits();
 
 	// set each type of unit
-	//setScoutUnits();
+	//djn ssh
+	setScoutUnits();
 	setCombatUnits();
+}
+//djn ssh
+
+void GameCommander::setScoutUnits()
+{
+	// if we haven't set a scout unit, do it
+	if (_scoutUnits.empty() && !_initialScoutSet)
+	{
+		BWAPI::Unit supplyProvider;// = getFirstSupplyProvider();
+
+		bool flag = false;
+		for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+		{
+			if (unit->getType().isBuilding() == true && unit->getType().isResourceDepot() == false)
+			{
+				supplyProvider = unit;
+				flag = true;
+				break;
+			}
+		}
+		// if it exists
+		//std::cout << "error??" << std::endl;
+		if (flag)
+		{
+			// grab the closest worker to the supply provider to send to scout
+			BWAPI::Unit workerScout = WorkerManager::Instance().getClosestMineralWorkerTo(supplyProvider->getPosition());
+			//	getClosestWorkerToTarget(supplyProvider->getPosition());
+
+			// if we find a worker (which we should) add it to the scout units
+			if (workerScout)
+			{
+				ScoutManager::Instance().setWorkerScout(workerScout);
+				assignUnit(workerScout, _scoutUnits);
+				_initialScoutSet = true;
+			}
+		}
+		//std::cout << "Lucky??" << std::endl;
+	}
 }
 
 //@도주남 김지훈 // 전투유닛을 setting 해주는 부분 기존 로직과 다르게 적용함.
