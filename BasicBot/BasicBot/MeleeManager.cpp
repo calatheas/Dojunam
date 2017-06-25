@@ -62,6 +62,7 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				{
 					// move to it
 					Micro::SmartMove(meleeUnit, order.getPosition());
+					
 				}
 			}
 		}
@@ -277,11 +278,12 @@ void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
         if (!target)
         {
             Micro::SmartMove(attacker, order.getPosition());
+			
             continue;
         }
 
         Micro::SmartAttackUnit(attacker, target);
-
+		
         // update the number of units assigned to attack the target we found
         int & assigned = attackersAssigned[attackerAssignment.second];
         assigned++;
@@ -309,6 +311,7 @@ void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
 			{
 				// move to it
 				Micro::SmartMove(unit, order.getPosition());
+
                 BWAPI::Broodwar->drawLineMap(unit->getPosition(), order.getPosition(), BWAPI::Colors::Yellow);
 			}
         }

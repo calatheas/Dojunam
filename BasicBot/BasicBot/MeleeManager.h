@@ -11,7 +11,7 @@ class MeleeManager : public MicroManager
 {
 
 public:
-
+	
 	MeleeManager();
 	~MeleeManager() {}
 	void executeMicro(const BWAPI::Unitset & targets);

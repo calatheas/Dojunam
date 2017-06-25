@@ -63,7 +63,7 @@ void Squad::update()
 	{
 		_meleeManager.execute(_order);
 		_rangedManager.execute(_order);
-        _tankManager.execute(_order);
+		_tankManager.execute(_order);
         _medicManager.execute(_order);
 		_transportManager.update();
 
@@ -181,13 +181,15 @@ void Squad::addUnitsToMicroManagers()
 			}
 		}
 	}
-
+	
 	_meleeManager.setUnits(meleeUnits);
 	_rangedManager.setUnits(rangedUnits);
 	_detectorManager.setUnits(detectorUnits);
 	_transportManager.setUnits(transportUnits);
     _tankManager.setUnits(tankUnits);
+	_medicManager.meleeUnitsetCenterP = _meleeManager.calcCenter();
     _medicManager.setUnits(medicUnits);
+
 }
 
 // calculates whether or not to regroup

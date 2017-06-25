@@ -96,7 +96,7 @@ void CombatCommander::updateAttackSquads()
 {
     Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	//@µµÁÖ³² ±èÁöÈÆ Å×¶õ¿¡¼­¸¸ Àû¿ëµÊ // scv »©°í ÀüÅõÀ¯´ÖÀÌ 40 ³ÑÀ¸¸é °ø°Ý½ÃÀÛ
-	if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) - BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_SCV) > 20)
+	if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) - BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_SCV) > 20 && BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_Medic) >  2)
     for (auto & unit : _combatUnits)
     {
         //if (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) < 30)
@@ -105,14 +105,30 @@ void CombatCommander::updateAttackSquads()
         //}
 
         // get every unit of a lower priority and put it into the attack squad
-        //if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
-        //{
+        if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
+        {
             _squadData.assignUnitToSquad(unit, mainAttackSquad);
-        //}
+        }
     }
+	
+   // SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
 
-    SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
-    mainAttackSquad.setSquadOrder(mainAttackOrder);
+	//@µµÁÖ³² ±èÁöÈÆ
+	BWTA::Chokepoint * secondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
+	if (secondCP != nullptr && secondCP->getCenter().getDistance(mainAttackSquad.calcCenter()) < 100)
+	{
+		SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
+		mainAttackSquad.setSquadOrder(mainAttackOrder);
+	}
+	else if (secondCP != nullptr){
+		SquadOrder mainAttackOrder(SquadOrderTypes::Attack, secondCP->getCenter(), 800, "Attack Enemy ChockPoint");
+		mainAttackSquad.setSquadOrder(mainAttackOrder);
+	}
+	else{
+		SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
+		mainAttackSquad.setSquadOrder(mainAttackOrder);
+	}
+
 }
 
 void CombatCommander::updateDropSquads()

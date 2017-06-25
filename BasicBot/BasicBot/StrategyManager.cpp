@@ -637,7 +637,7 @@ void StrategyManager::executeCombat()
 				&& InformationManager::Instance().enemyRace != BWAPI::Races::Unknown
 				&& InformationManager::Instance().getOccupiedBaseLocations(InformationManager::Instance().enemyPlayer).size() > 0)
 			{				
-				isFullScaleAttackStarted = true;
+				//isFullScaleAttackStarted = true;
 			}
 		}
 
