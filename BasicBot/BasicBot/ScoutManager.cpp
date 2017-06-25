@@ -36,7 +36,6 @@ void ScoutManager::update()
 // 상대방 MainBaseLocation 위치를 알고있으면, 정찰 유닛이 죽었어도 새로 지정 안함
 void ScoutManager::assignScoutIfNeeded()
 {
-	/*
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 
 	if (enemyBaseLocation == nullptr)
@@ -77,38 +76,6 @@ void ScoutManager::assignScoutIfNeeded()
 			}
 		}
 	}
-	*/
-	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-
-	// 적 진영을 모르면
-	if (enemyBaseLocation == nullptr)
-	{
-		bool isScout = false;
-		for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
-		{
-			if (WorkerManager::Instance().getWorkerData().getWorkerJob(unit) == 7)
-				isScout = true;
-		}
-		if (isScout == false)
-		{
-			int mineral_count_flag = 0;
-			for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
-			{
-				if (WorkerManager::Instance().getWorkerData().getWorkerJob(unit) == 0)
-					mineral_count_flag++;
-			}
-			if (mineral_count_flag % 9 == 0)
-			{
-				for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
-				{
-					if (unit->isGatheringMinerals())
-						currentScoutUnit = unit;
-					WorkerManager::Instance().setScoutWorker(currentScoutUnit);
-					break;
-				}
-			}
-		}
-	}
 }
 
 
@@ -116,7 +83,7 @@ void ScoutManager::assignScoutIfNeeded()
 // 상대방 MainBaseLocation 위치를 아는 상황이면, 해당 BaseLocation 이 있는 Region의 가장자리를 따라 계속 이동함 (정찰 유닛이 죽을때까지) 
 void ScoutManager::moveScoutUnit()
 {
-	if (!currentScoutUnit || currentScoutUnit->exists() == false || currentScoutUnit->getHitPoints() <= 0)
+	if (!currentScoutUnit || currentScoutUnit->exists() == false || currentScoutUnit->getHitPoints() <= 0 )
 	{
 		currentScoutUnit = nullptr;
 		currentScoutStatus = ScoutStatus::NoScout;
@@ -130,10 +97,10 @@ void ScoutManager::moveScoutUnit()
 	{
 		// currentScoutTargetBaseLocation 가 null 이거나 정찰 유닛이 currentScoutTargetBaseLocation 에 도착했으면 
 		// 아군 MainBaseLocation 으로부터 가장 가까운 미정찰 BaseLocation 을 새로운 정찰 대상 currentScoutTargetBaseLocation 으로 잡아서 이동
-		if (currentScoutTargetBaseLocation == nullptr || currentScoutUnit->getDistance(currentScoutTargetBaseLocation->getPosition()) < 5 * TILE_SIZE)
+		if (currentScoutTargetBaseLocation == nullptr || currentScoutUnit->getDistance(currentScoutTargetBaseLocation->getPosition()) < 5 * TILE_SIZE) 
 		{
 			currentScoutStatus = ScoutStatus::MovingToAnotherBaseLocation;
-
+			
 			int closestDistance = INT_MAX;
 			int tempDistance = 0;
 			BWTA::BaseLocation * closestBaseLocation = nullptr;
@@ -144,7 +111,7 @@ void ScoutManager::moveScoutUnit()
 				{
 					// GroundDistance 를 기준으로 가장 가까운 곳으로 선정
 					tempDistance = (int)(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getGroundDistance(startLocation) + 0.5);
-
+				
 					if (tempDistance > 0 && tempDistance < closestDistance) {
 						closestBaseLocation = startLocation;
 						closestDistance = tempDistance;
@@ -161,7 +128,7 @@ void ScoutManager::moveScoutUnit()
 
 	}
 	// if we know where the enemy region is
-	else
+	else 
 	{
 		// if scout is exist, move scout into enemy region
 		if (currentScoutUnit) {
@@ -252,7 +219,7 @@ void ScoutManager::calculateEnemyRegionVertices()
 
 	// 아군 Main BaseLocation 으로부터 가까운 순서대로 정렬된 타일들의 전체 목록을 갖고와서, enemyRegion 에 해당하는 타일들만 추려내면, 
 	// enemyRegion 의 타일 중 아군 Main BaseLocation 으로부터 가장 가까운 순서대로 정렬된 타일들의 목록을 만들 수 있다
-	const BWAPI::Position basePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
+	const BWAPI::Position basePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());	
 	const std::vector<BWAPI::TilePosition> & closestTobase = MapTools::Instance().getClosestTilesTo(basePosition);
 
 	std::set<BWAPI::Position> unsortedVertices;
