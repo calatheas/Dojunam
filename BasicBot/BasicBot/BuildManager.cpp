@@ -1064,3 +1064,8 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 	}
 }
 
+//dhj ssh
+void BuildManager::queueGasSteal()
+{
+	buildQueue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getRefinery()), true, true);
+}
