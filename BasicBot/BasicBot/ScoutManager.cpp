@@ -21,21 +21,50 @@ ScoutManager & ScoutManager::Instance()
 
 void ScoutManager::update()
 {
-	// 1초에 4번만 실행합니다
+
 	if (BWAPI::Broodwar->getFrameCount() % 6 != 0) return;
 
-	// scoutUnit 을 지정하고, scoutUnit 의 이동을 컨트롤함. 
-	// TODO 과제 : 여러 scoutUnit 을 동시에 운용하거나, scoutUnit 이 길목에서 적군에 의해 사망하여 정찰이 계속 실패하는 경우, 중후반 정찰에 대한 처리 등은 생각해볼 과제이다  
+
 	assignScoutIfNeeded();
 	moveScoutUnit();
 
-	// 참고로, scoutUnit 의 이동에 의해 발견된 정보를 처리하는 것은 InformationManager.update() 에서 수행함
 }
 
-// 상대방 MainBaseLocation 위치를 모르면서, 정찰 유닛이 지정되어있지 않거나 정찰 유닛이 죽었으면, ResourceDepot 이 아닌 다른 건물이 있을 경우, 미네랄 일꾼 중에서 새로 지정.
-// 상대방 MainBaseLocation 위치를 알고있으면, 정찰 유닛이 죽었어도 새로 지정 안함
+
 void ScoutManager::assignScoutIfNeeded()
 {
+	//djn ssh
+	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+
+	if (enemyBaseLocation == nullptr)
+	{
+		bool isScout = false;
+		for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
+		{
+			if (WorkerManager::Instance().getWorkerData().getWorkerJob(unit) == 7)
+				isScout = true;
+		}
+		if (isScout == false)
+		{
+			int mineral_count_flag = 0;
+			for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
+			{
+				if (WorkerManager::Instance().getWorkerData().getWorkerJob(unit) == 0)
+					mineral_count_flag++;
+			}
+			if (mineral_count_flag % 9 == 0)
+			{
+				for (auto & unit : WorkerManager::Instance().workerData.getWorkers())
+				{
+					if (unit->isGatheringMinerals())
+						currentScoutUnit = unit;
+					WorkerManager::Instance().setScoutWorker(currentScoutUnit);
+					break;
+				}
+			}
+		}
+	}
+	/*
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 
 	if (enemyBaseLocation == nullptr)
@@ -45,7 +74,7 @@ void ScoutManager::assignScoutIfNeeded()
 			currentScoutUnit = nullptr;
 			currentScoutStatus = ScoutStatus::NoScout;
 
-			// first building (Pylon / Supply Depot / Spawning Pool) 을 건설 시작한 후, 가장 가까이에 있는 Worker 를 정찰유닛으로 지정한다
+
 			BWAPI::Unit firstBuilding = nullptr;
 
 			for (auto & unit : BWAPI::Broodwar->self()->getUnits())
@@ -63,27 +92,24 @@ void ScoutManager::assignScoutIfNeeded()
 				BWAPI::Unit unit = WorkerManager::Instance().getClosestMineralWorkerTo(firstBuilding->getPosition());
 
 				// if we find a worker (which we should) add it to the scout units
-				// 정찰 나갈 일꾼이 없으면, 아무것도 하지 않는다
 				if (unit)
 				{
 					// set unit as scout unit
 					currentScoutUnit = unit;
 					WorkerManager::Instance().setScoutWorker(currentScoutUnit);
 
-					// 참고로, 일꾼의 정찰 임무를 해제하려면, 다음과 같이 하면 된다
 					//WorkerManager::Instance().setIdleWorker(currentScoutUnit);
 				}
 			}
 		}
 	}
+	*/
 }
 
 
-// 상대방 MainBaseLocation 위치를 모르는 상황이면, StartLocation 들에 대해 아군의 MainBaseLocation에서 가까운 것부터 순서대로 정찰
-// 상대방 MainBaseLocation 위치를 아는 상황이면, 해당 BaseLocation 이 있는 Region의 가장자리를 따라 계속 이동함 (정찰 유닛이 죽을때까지) 
 void ScoutManager::moveScoutUnit()
 {
-	if (!currentScoutUnit || currentScoutUnit->exists() == false || currentScoutUnit->getHitPoints() <= 0 )
+	if (!currentScoutUnit || currentScoutUnit->exists() == false || currentScoutUnit->getHitPoints() <= 0)
 	{
 		currentScoutUnit = nullptr;
 		currentScoutStatus = ScoutStatus::NoScout;
@@ -95,23 +121,19 @@ void ScoutManager::moveScoutUnit()
 
 	if (enemyBaseLocation == nullptr)
 	{
-		// currentScoutTargetBaseLocation 가 null 이거나 정찰 유닛이 currentScoutTargetBaseLocation 에 도착했으면 
-		// 아군 MainBaseLocation 으로부터 가장 가까운 미정찰 BaseLocation 을 새로운 정찰 대상 currentScoutTargetBaseLocation 으로 잡아서 이동
-		if (currentScoutTargetBaseLocation == nullptr || currentScoutUnit->getDistance(currentScoutTargetBaseLocation->getPosition()) < 5 * TILE_SIZE) 
+		if (currentScoutTargetBaseLocation == nullptr || currentScoutUnit->getDistance(currentScoutTargetBaseLocation->getPosition()) < 5 * TILE_SIZE)
 		{
 			currentScoutStatus = ScoutStatus::MovingToAnotherBaseLocation;
-			
+
 			int closestDistance = INT_MAX;
 			int tempDistance = 0;
 			BWTA::BaseLocation * closestBaseLocation = nullptr;
 			for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
 			{
-				// if we haven't explored it yet (방문했었던 곳은 다시 가볼 필요 없음)
 				if (BWAPI::Broodwar->isExplored(startLocation->getTilePosition()) == false)
 				{
-					// GroundDistance 를 기준으로 가장 가까운 곳으로 선정
 					tempDistance = (int)(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getGroundDistance(startLocation) + 0.5);
-				
+
 					if (tempDistance > 0 && tempDistance < closestDistance) {
 						closestBaseLocation = startLocation;
 						closestDistance = tempDistance;
@@ -128,7 +150,7 @@ void ScoutManager::moveScoutUnit()
 
 	}
 	// if we know where the enemy region is
-	else 
+	else
 	{
 		// if scout is exist, move scout into enemy region
 		if (currentScoutUnit) {
@@ -203,8 +225,6 @@ BWAPI::Position ScoutManager::getScoutFleePositionFromEnemyRegionVertices()
 	}
 }
 
-// Enemy MainBaseLocation 이 있는 Region 의 가장자리를  enemyBaseRegionVertices 에 저장한다
-// Region 내 모든 건물을 Eliminate 시키기 위한 지도 탐색 로직 작성시 참고할 수 있다
 void ScoutManager::calculateEnemyRegionVertices()
 {
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
@@ -217,9 +237,7 @@ void ScoutManager::calculateEnemyRegionVertices()
 		return;
 	}
 
-	// 아군 Main BaseLocation 으로부터 가까운 순서대로 정렬된 타일들의 전체 목록을 갖고와서, enemyRegion 에 해당하는 타일들만 추려내면, 
-	// enemyRegion 의 타일 중 아군 Main BaseLocation 으로부터 가장 가까운 순서대로 정렬된 타일들의 목록을 만들 수 있다
-	const BWAPI::Position basePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());	
+	const BWAPI::Position basePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
 	const std::vector<BWAPI::TilePosition> & closestTobase = MapTools::Instance().getClosestTilesTo(basePosition);
 
 	std::set<BWAPI::Position> unsortedVertices;
@@ -246,7 +264,6 @@ void ScoutManager::calculateEnemyRegionVertices()
 			surrounded = false;
 		}
 
-		// Region의 가장자리 타일들 (surrounded 되지 않은 타일들)만 추가한다
 		// push the tiles that aren't surrounded 
 		if (!surrounded && BWAPI::Broodwar->isBuildable(tp))
 		{
