@@ -346,7 +346,7 @@ BWAPI::Position Squad::calcCenter()
 	for (auto & unit : _units)
 	{
 		accum += unit->getPosition();
-		std::cout << " BWAPI::Position Squad::calcCenter()   " << accum.x << " / " << accum.y << std::endl;
+		//std::cout << " BWAPI::Position Squad::calcCenter()   " << accum.x << " / " << accum.y << std::endl;
 	}
 	return BWAPI::Position(accum.x / _units.size(), accum.y / _units.size());
 }

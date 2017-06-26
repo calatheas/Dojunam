@@ -711,16 +711,24 @@ const MetaPairVector StrategyManager::getBuildOrderGoal()
 bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran){
 		if (_main_strategy == "Terran_Bionic"){
-			if (numUnits["Marines"] > 36){
+			if (numUnits["Marines"] > 24){
 				_main_strategy = "Terran_Bionic_Tank";
 			}
 		}
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
-
+		if (_main_strategy == "Terran_Bionic"){
+			if (numUnits["Marines"] > 24){
+				_main_strategy = "Terran_Bionic_Tank";
+			}
+		}
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Zerg){
-
+		if (_main_strategy == "Terran_Bionic"){
+			if (numUnits["Marines"] > 24){
+				_main_strategy = "Terran_Bionic_Tank";
+			}
+		}
 	}
 	return false;
 }
@@ -853,9 +861,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Engineering_Bay, 1));
 		}
 
-		if (BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Stim_Packs)){
-			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Stim_Packs, 1));
-		}
+		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Stim_Packs, 1));
 	}
 	else if (_main_strategy == "Terran_Bionic_Tank")
 	{
@@ -864,9 +870,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, numUnits["Firebats"] + 1));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, numUnits["Tanks"]+1));
 
-		if (BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode)){
-			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
-		}
+		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 	}
 
 	else if (_main_strategy == "Terran_4RaxMarines")
