@@ -23,6 +23,52 @@ void BuildManager::update()
 		}
 	}
 
+	// if they have cloaked units get a new goal asap
+	//
+	if (!_enemyCloakedDetected && InformationManager::Instance().enemyHasCloakedUnits())
+	{
+		std::cout << "_enemyCloakedDetected" << std::endl;
+		if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss)
+		{
+			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon) < 2)
+			{
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Protoss_Photon_Cannon), true);
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Protoss_Photon_Cannon), true);
+			}
+
+			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Protoss_Forge) == 0)
+			{
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Protoss_Forge), true);
+			}
+		}
+		else if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran)
+		{
+			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret) < 2)
+			{
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstChokePoint, true);
+				if (InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self()) != nullptr){
+					buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstExpansionLocation, true);
+				}
+			}
+
+			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay) == 0)
+			{
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Engineering_Bay), true);
+			}
+
+			for (int i = 0; i < UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center); ++i){
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
+			}
+		}
+
+		if (Config::Debug::DrawBuildOrderSearchInfo)
+		{
+			BWAPI::Broodwar->printf("Enemy Cloaked Unit Detected!");
+		}
+
+		_enemyCloakedDetected = true;
+	}
+
 	// Dead Lock 을 체크해서 제거한다
 	checkBuildOrderQueueDeadlockAndAndFixIt();
 	// Dead Lock 제거후 Empty 될 수 있다
@@ -215,53 +261,7 @@ void BuildManager::update()
 		}
 	}
 
-	// if they have cloaked units get a new goal asap
-	//
-	if (!_enemyCloakedDetected && InformationManager::Instance().enemyHasCloakedUnits())
-	{
-		if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss)
-		{
-			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon) < 2)
-			{
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Protoss_Photon_Cannon), true);
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Protoss_Photon_Cannon), true);
-			}
 
-			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Protoss_Forge) == 0)
-			{
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Protoss_Forge), true);
-			}
-		}
-		else if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran)
-		{
-			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret) < 2)
-			{
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstChokePoint, true);
-				if (InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self()) != nullptr){
-					buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstExpansionLocation, true);
-				}
-			}
-
-			if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay) == 0)
-			{
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Engineering_Bay), true);
-			}
-
-			for (int i = 0; i < UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center); ++i){
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
-			}
-		}
-
-		if (Config::Debug::DrawBuildOrderSearchInfo)
-		{
-			BWAPI::Broodwar->printf("Enemy Cloaked Unit Detected!");
-		}
-
-		_enemyCloakedDetected = true;
-	}
-
-	if (_enemyCloakedDetected){
-	}
 }
 
 void BuildManager::performBuildOrderSearch()
@@ -897,6 +897,13 @@ void BuildManager::checkBuildOrderQueueDeadlockAndAndFixIt()
 					}
 
 					if (hasFoundCreepGenerator == false) {
+						isDeadlockCase = true;
+					}
+				}
+
+				if (!isDeadlockCase && unitType == BWAPI::UnitTypes::Terran_Barracks){
+					int _max_barracks = 4;
+					if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks) >= _max_barracks){
 						isDeadlockCase = true;
 					}
 				}

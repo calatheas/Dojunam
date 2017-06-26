@@ -50,7 +50,7 @@ void GameCommander::onFrame()
 
 	if (isToFindError) std::cout << "d";
 
-	BOSSManager::Instance().update(100.0);
+	BOSSManager::Instance().update(49.0);
 
 	// 빌드오더큐를 관리하며, 빌드오더에 따라 실제 실행(유닛 훈련, 테크 업그레이드 등)을 지시한다.
 	BuildManager::Instance().update();
