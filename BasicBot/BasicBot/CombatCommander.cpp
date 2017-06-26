@@ -96,20 +96,35 @@ void CombatCommander::updateAttackSquads()
 {
     Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	//@도주남 김지훈 테란에서만 적용됨 // scv 빼고 전투유닛이 40 넘으면 공격시작
-	if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) - BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_SCV) > 20 && BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_Medic) >  2)
-    for (auto & unit : _combatUnits)
-    {
-        //if (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) < 30)
-        //{
-        //    continue;
-        //}
+	if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) - BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_SCV) > 20 && BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_Medic) > 2){
+		for (auto & unit : _combatUnits)
+		{
+			//if (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) < 30)
+			//{
+			//    continue;
+			//}
 
-        // get every unit of a lower priority and put it into the attack squad
-        if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
-        {
-            _squadData.assignUnitToSquad(unit, mainAttackSquad);
-        }
-    }
+			// get every unit of a lower priority and put it into the attack squad
+			if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
+			{
+				_squadData.assignUnitToSquad(unit, mainAttackSquad);
+			}
+		}
+	}
+
+	//@도주남 kyj strategy로직 이동
+	//else 블록 마지막에 return 해도 될듯.. 김지훈 판단 필요
+	else{
+		BWTA::Chokepoint* secondChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
+		
+		for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+		{
+			if (UnitUtil::IsCombatUnit(unit) && unit->isIdle()) {
+				CommandUtil::attackMove(unit, secondChokePoint->getCenter());
+				
+			}
+		}
+	}
 	
    // SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
 

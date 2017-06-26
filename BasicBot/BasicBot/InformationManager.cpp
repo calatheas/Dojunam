@@ -660,10 +660,22 @@ bool InformationManager::enemyHasCloakedUnits()
 	{
 		const UnitInfo & ui(kv.second);
 
+		//@도주남 kyj 레이스, 고스트
 		if (ui.type.isCloakable())
 		{
 			return true;
 		}
+		//@도주남 kyj 닥템, 옵저버
+		if (ui.type.hasPermanentCloak())
+		{
+			return true;
+		}
+		//@도주남 kyj lurker
+		if (ui.type == BWAPI::UnitTypes::Zerg_Lurker)
+		{
+			return true;
+		}
+
 
 		// assume they're going dts
 		if (ui.type == BWAPI::UnitTypes::Protoss_Citadel_of_Adun || 

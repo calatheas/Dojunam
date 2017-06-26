@@ -70,7 +70,7 @@ void GameCommander::onFrame()
 	if (isToFindError) std::cout << "g";
 
 	// 전략적 판단 및 유닛 컨트롤
-	StrategyManager::Instance().update();
+	//StrategyManager::Instance().update();
 
 	if (isToFindError) std::cout << "h)";
 	//@도주남 김지훈 전투유닛 셋팅
