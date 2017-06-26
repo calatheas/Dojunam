@@ -4,6 +4,8 @@ using namespace MyBot;
 
 GameCommander::GameCommander(){
 	isToFindError = false;
+	//@도주남 김지훈
+	_initialScoutSet = false;
 }
 GameCommander::~GameCommander(){
 }
