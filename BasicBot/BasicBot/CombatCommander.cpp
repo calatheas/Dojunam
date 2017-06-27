@@ -24,7 +24,7 @@ CombatCommander::CombatCommander()
 
 void CombatCommander::initializeSquads()
 {
-    SquadOrder idleOrder(SquadOrderTypes::Idle, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()), 100, "Chill Out");
+	SquadOrder idleOrder(SquadOrderTypes::Idle, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter(), 100, "Chill Out");
 	_squadData.addSquad("Idle", Squad("Idle", idleOrder, IdlePriority));
 
     // the main attack squad that will pressure the enemy's closest base location
@@ -85,65 +85,36 @@ void CombatCommander::updateIdleSquad()
     for (auto & unit : _combatUnits)
     {
         // if it hasn't been assigned to a squad yet, put it in the low priority idle squad
-        if (_squadData.canAssignUnitToSquad(unit, idleSquad))
+		//BWAPI::UnitCommand currentCommand(unit->getLastCommand());
+		if (_squadData.canAssignUnitToSquad(unit, idleSquad))
         {
-            idleSquad.addUnit(unit);
-        }
+            //idleSquad.addUnit(unit);
+			_squadData.assignUnitToSquad(unit, idleSquad);
+			Micro::SmartAttackMove(unit, idleSquad.getSquadOrder().getPosition());
+        }		
     }
 }
 
 void CombatCommander::updateAttackSquads()
 {
-    Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
-	//@도주남 김지훈 테란에서만 적용됨 // scv 빼고 전투유닛이 40 넘으면 공격시작
-	if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::AllUnits) - BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_SCV) > 20 && BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_Medic) > 2){
+	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
+	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
+
+	if (candiAttackerSquad.getUnits().size() > 7)
+	{
 		for (auto & unit : _combatUnits)
 		{
-			//if (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) < 30)
-			//{
-			//    continue;
-			//}
-
-			// get every unit of a lower priority and put it into the attack squad
-			if (!unit->getType().isWorker() && (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord) && _squadData.canAssignUnitToSquad(unit, mainAttackSquad))
+			if (_squadData.canAssignUnitToSquad(unit, mainAttackSquad))
 			{
 				_squadData.assignUnitToSquad(unit, mainAttackSquad);
 			}
 		}
 	}
-
-	//@도주남 kyj strategy로직 이동
-	//else 블록 마지막에 return 해도 될듯.. 김지훈 판단 필요
-	else{
-		BWTA::Chokepoint* secondChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
-		
-		for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-		{
-			if (UnitUtil::IsCombatUnit(unit) && unit->isIdle()) {
-				CommandUtil::attackMove(unit, secondChokePoint->getCenter());
-				
-			}
-		}
-	}
-	
-   // SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
-
-	//@도주남 김지훈
-	BWTA::Chokepoint * secondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
-	if (secondCP != nullptr && secondCP->getCenter().getDistance(mainAttackSquad.calcCenter()) < 100)
-	{
-		SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
-		mainAttackSquad.setSquadOrder(mainAttackOrder);
-	}
-	else if (secondCP != nullptr){
-		SquadOrder mainAttackOrder(SquadOrderTypes::Attack, secondCP->getCenter(), 800, "Attack Enemy ChockPoint");
-		mainAttackSquad.setSquadOrder(mainAttackOrder);
-	}
-	else{
-		SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
-		mainAttackSquad.setSquadOrder(mainAttackOrder);
-	}
-
+	//else
+	//	return ;
+	//
+	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(mainAttackSquad.calcCenter()) , 800, "Attack Enemy ChokePoint");
+	mainAttackSquad.setSquadOrder(mainAttackOrder);
 }
 
 void CombatCommander::updateDropSquads()
@@ -503,10 +474,39 @@ void CombatCommander::drawSquadInformation(int x, int y)
 	_squadData.drawSquadInformation(x, y);
 }
 
+BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition)
+{
+	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+	BWTA::Chokepoint * enemySecondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
+	
+	if (enemySecondCP)
+	{
+		BWAPI::Position enemySecondChokePosition = enemySecondCP->getCenter();
+		//std::cout << "MapTools::Instance().getGroundDistance(enemySecondChokePosition, enemyBaseLocation->getPosition()) " << MapTools::Instance().getGroundDistance(enemySecondChokePosition, enemyBaseLocation->getPosition()) << std::endl;
+		//std::cout << "MapTools::Instance().getGroundDistance(ourCenterPosition, enemyBaseLocation->getPosition())) " << MapTools::Instance().getGroundDistance(ourCenterPosition, enemyBaseLocation->getPosition()) << std::endl;
+		//std::cout << "enemySecondCP->getWidth() " << enemySecondCP->getWidth() << std::endl;
+		//std::cout << "MapTools::Instance().getGroundDistance(enemySecondChokePosition, ourCenterPosition) " << MapTools::Instance().getGroundDistance(enemySecondChokePosition, ourCenterPosition) << std::endl << std::endl;
+
+		if (MapTools::Instance().getGroundDistance(enemySecondChokePosition, ourCenterPosition) > 5 //enemySecondCP->getWidth()
+			&& MapTools::Instance().getGroundDistance(enemySecondChokePosition, enemyBaseLocation->getPosition())
+			< MapTools::Instance().getGroundDistance(ourCenterPosition, enemyBaseLocation->getPosition()))
+			return enemySecondChokePosition;
+	}
+	return getMainAttackLocation();
+
+}
+
 BWAPI::Position CombatCommander::getMainAttackLocation()
 {
     BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-	
+	//BWTA::Chokepoint * enemySecondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
+	//
+	//if (enemySecondCP)
+	//{
+	//	BWAPI::Position enemySecondChokePosition = enemySecondCP->getCenter();
+	//	
+	//}
+
 	// First choice: Attack an enemy region if we can see units inside it
     if (enemyBaseLocation)
     {

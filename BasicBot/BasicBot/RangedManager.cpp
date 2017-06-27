@@ -216,7 +216,7 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
 
 BWAPI::Unit RangedManager::closestrangedUnit(BWAPI::Unit target, std::set<BWAPI::Unit> & rangedUnitsToAssign)
 {
-	double minDistance = 0;
+	double minDistance = 0; //////////// @도주남 김지훈 이 값 좀 이상한듯
 	BWAPI::Unit closest = nullptr;
 
 	for (auto & rangedUnit : rangedUnitsToAssign)

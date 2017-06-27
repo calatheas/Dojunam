@@ -15,6 +15,8 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 	int countCB = 0;
 	// create a set of all medic targets
 	BWAPI::Unitset medicTargets;
+	double minDistance = std::numeric_limits<double>::max();
+	BWAPI::Position meleeUnitsetCenterP = order.getPosition();
     for (auto & unit : BWAPI::Broodwar->self()->getUnits())
     {
         if (unit->getHitPoints() < unit->getInitialHitPoints() && !unit->getType().isMechanical() && !unit->getType().isBuilding())
@@ -22,8 +24,15 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
         {
             medicTargets.insert(unit);
         }
-		if (unit->getType().groundWeapon().maxRange() > 0 && !unit->getType().isMechanical() && !unit->getType().isBuilding())
+		if (unit->getHitPoints() > 0 && unit->getType() == InformationManager::Instance().getBasicCombatUnitType() && !unit->getType().isMechanical() && !unit->getType().isBuilding())
+		{
+			if (unit->getDistance(order.getPosition()) < minDistance)
+			{
+				meleeUnitsetCenterP = unit->getPosition();
+				minDistance = unit->getDistance(order.getPosition());
+			}
 			countCB++;
+		}
     }
 	//std::cout << "MedicManager::executeMicro medicTargets.size(" << medicTargets.size()<< std::endl;
     
@@ -94,12 +103,16 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 		//}
 		//else
 		//@도주남 김지훈 노는 메딕을 마린혹은 파벳 중심으로 보내준다.  아 안되겠다 싶으면 본진쪽 초크포인트로 돌아온다
-		if (countCB == 0) // 조정필요
-			Micro::SmartAttackMove(medic, InformationManager::Instance().getSecondChokePoint(InformationManager::Instance().selfPlayer)->getCenter());
-		else if (countCB - medics.size() > medics.size() * 2)
-			Micro::SmartAttackMove(medic, order.getPosition());
-		else 
+		if (countCB > medics.size())
 			Micro::SmartAttackMove(medic, meleeUnitsetCenterP);
+		else
+		{
+			BWAPI::UnitCommand currentCommand(medic->getLastCommand());
+			Micro::SmartAttackMove(medic, currentCommand.getTargetPosition());
+		}
+
+		//	Micro::SmartAttackMove(medic, InformationManager::Instance().getSecondChokePoint(InformationManager::Instance().selfPlayer)->getCenter());
+		//
 		
     }
 }

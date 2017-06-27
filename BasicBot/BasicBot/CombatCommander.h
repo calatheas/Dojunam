@@ -27,6 +27,8 @@ class CombatCommander
 
 	BWAPI::Position getDefendLocation();
     BWAPI::Position getMainAttackLocation();
+	//@µµ¡÷≥≤ ±Ë¡ˆ»∆
+	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
 
     void            initializeSquads();
     void            verifySquadUniqueMembership();
