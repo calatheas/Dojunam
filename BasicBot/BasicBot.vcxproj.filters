@@ -332,9 +332,6 @@
     <ClInclude Include="BasicBot\RangedManager.h">
       <Filter>combat\micro</Filter>
     </ClInclude>
-    <ClInclude Include="BasicBot\ConstructionPlaceFinder.h">
-      <Filter>combat</Filter>
-    </ClInclude>
     <ClInclude Include="BasicBot\TankManager.h">
       <Filter>combat\micro</Filter>
     </ClInclude>
@@ -352,6 +349,9 @@
     </ClInclude>
     <ClInclude Include="BasicBot\DistanceMap.hpp">
       <Filter>util\map</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicBot\ConstructionPlaceFinder.h">
+      <Filter>combat\micro</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

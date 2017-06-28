@@ -20,30 +20,9 @@ namespace MyBot
 
 	struct Strategy
 	{
-		std::string _name;
-		BWAPI::Race _race;
-		int         _wins;
-		int         _losses;
-		BuildOrder  _buildOrder;
-
-		Strategy()
-			: _name("None")
-			, _race(BWAPI::Races::None)
-			, _wins(0)
-			, _losses(0)
-		{
-
-		}
-
-		Strategy(const std::string & name, const BWAPI::Race & race, const BuildOrder & buildOrder)
-			: _name(name)
-			, _race(race)
-			, _wins(0)
-			, _losses(0)
-			, _buildOrder(buildOrder)
-		{
-
-		}
+		std::string next_strategy_name;
+		std::string pre_strategy_name;
+		std::map<std::string, int> num_unit_limit;
 	};
 
 	/// 상황을 판단하여, 정찰, 빌드, 공격, 방어 등을 수행하도록 총괄 지휘를 하는 class
@@ -65,6 +44,7 @@ namespace MyBot
 		void executeCombat();
 
 		std::map<std::string, Strategy> _strategies;
+		BuildOrder _openingBuildOrder;
 		std::string _main_strategy;
 		const BuildOrder                _emptyBuildOrder;
 		const MetaPairVector getProtossBuildOrderGoal() const;
@@ -72,7 +52,9 @@ namespace MyBot
 		const MetaPairVector getZergBuildOrderGoal() const;
 		void setOpeningBookBuildOrder();
 		bool changeMainStrategy(std::map<std::string, int> & numUnits);
+		bool checkStrategyLimit(std::string &name, std::map<std::string, int> & numUnits);
 
+		std::map<std::string, std::vector<int>> unit_ratio_table;
 
 	public:
 		/// static singleton 객체를 리턴합니다

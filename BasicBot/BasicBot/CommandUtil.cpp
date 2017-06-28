@@ -274,13 +274,16 @@ size_t UnitUtil::GetAllUnitCount(BWAPI::UnitType type)
 			count++;
 		}
 
+
 		// case where a zerg egg contains the unit type
+		//저글링은 2개씩 세는 로직
 		if (unit->getType() == BWAPI::UnitTypes::Zerg_Egg && unit->getBuildType() == type)
 		{
 			count += type.isTwoUnitsInOneEgg() ? 2 : 1;
 		}
 
 		// case where a building has started constructing a unit but it doesn't yet have a unit associated with it
+		// 트레이닝 중인 유닛모두 포함
 		if (unit->getRemainingTrainTime() > 0)
 		{
 			BWAPI::UnitType trainType = unit->getLastCommand().getUnitType();

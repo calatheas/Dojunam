@@ -901,9 +901,11 @@ void BuildManager::checkBuildOrderQueueDeadlockAndAndFixIt()
 					}
 				}
 
+				//@도주남 
 				if (!isDeadlockCase && unitType == BWAPI::UnitTypes::Terran_Barracks){
 					int _max_barracks = 4;
-					if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks) >= _max_barracks){
+					
+					if ((UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks) + ConstructionManager::Instance().getConstructionQueueItemCount(unitType)) >= _max_barracks){
 						isDeadlockCase = true;
 					}
 				}
