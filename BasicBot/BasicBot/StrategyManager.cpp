@@ -24,6 +24,7 @@ void StrategyManager::setOpeningBookBuildOrder(){
 	std::string str_build_order;
 	if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran){
 		//_main_strategy = "Terran_MarineRush";
+		//_main_strategy = "Terran_Mechanic";
 		_main_strategy = "Terran_Bionic";
 		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV SCV Academy SCV SCV Marine Supply_Depot Marine Marine Marine Marine Marine Marine Marine Stim_Packs Medic Medic Firebat Firebat";
 		str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
@@ -49,8 +50,8 @@ void StrategyManager::setOpeningBookBuildOrder(){
 	//@도주남 김유진 전략별 유닛최대치 세팅
 	_strategies["Terran_Bionic"] = Strategy();
 	_strategies["Terran_Bionic"].pre_strategy_name = "None";
-	_strategies["Terran_Bionic"].next_strategy_name = "Terran_Bionic_Tank";
-	_strategies["Terran_Bionic"].num_unit_limit["Marines"] = 18; //마린18이상이면 테크진화
+	_strategies["Terran_Bionic"].next_strategy_name = "Terran_Mechanic";
+	_strategies["Terran_Bionic"].num_unit_limit["Marines"] = 12; //마린18이상이면 테크진화
 	//_strategies["Terran_Bionic"].num_unit_limit["Barracks"] = 4; //배럭4개 이상
 	_strategies["Terran_Bionic"].num_unit_limit["Medics"] = -1; //-1은 테크진화에 영향없음
 	_strategies["Terran_Bionic"].num_unit_limit["Firebats"] = -1;
@@ -938,8 +939,9 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	else if (_main_strategy == "Terran_Mechanic")
 	{
 		int goal_num_tanks = numUnits["Tanks"] + 2;
-		int goal_num_vultures = (goal_num_tanks - numUnits["Vultures"]) > numUnits["Factorys"] * 2 ? numUnits["Vultures"]+numUnits["Factorys"] : goal_num_tanks;
+		//int goal_num_vultures = (goal_num_tanks - numUnits["Vultures"]) > numUnits["Factorys"] * 2 ? numUnits["Vultures"]+numUnits["Factorys"] : goal_num_tanks;
 		//벌쳐는 탱크수만큼 뽑되 현재 탱크수와 벌쳐수가 많이 차이나면(팩토리의 2배만큼) 현재탱크수의 절반만 뽑는다.
+		int goal_num_vultures = numUnits["Vultures"] + 4;
 
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
