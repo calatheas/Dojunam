@@ -1,0 +1,1 @@
+cp Release\BWRepDump.dll C:\StarCraft\bwapi-data\AI\

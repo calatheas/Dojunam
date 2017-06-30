@@ -34,14 +34,12 @@ namespace MyBot
 		StrategyManager();
 
 		bool isInitialBuildOrderFinished;
-		void setInitialBuildOrder();
 
 		void executeWorkerTraining();
 		void executeSupplyManagement();
 		void executeBasicCombatUnitTraining();
 
 		bool isFullScaleAttackStarted;
-		void executeCombat();
 
 		std::map<std::string, Strategy> _strategies;
 		BuildOrder _openingBuildOrder;
