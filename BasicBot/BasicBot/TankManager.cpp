@@ -16,7 +16,12 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
     std::copy_if(targets.begin(), targets.end(), std::inserter(tankTargets, tankTargets.end()), 
                  [](BWAPI::Unit u){ return u->isVisible() && !u->isFlying(); });
     
+	BWAPI::Unitset tankTargets_UnSiege;
+	std::copy_if(targets.begin(), targets.end(), std::inserter(tankTargets_UnSiege, tankTargets_UnSiege.end()),
+		[](BWAPI::Unit u){ return u->isVisible(); });
+
     int siegeTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 32;
+	int  tankTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange() - 32;
     bool haveSiege = BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode);
 
 
@@ -30,6 +35,8 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
         bool tankNearChokepoint = false; 
         for (auto & choke : BWTA::getChokepoints())
         {
+			//@도주남 김지훈 64 라는 절대적인 수치 기준으로 , choke point 진입여부를 판단하고 있음 , 다른 getDistance 기준 64 미만의 경우
+			// 근접해있다고 판단해도 무방할 것으로 보임
             if (choke->getCenter().getDistance(tank->getPosition()) < 64)
             {
                 tankNearChokepoint = true;
@@ -45,23 +52,42 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			{
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(tank, tankTargets);
-
+				BWAPI::Unit target_unSiege = closestrangedUnit_kjh(tank, tankTargets_UnSiege);
                 if (target && Config::Debug::DrawUnitTargetInfo) 
 	            {
 		            BWAPI::Broodwar->drawLineMap(tank->getPosition(), tank->getTargetPosition(), BWAPI::Colors::Purple);
 	            }
-
+				//if (target)
+				//{
+				//	//352 는 siegeTankRange
+				//	std::cout << " tank->getDistance(target) : [" << tank->getDistance(target) << "]" << std::endl << "siegeTankRange [" << siegeTankRange << "]" << std::endl;
+				//}
+				int siegeOrder = 0;
                 // if we are within siege range, siege up
-                if (tank->getDistance(target) < siegeTankRange && tank->canSiege() && !tankNearChokepoint)
+				//@도주남 김지훈 시즈 모드 인데 타겟(타겟이 너무 빨라서)이 범위 안에 있는경우 시즈모드 해제
+				if (tank->getDistance(target_unSiege) < tankTankRange && tank->canUnsiege())
+				{
+					siegeOrder = 2;
+					//tank->unsiege();
+				}
+				else if (tank->getDistance(target) < siegeTankRange && tank->canSiege() && !tankNearChokepoint)
                 {
-                    tank->siege();
+					siegeOrder = 1;
+                    //tank->siege();
                 }
                 // otherwise unsiege and move in
                 else if ((!target || tank->getDistance(target) > siegeTankRange) && tank->canUnsiege())
                 {
-                    tank->unsiege();
+					siegeOrder = 2;
+                    //tank->unsiege();
                 }
+				
 
+				//@도주남 김지훈   시즈모드 수행중에 바로 unsiege 가 실행될수 없을 것 이므로 판단이 모두 끝나면 시즈모드를 풀거나 하는것을 실행시킴
+				if (siegeOrder == 1)
+					tank->siege();
+				else if (siegeOrder == 2)
+					tank->unsiege();
 
                 // if we're in siege mode just attack the target
                 if (tank->isSieged())
@@ -71,6 +97,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                 // if we're not in siege mode kite the target
                 else
                 {
+					//@도주남 김지훈 처음 보는 부분이였음, smartKite 라는 것이 발동되어야 소위말하는 kiting 이 되는 듯
                     Micro::SmartKiteTarget(tank, target);
                 }
 			}
@@ -153,7 +180,9 @@ BWAPI::Unit TankManager::getTarget(BWAPI::Unit tank, const BWAPI::Unitset & targ
     return closestTarget;
 }
 
-	// get the attack priority of a type in relation to a zergling
+//@도주남 김지훈 시즈모드 풀기위한 가장 가까운 유닛찾기
+
+// get the attack priority of a type in relation to a zergling
 int TankManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target) 
 {
 	BWAPI::UnitType rangedType = rangedUnit->getType();
@@ -234,5 +263,24 @@ BWAPI::Unit TankManager::closestrangedUnit(BWAPI::Unit target, std::set<BWAPI::U
 		}
 	}
 	
+	return closest;
+}
+
+
+BWAPI::Unit TankManager::closestrangedUnit_kjh(BWAPI::Unit target, BWAPI::Unitset & rangedUnitsToAssign)
+{
+	double minDistance = 0;
+	BWAPI::Unit closest = nullptr;
+
+	for (auto & rangedUnit : rangedUnitsToAssign)
+	{
+		double distance = rangedUnit->getDistance(target);
+		if (!closest || distance < minDistance)
+		{
+			minDistance = distance;
+			closest = rangedUnit;
+		}
+	}
+
 	return closest;
 }

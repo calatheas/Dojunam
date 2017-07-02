@@ -51,6 +51,17 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				// find the best target for this meleeUnit
 				BWAPI::Unit target = getTarget(meleeUnit, meleeUnitTargets);
 
+				//@µµÁÖ³² ±èÁöÈÆ ½ºÆÀÆÑ »ç¿ëÇÏ±â!
+				//Stim_Packs
+				if (meleeUnit->getStimTimer() == 0 
+					&& meleeUnit->getType() == BWAPI::UnitTypes::Terran_Firebat
+					&& meleeUnit->getHitPoints() == meleeUnit->getType().maxHitPoints())
+				{
+					std::string stimPacksUsed = "stimPacksUsed";
+					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x + 50, meleeUnit->getPosition().y, "%s", stimPacksUsed.c_str());
+					meleeUnit->useTech(BWAPI::TechTypes::Stim_Packs);
+				}
+				
 				// attack it
 				Micro::SmartAttackUnit(meleeUnit, target);
 			}

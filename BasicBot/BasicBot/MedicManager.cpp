@@ -19,7 +19,8 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 	BWAPI::Position meleeUnitsetCenterP = order.getPosition();
     for (auto & unit : BWAPI::Broodwar->self()->getUnits())
     {
-        if (unit->getHitPoints() < unit->getInitialHitPoints() && !unit->getType().isMechanical() && !unit->getType().isBuilding())
+		
+		if (unit->getHitPoints() < unit->getType().maxHitPoints() && !unit->getType().isMechanical() && !unit->getType().isBuilding())
 		//if (!unit->getType().isWorker() && !unit->getType().isMechanical() && !unit->getType().isBuilding()) //@도주남 김지훈 추가했다가 원복
         {
             medicTargets.insert(unit);

@@ -40,6 +40,14 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		            BWAPI::Broodwar->drawLineMap(rangedUnit->getPosition(), rangedUnit->getTargetPosition(), BWAPI::Colors::Purple);
 	            }
 
+				if (rangedUnit->getStimTimer() == 0
+					&& rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
+					&& rangedUnit->getHitPoints() == rangedUnit->getType().maxHitPoints() )
+				{
+					std::string stimPacksUsed = "stimPacksUsed";
+					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x + 50, rangedUnit->getPosition().y, "%s", stimPacksUsed.c_str());
+					rangedUnit->useTech(BWAPI::TechTypes::Stim_Packs);
+				}
 
 				// attack it
                 if (Config::Micro::KiteWithRangedUnits)
@@ -216,7 +224,7 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
 
 BWAPI::Unit RangedManager::closestrangedUnit(BWAPI::Unit target, std::set<BWAPI::Unit> & rangedUnitsToAssign)
 {
-	double minDistance = 0; //////////// @도주남 김지훈 이 값 좀 이상한듯
+	double minDistance = 0;
 	BWAPI::Unit closest = nullptr;
 
 	for (auto & rangedUnit : rangedUnitsToAssign)
