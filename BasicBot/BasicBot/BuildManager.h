@@ -59,6 +59,7 @@ namespace MyBot
 		void			    performBuildOrderSearch();
 				//@djn ssh
 		void        queueGasSteal();
+		void		onUnitComplete(BWAPI::Unit unit);
 	};
 
 

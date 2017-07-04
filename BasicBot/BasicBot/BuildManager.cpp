@@ -55,10 +55,6 @@ void BuildManager::update()
 			{
 				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Engineering_Bay), true);
 			}
-
-			for (int i = 0; i < UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center); ++i){
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
-			}
 		}
 
 		if (Config::Debug::DrawBuildOrderSearchInfo)
@@ -175,6 +171,7 @@ void BuildManager::update()
 
 						if (desiredPosition != BWAPI::TilePositions::None) {
 							// Send the construction task to the construction manager
+							std::cout << "currentItem.seedLocation:" << currentItem.seedLocation << " / currentItem.seedLocationStrategy:" << currentItem.seedLocationStrategy << std::endl;
 							ConstructionManager::Instance().addConstructionTask(t.getUnitType(), desiredPosition);
 						}
 						else {
@@ -310,6 +307,7 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 		if (!unit->exists())	                                { continue; }
 		if (!unit->isCompleted())                               { continue; }
 		if (unit->isTraining())                                 { continue; }
+		if (unit->isResearching())                              { continue; }
 		if (!unit->isPowered())                                 { continue; }
 		// if unit is lifted, unit should land first
 		if (unit->isLifted())                                   { continue; }
@@ -904,8 +902,7 @@ void BuildManager::checkBuildOrderQueueDeadlockAndAndFixIt()
 				//@도주남 
 				if (!isDeadlockCase && unitType == BWAPI::UnitTypes::Terran_Barracks){
 					int _max_barracks = 4;
-					
-					if ((UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks) + ConstructionManager::Instance().getConstructionQueueItemCount(unitType)) >= _max_barracks){
+					if ((int(UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks)) + ConstructionManager::Instance().getConstructionQueueItemCount(unitType)) >= _max_barracks){
 						isDeadlockCase = true;
 					}
 				}
@@ -1077,4 +1074,29 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 void BuildManager::queueGasSteal()
 {
 	buildQueue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getRefinery()), true, true);
+}
+
+void BuildManager::onUnitComplete(BWAPI::Unit unit){
+	//@도주남 김유진 
+	//고칠점 아카데미가 부서지고 다시 지을때는 유효하지 않은 코드임
+	if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+		for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Academy && unit->isCompleted()){
+				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
+				break;
+			}
+		}
+
+		for (auto &unit_in_region : unit->getRegion()->getUnits()){
+			if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field ||
+				unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_2 ||
+				unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_3){
+				InformationManager::Instance().numExpansion++;
+				break;
+			}
+		}
+	}
+	else if (unit->getType() == BWAPI::UnitTypes::Terran_Academy){
+		buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
+	}
 }

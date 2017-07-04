@@ -48,17 +48,17 @@ void MicroManager::execute(const SquadOrder & inputOrder)
 	// if the order is to defend, we only care about units in the radius of the defense
 	if (order.getType() == SquadOrderTypes::Defend)
 	{
-		MapGrid::Instance().GetUnits(nearbyEnemies, order.getPosition(), order.getRadius(), false, true);
+		MapGrid::Instance().getUnitsNear(nearbyEnemies, order.getPosition(), order.getRadius(), false, true);
 	
 	} // otherwise we want to see everything on the way
 	else if (order.getType() == SquadOrderTypes::Attack) 
 	{
-		MapGrid::Instance().GetUnits(nearbyEnemies, order.getPosition(), order.getRadius(), false, true);
+		MapGrid::Instance().getUnitsNear(nearbyEnemies, order.getPosition(), order.getRadius(), false, true);
 		for (auto & unit : _units) 
 		{
 			BWAPI::Unit u = unit;
 			BWAPI::UnitType t = u->getType();
-			MapGrid::Instance().GetUnits(nearbyEnemies, unit->getPosition(), order.getRadius(), false, true);
+			MapGrid::Instance().getUnitsNear(nearbyEnemies, unit->getPosition(), order.getRadius(), false, true);
 		}
 	}
 
@@ -151,7 +151,7 @@ bool MicroManager::unitNearEnemy(BWAPI::Unit unit)
 
 	BWAPI::Unitset enemyNear;
 
-	MapGrid::Instance().GetUnits(enemyNear, unit->getPosition(), 800, false, true);
+	MapGrid::Instance().getUnitsNear(enemyNear, unit->getPosition(), 800, false, true);
 
 	return enemyNear.size() > 0;
 }

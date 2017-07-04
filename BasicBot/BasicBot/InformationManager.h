@@ -38,6 +38,8 @@ namespace MyBot
 		/// 해당 Player의 mainBaseLocation 에서 두번째로 가까운 (firstChokePoint가 아닌) ChokePoint
 		/// 게임 맵에 따라서, secondChokePoint 는 일반 상식과 다른 지점이 될 수도 있습니다
 		std::map<BWAPI::Player, BWTA::Chokepoint *>					_secondChokePoint;
+
+		
 	
 		/// 전체 unit 의 정보를 업데이트 합니다 (UnitType, lastPosition, HitPoint 등)
 		void                    updateUnitsInfo();
@@ -60,6 +62,8 @@ namespace MyBot
 		BWAPI::Race			selfRace;		///< 아군 Player의 종족		
 		BWAPI::Player       enemyPlayer;	///< 적군 Player		
 		BWAPI::Race			enemyRace;		///< 적군 Player의 종족  
+
+		int numExpansion;
 		
 		/// Unit 및 BaseLocation, ChokePoint 등에 대한 정보를 업데이트합니다
 		void                    update();

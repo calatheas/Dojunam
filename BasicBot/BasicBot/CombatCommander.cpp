@@ -514,7 +514,7 @@ BWAPI::Position CombatCommander::getMainAttackLocation()
 
         // get all known enemy units in the area
         BWAPI::Unitset enemyUnitsInArea;
-		MapGrid::Instance().GetUnits(enemyUnitsInArea, enemyBasePosition, 800, false, true);
+		MapGrid::Instance().getUnitsNear(enemyUnitsInArea, enemyBasePosition, 800, false, true);
 
         bool onlyOverlords = true;
         for (auto & unit : enemyUnitsInArea)

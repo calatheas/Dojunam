@@ -327,7 +327,7 @@ bool Squad::unitNearEnemy(BWAPI::Unit unit)
 
 	BWAPI::Unitset enemyNear;
 
-	MapGrid::Instance().GetUnits(enemyNear, unit->getPosition(), 400, false, true);
+	MapGrid::Instance().getUnitsNear(enemyNear, unit->getPosition(), 400, false, true);
 
 	return enemyNear.size() > 0;
 }

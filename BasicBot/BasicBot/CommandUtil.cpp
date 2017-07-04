@@ -195,7 +195,7 @@ double UnitUtil::GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2)
 
 bool UnitUtil::CanAttack(BWAPI::Unit attacker, BWAPI::Unit target)
 {
-	return GetWeapon(attacker, target) != BWAPI::UnitTypes::None;
+	return GetWeapon(attacker, target) != BWAPI::UnitTypes::None; //반환타입 조심!!!! CanAttackAir과 다름
 }
 
 bool UnitUtil::CanAttackAir(BWAPI::Unit unit)
@@ -321,3 +321,10 @@ BWAPI::Unit UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Po
 }
 
 
+void UnitUtil::getAllCloakUnits(BWAPI::Unitset &units){
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits()){
+		if (unit->isVisible() && !unit->isDetected()){
+			units.insert(unit);
+		}
+	}
+}

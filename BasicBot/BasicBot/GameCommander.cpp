@@ -99,6 +99,7 @@ void GameCommander::onUnitCreate(BWAPI::Unit unit)
 void GameCommander::onUnitComplete(BWAPI::Unit unit)
 {
 	InformationManager::Instance().onUnitComplete(unit);
+	BuildManager::Instance().onUnitComplete(unit);
 }
 
 void GameCommander::onUnitDestroy(BWAPI::Unit unit)		

@@ -2,70 +2,6 @@
 
 using namespace MyBot;
 
-
-
-
-void MapGrid::GetUnits(BWAPI::Unitset & units, BWAPI::Position center, int radius, bool ourUnits, bool oppUnits)
-{
-	const int x0(std::max((center.x - radius) / cellSize, 0));
-	const int x1(std::min((center.x + radius) / cellSize, cols - 1));
-	const int y0(std::max((center.y - radius) / cellSize, 0));
-	const int y1(std::min((center.y + radius) / cellSize, rows - 1));
-	const int radiusSq(radius * radius);
-	for (int y(y0); y <= y1; ++y)
-	{
-		for (int x(x0); x <= x1; ++x)
-		{
-			int row = y;
-			int col = x;
-
-			GridCell & cell(getCellByIndex(row, col));
-			if (ourUnits)
-			{
-				for (auto & unit : cell.ourUnits)
-				{
-					BWAPI::Position d(unit->getPosition() - center);
-					if (d.x * d.x + d.y * d.y <= radiusSq)
-					{
-						if (!units.contains(unit))
-						{
-							units.insert(unit);
-						}
-					}
-				}
-			}
-			if (oppUnits)
-			{
-				for (auto & unit : cell.oppUnits) if (unit->getType() != BWAPI::UnitTypes::Unknown && unit->isVisible())
-				{
-					BWAPI::Position d(unit->getPosition() - center);
-					if (d.x * d.x + d.y * d.y <= radiusSq)
-					{
-						if (!units.contains(unit))
-						{
-							units.insert(unit);
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MapGrid & MapGrid::Instance()
 {
@@ -584,11 +520,29 @@ BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::Player player)
 			BWAPI::Position thisTile = BWAPI::Position(tile);
 			double distanceFromHome = MapTools::Instance().getGroundDistance(thisTile, myBasePosition);
 
+
+
 			// if it is not connected, continue
 			// 섬에는 못지음(내 생각)
 			if (!BWTA::isConnected(homeTile, tile) || distanceFromHome < 0)
 			{
 				continue;
+			}
+
+			//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다
+			if (InformationManager::Instance().numExpansion > 1 && (InformationManager::Instance().numExpansion % 2 != 0)){
+				bool isStart = false;
+				for (auto start : BWTA::getStartLocations()){
+					if (base->getPosition() == start->getPosition()){
+						isStart = true;
+						break;
+					}
+				}
+				std::cout << "searching base position : " << base->getPosition() << " / isStart:" << isStart << std::endl;
+
+				if (!isStart){
+					continue;
+				}
 			}
 
 			//가능한 베이스지역 중에서 최소값을 구한다.

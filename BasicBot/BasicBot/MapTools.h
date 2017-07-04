@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Common.h"
+#include "InformationManager.h"
 
 namespace MyBot
 {
@@ -166,11 +167,6 @@ namespace MyBot
 
 		void						clearGrid();
 		BWAPI::Position				getCellCenter(int x, int y);
-
-
-		// kyj
-		void				GetUnits(BWAPI::Unitset & units, BWAPI::Position center, int radius, bool ourUnits, bool oppUnits);
-		//////////////////////////////////////////////
 
 		/// static singleton 객체를 리턴합니다
 		static MapGrid &	Instance();

@@ -33,6 +33,8 @@ InformationManager::InformationManager()
 	_secondChokePoint[enemyPlayer] = nullptr;
 
 	updateChokePointAndExpansionLocation();
+
+	numExpansion = 1;
 }
 
 //kyj

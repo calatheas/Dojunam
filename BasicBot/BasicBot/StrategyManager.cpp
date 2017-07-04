@@ -78,7 +78,7 @@ void StrategyManager::setOpeningBookBuildOrder(){
 		if (i%10 == 0)
 			std::cout << unit_ratio_table["Medics"][i - 1] << " ";
 
-		unit_ratio_table["Medics"].push_back(log(i) / log(1.5));
+		unit_ratio_table["Medics"].push_back(int(log(i) / log(1.5)));
 	}
 	std::cout << std::endl;
 	

@@ -55,5 +55,7 @@ namespace MyBot
 
 		BWAPI::Unit GetClosestUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target);
 		double GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2);
+
+		void getAllCloakUnits(BWAPI::Unitset &units);
 	};
 }

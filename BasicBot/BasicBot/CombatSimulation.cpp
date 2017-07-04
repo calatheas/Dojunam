@@ -18,7 +18,7 @@
 //	BWAPI::Unitset ourCombatUnits;
 //	std::vector<UnitInfo> enemyCombatUnits;
 //
-//	MapGrid::Instance().GetUnits(ourCombatUnits, center, Config::Micro::CombatRegroupRadius, true, false);
+//	MapGrid::Instance().getUnitsNear(ourCombatUnits, center, Config::Micro::CombatRegroupRadius, true, false);
 //	InformationManager::Instance().getNearbyForce(enemyCombatUnits, center, BWAPI::Broodwar->enemy(), Config::Micro::CombatRegroupRadius);
 //
 //	for (auto & unit : ourCombatUnits)
