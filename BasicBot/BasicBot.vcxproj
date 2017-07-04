@@ -104,6 +104,7 @@
     <ClCompile Include="BasicBot\BuildOrder_boss.cpp" />
     <ClCompile Include="BasicBot\CombatCommander.cpp" />
     <ClCompile Include="BasicBot\CombatSimulation.cpp" />
+    <ClCompile Include="BasicBot\ComsatManager.cpp" />
     <ClCompile Include="BasicBot\Constants.cpp" />
     <ClCompile Include="BasicBot\ConstructionTask.cpp" />
     <ClCompile Include="BasicBot\ConstructionManager.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="BasicBot\BuildOrder_boss.h" />
     <ClInclude Include="BasicBot\CombatCommander.h" />
     <ClInclude Include="BasicBot\CombatSimulation.h" />
+    <ClInclude Include="BasicBot\ComsatManager.h" />
     <ClInclude Include="BasicBot\Constants.h" />
     <ClInclude Include="BasicBot\ConstructionTask.h" />
     <ClInclude Include="BasicBot\ConstructionManager.h" />

@@ -170,6 +170,9 @@
     <ClCompile Include="BasicBot\Logger.cpp">
       <Filter>util</Filter>
     </ClCompile>
+    <ClCompile Include="BasicBot\ComsatManager.cpp">
+      <Filter>BotSource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicBot\MyBotModule.h">
@@ -351,7 +354,10 @@
       <Filter>util\map</Filter>
     </ClInclude>
     <ClInclude Include="BasicBot\ConstructionPlaceFinder.h">
-      <Filter>combat\micro</Filter>
+      <Filter>BotSource</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicBot\ComsatManager.h">
+      <Filter>BotSource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
