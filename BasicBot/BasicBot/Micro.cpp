@@ -275,6 +275,7 @@ void Micro::SmartKiteTarget(BWAPI::Unit rangedUnit, BWAPI::Unit target)
 	{
 		BWAPI::Position fleePosition(rangedUnit->getPosition() - target->getPosition() + rangedUnit->getPosition());
 		//BWAPI::Broodwar->drawLineMap(rangedUnit->getPosition(), fleePosition, BWAPI::Colors::Cyan);
+		rangedUnit->move(fleePosition);
 		Micro::SmartMove(rangedUnit, fleePosition);
 	}
 	// otherwise shoot

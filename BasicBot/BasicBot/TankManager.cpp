@@ -15,16 +15,10 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 	BWAPI::Unitset tankTargets;
     std::copy_if(targets.begin(), targets.end(), std::inserter(tankTargets, tankTargets.end()), 
                  [](BWAPI::Unit u){ return u->isVisible() && !u->isFlying(); });
-    
-	BWAPI::Unitset tankTargets_UnSiege;
-	std::copy_if(targets.begin(), targets.end(), std::inserter(tankTargets_UnSiege, tankTargets_UnSiege.end()),
-		[](BWAPI::Unit u){ return u->isVisible(); });
 
     int siegeTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 32;
 	int  tankTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange() - 32;
     bool haveSiege = BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode);
-
-
 
 	// for each zealot
 	for (auto & tank : tanks)
@@ -52,43 +46,26 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			{
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(tank, tankTargets);
-				BWAPI::Unit target_unSiege = closestrangedUnit_kjh(tank, tankTargets_UnSiege);
+				BWAPI::Unit target_unSiege_Unit = closestrangedUnit_kjh(tank, tankTargets);
                 if (target && Config::Debug::DrawUnitTargetInfo) 
 	            {
 		            BWAPI::Broodwar->drawLineMap(tank->getPosition(), tank->getTargetPosition(), BWAPI::Colors::Purple);
 	            }
-				//if (target)
-				//{
-				//	//352 는 siegeTankRange
-				//	std::cout << " tank->getDistance(target) : [" << tank->getDistance(target) << "]" << std::endl << "siegeTankRange [" << siegeTankRange << "]" << std::endl;
-				//}
-				int siegeOrder = 0;
-                // if we are within siege range, siege up
-				//@도주남 김지훈 시즈 모드 인데 타겟(타겟이 너무 빨라서)이 범위 안에 있는경우 시즈모드 해제
-				if (tank->getDistance(target_unSiege) < tankTankRange && tank->canUnsiege())
+
+				if (tank->getDistance(target_unSiege_Unit) < tankTankRange)
 				{
-					siegeOrder = 2;
-					//tank->unsiege();
+					tank->unsiege();
 				}
 				else if (tank->getDistance(target) < siegeTankRange && tank->canSiege() && !tankNearChokepoint)
-                {
-					siegeOrder = 1;
-                    //tank->siege();
-                }
-                // otherwise unsiege and move in
-                else if ((!target || tank->getDistance(target) > siegeTankRange) && tank->canUnsiege())
-                {
-					siegeOrder = 2;
-                    //tank->unsiege();
-                }
-				
-
-				//@도주남 김지훈   시즈모드 수행중에 바로 unsiege 가 실행될수 없을 것 이므로 판단이 모두 끝나면 시즈모드를 풀거나 하는것을 실행시킴
-				if (siegeOrder == 1)
+				{
 					tank->siege();
-				else if (siegeOrder == 2)
+				}
+				// otherwise unsiege and move in
+				else if ((!target || (tank->getDistance(target) > siegeTankRange) && tank->canUnsiege()))
+				{
 					tank->unsiege();
-
+				}
+				
                 // if we're in siege mode just attack the target
                 if (tank->isSieged())
                 {
@@ -100,6 +77,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 					//@도주남 김지훈 처음 보는 부분이였음, smartKite 라는 것이 발동되어야 소위말하는 kiting 이 되는 듯
                     Micro::SmartKiteTarget(tank, target);
                 }
+			
 			}
 			// if there are no targets
 			else
