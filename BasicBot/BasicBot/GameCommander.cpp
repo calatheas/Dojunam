@@ -76,6 +76,8 @@ void GameCommander::onFrame()
 	//@도주남 김지훈 전투유닛 셋팅
 	handleUnitAssignments();
 	CombatCommander::Instance().update(_combatUnits);
+
+	ComsatManager::Instance().update();
 }
 
 void GameCommander::onUnitShow(BWAPI::Unit unit)			

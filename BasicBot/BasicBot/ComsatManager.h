@@ -8,15 +8,20 @@ namespace MyBot
 {
 	class ComsatManager
 	{
-		std::vector<BWAPI::TilePosition> _scan_positions;
+		BWAPI::Position _scan_position;
+		int _next_enable_frame;
+
 		const double _scan_dps_offset= 1.0; //min dps (a marine is 6/15)
 		const int _scan_radius_offset = 224; //marine sight
 
 		ComsatManager();
+		void setScanPosition();
+		void setCommand();
+		void clearScanPosition();
+		void setNextEnableFrame();
 
 		public:
-			void addScanPosition(BWAPI::TilePosition p);
-			void setScanPosition();
 			void update();
+			static ComsatManager &	Instance();
 	};
 }

@@ -10,6 +10,7 @@
 #include "UXManager.h"
 #include "kyj.h"
 #include "CombatCommander.h"
+#include "ComsatManager.h"
 
 
 namespace MyBot

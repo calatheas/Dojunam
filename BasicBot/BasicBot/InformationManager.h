@@ -50,6 +50,7 @@ namespace MyBot
 		void					updateChokePointAndExpansionLocation();
 		void                    updateOccupiedRegions(BWTA::Region * region, BWAPI::Player player);
 
+
 	public:
 
 		//kyj
@@ -64,6 +65,8 @@ namespace MyBot
 		BWAPI::Race			enemyRace;		///< 적군 Player의 종족  
 
 		int numExpansion;
+		bool hasCloakedUnits;
+		bool hasFlyingUnits;
 		
 		/// Unit 및 BaseLocation, ChokePoint 등에 대한 정보를 업데이트합니다
 		void                    update();
@@ -163,6 +166,7 @@ namespace MyBot
 		// 해당 종족의 UnitType 중 Advanced Depense 기능을 하는 UnitType을 리턴합니다
 		BWAPI::UnitType			getAdvancedDefenseBuildingType(BWAPI::Race race = BWAPI::Races::None);
 
-		bool                    enemyHasCloakedUnits();
+		void                    enemyHasCloakedUnits(BWAPI::Unit u);
+		void                    enemyHasFlyingUnits(BWAPI::Unit u);
 	};
 }

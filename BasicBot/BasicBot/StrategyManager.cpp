@@ -28,7 +28,7 @@ void StrategyManager::setOpeningBookBuildOrder(){
 		_main_strategy = "Terran_Bionic";
 		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV SCV Academy SCV SCV Marine Supply_Depot Marine Marine Marine Marine Marine Marine Marine Stim_Packs Medic Medic Firebat Firebat";
 		str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
-		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks Refinery SCV SCV SCV SCV Factory Factory SCV SCV SCV SCV Machine_Shop Machine_Shop Supply_Depot Tank_Siege_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode";
+		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks Refinery SCV SCV SCV SCV Factory Factory SCV SCV SCV SCV Supply_Depot Siege_Tank_Siege_Mode Tank_Siege_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode";
 	}
 	else if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss){
 		_main_strategy = "Protoss_ZealotRush";
@@ -50,7 +50,7 @@ void StrategyManager::setOpeningBookBuildOrder(){
 	//@도주남 김유진 전략별 유닛최대치 세팅
 	_strategies["Terran_Bionic"] = Strategy();
 	_strategies["Terran_Bionic"].pre_strategy_name = "None";
-	_strategies["Terran_Bionic"].next_strategy_name = "Terran_Mechanic";
+	_strategies["Terran_Bionic"].next_strategy_name = "Terran_Bionic_Tank";
 	_strategies["Terran_Bionic"].num_unit_limit["Marines"] = 12; //마린18이상이면 테크진화
 	//_strategies["Terran_Bionic"].num_unit_limit["Barracks"] = 4; //배럭4개 이상
 	_strategies["Terran_Bionic"].num_unit_limit["Medics"] = -1; //-1은 테크진화에 영향없음
@@ -65,6 +65,11 @@ void StrategyManager::setOpeningBookBuildOrder(){
 	_strategies["Terran_Mechanic"].pre_strategy_name = "None";
 	_strategies["Terran_Mechanic"].next_strategy_name = "None";
 	_strategies["Terran_Mechanic"].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
+
+	_strategies["Terran_Mechanic_Goliath"] = Strategy();
+	_strategies["Terran_Mechanic_Goliath"].pre_strategy_name = "None";
+	_strategies["Terran_Mechanic_Goliath"].next_strategy_name = "None";
+	_strategies["Terran_Mechanic_Goliath"].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
 
 	//_strategies["Terran_Mechanic_Vessel"] = Strategy();
 	//_strategies["Terran_Mechanic_Vessel"].pre_strategy_name = "None";
@@ -293,7 +298,6 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 
 		if (_changeStrategy){
 			_main_strategy = _strategies[_main_strategy].next_strategy_name;
-			return true;
 		}
 	}
 
@@ -309,32 +313,26 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 
 		if (_changeStrategy){
 			_main_strategy = _strategies[_main_strategy].pre_strategy_name;
+		}
+	}
+
+	if (_main_strategy == "Terran_Mechanic"){
+		if (InformationManager::Instance().hasFlyingUnits){
+			_main_strategy = "Terran_Mechanic_Goliath";
 			return true;
 		}
 	}
-	/*
+	
 	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran){
-		if (_main_strategy == "Terran_Bionic"){
-			if (numUnits["Marines"] > 24){
-				_main_strategy = "Terran_Bionic_Tank";
-			}
-		}
+
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
-		if (_main_strategy == "Terran_Bionic"){
-			if (numUnits["Marines"] > 24){
-				_main_strategy = "Terran_Bionic_Tank";
-			}
-		}
+
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Zerg){
-		if (_main_strategy == "Terran_Bionic"){
-			if (numUnits["Marines"] > 24){
-				_main_strategy = "Terran_Bionic_Tank";
-			}
-		}
+
 	}
-	*/
+	
 
 	return false;
 }
@@ -404,7 +402,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
 	}
 
 	// add observer to the goal if the enemy has cloaked units
-	if (InformationManager::Instance().enemyHasCloakedUnits())
+	if (InformationManager::Instance().hasCloakedUnits)
 	{
 		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1));
 
@@ -474,7 +472,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	}
 	else if (_main_strategy == "Terran_Bionic_Tank")
 	{
-		int goal_num_marines = numUnits["Marines"] + 2;
+		int goal_num_marines = numUnits["Marines"]+numUnits["Barracks"];
 		int goal_num_tanks = numUnits["Tanks"] + 2;
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, goal_num_marines));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, unit_ratio_table["Medics"][goal_num_marines]));
@@ -486,10 +484,10 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 
 	else if (_main_strategy == "Terran_Mechanic")
 	{
-		int goal_num_tanks = numUnits["Tanks"] + 2;
+		int goal_num_tanks = numUnits["Tanks"] + numUnits["Factorys"];
 		//int goal_num_vultures = (goal_num_tanks - numUnits["Vultures"]) > numUnits["Factorys"] * 2 ? numUnits["Vultures"]+numUnits["Factorys"] : goal_num_tanks;
 		//벌쳐는 탱크수만큼 뽑되 현재 탱크수와 벌쳐수가 많이 차이나면(팩토리의 2배만큼) 현재탱크수의 절반만 뽑는다.
-		int goal_num_vultures = numUnits["Vultures"] + 4;
+		int goal_num_vultures = numUnits["Vultures"] + numUnits["Factorys"];
 
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
@@ -497,6 +495,22 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Spider_Mines, 1));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Ion_Thrusters, 1));
+	}
+
+	else if (_main_strategy == "Terran_Mechanic_Goliath")
+	{
+		int goal_num_tanks = numUnits["Tanks"] + 2;
+		int goal_num_vultures = numUnits["Vultures"] + 2;
+		int goal_num_goliath = numUnits["Goliath"] + 2;
+
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Goliath, goal_num_goliath));
+
+		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Spider_Mines, 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Ion_Thrusters, 1));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Charon_Boosters, 1));
 	}
 
 	else if (_main_strategy == "Terran_4RaxMarines")
@@ -610,19 +624,19 @@ const bool StrategyManager::shouldExpandNow() const
 	int minute = frame / (24 * 60);
 
 	// if we have a ton of idle workers then we need a new expansion
-	if (WorkerManager::Instance().getNumIdleWorkers() > 5)
+	if (WorkerManager::Instance().getNumIdleWorkers() > 7)
 	{
 		return true;
 	}
 
 	// if we have a ridiculous stockpile of minerals, expand
-	if (BWAPI::Broodwar->self()->minerals() > 3000)
+	if (BWAPI::Broodwar->self()->minerals() > 1700)
 	{
 		return true;
 	}
 
 	// we will make expansion N after array[N] minutes have passed
-	std::vector<int> expansionTimes = { 5, 10, 20, 30, 40, 50 };
+	std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
 
 	for (size_t i(0); i < expansionTimes.size(); ++i)
 	{

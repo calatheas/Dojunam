@@ -35,6 +35,8 @@ InformationManager::InformationManager()
 	updateChokePointAndExpansionLocation();
 
 	numExpansion = 1;
+	hasCloakedUnits = false;
+	hasFlyingUnits = false;
 }
 
 //kyj
@@ -59,6 +61,11 @@ void InformationManager::updateUnitsInfo()
 	// update units info
 	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
+		//한번만 체크!
+		//적 전략 중에 공중 전략 또는 클로킹 전략이 있는지 판단하여 저장
+		if (!hasCloakedUnits) enemyHasCloakedUnits(unit);
+		if (!hasFlyingUnits) enemyHasFlyingUnits(unit);
+
 		updateUnitInfo(unit);
 	}
 
@@ -656,44 +663,54 @@ BWAPI::UnitType InformationManager::getAdvancedDefenseBuildingType(BWAPI::Race r
 	}
 }
 
-bool InformationManager::enemyHasCloakedUnits()
+void InformationManager::enemyHasCloakedUnits(BWAPI::Unit u)
 {
-	for (const auto & kv : getUnitData(enemyPlayer).getUnitAndUnitInfoMap())
+	//@도주남 kyj 레이스, 고스트
+	//@도주남 kyj 닥템, 옵저버
+	//@도주남 kyj lurker
+	if (u->getType().isCloakable() || 
+		u->getType().hasPermanentCloak() ||
+		u->getType() == BWAPI::UnitTypes::Zerg_Lurker)
 	{
-		const UnitInfo & ui(kv.second);
-
-		//@도주남 kyj 레이스, 고스트
-		if (ui.type.isCloakable())
-		{
-			return true;
-		}
-		//@도주남 kyj 닥템, 옵저버
-		if (ui.type.hasPermanentCloak())
-		{
-			return true;
-		}
-		//@도주남 kyj lurker
-		if (ui.type == BWAPI::UnitTypes::Zerg_Lurker)
-		{
-			return true;
-		}
-
-
-		// assume they're going dts
-		if (ui.type == BWAPI::UnitTypes::Protoss_Citadel_of_Adun || 
-			ui.type == BWAPI::UnitTypes::Protoss_Observatory ||
-			ui.type == BWAPI::UnitTypes::Protoss_Templar_Archives ||
-			ui.type == BWAPI::UnitTypes::Protoss_Arbiter_Tribunal)
-		{
-			return true;
-		}
-
-		if (ui.type == BWAPI::UnitTypes::Terran_Control_Tower ||
-			ui.type == BWAPI::UnitTypes::Terran_Covert_Ops )
-		{
-			return true;
-		}
+		hasCloakedUnits = true;
+		return;
 	}
 
-	return false;
+
+	// assume they're going dts
+	if (u->getType() == BWAPI::UnitTypes::Protoss_Citadel_of_Adun ||
+		u->getType() == BWAPI::UnitTypes::Protoss_Observatory ||
+		u->getType() == BWAPI::UnitTypes::Protoss_Templar_Archives ||
+		u->getType() == BWAPI::UnitTypes::Protoss_Arbiter_Tribunal)
+	{
+		hasCloakedUnits = true;
+		return;
+	}
+
+	if (u->getType() == BWAPI::UnitTypes::Terran_Control_Tower ||
+		u->getType() == BWAPI::UnitTypes::Terran_Covert_Ops)
+	{
+		hasCloakedUnits = true;
+		return;
+	}
+}
+
+void InformationManager::enemyHasFlyingUnits(BWAPI::Unit u){
+	if (u->getType().isFlyer()){
+		hasFlyingUnits = true;
+		return;
+	}
+
+	if (u->getType() == BWAPI::UnitTypes::Zerg_Mutalisk ||
+		u->getType() == BWAPI::UnitTypes::Zerg_Spire){
+		hasFlyingUnits = true;
+		return;
+	}
+
+	if (u->getType() == BWAPI::UnitTypes::Protoss_Stargate ||
+		u->getType() == BWAPI::UnitTypes::Protoss_Scout ||
+		u->getType() == BWAPI::UnitTypes::Protoss_Carrier){
+		hasFlyingUnits = true;
+		return;
+	}
 }

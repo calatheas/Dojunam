@@ -25,7 +25,7 @@ void BuildManager::update()
 
 	// if they have cloaked units get a new goal asap
 	//
-	if (!_enemyCloakedDetected && InformationManager::Instance().enemyHasCloakedUnits())
+	if (!_enemyCloakedDetected && InformationManager::Instance().hasCloakedUnits)
 	{
 		std::cout << "_enemyCloakedDetected" << std::endl;
 		if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss)
@@ -171,7 +171,7 @@ void BuildManager::update()
 
 						if (desiredPosition != BWAPI::TilePositions::None) {
 							// Send the construction task to the construction manager
-							std::cout << "currentItem.seedLocation:" << currentItem.seedLocation << " / currentItem.seedLocationStrategy:" << currentItem.seedLocationStrategy << std::endl;
+							//std::cout << "currentItem.seedLocation:" << currentItem.seedLocation << " / currentItem.seedLocationStrategy:" << currentItem.seedLocationStrategy << std::endl;
 							ConstructionManager::Instance().addConstructionTask(t.getUnitType(), desiredPosition);
 						}
 						else {
@@ -294,9 +294,11 @@ void BuildManager::performBuildOrderSearch()
 BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int producerID)
 {
     // get the type of unit that builds this
+	//지을수 있는 타입을 고른다. 시즈면 팩토리
     BWAPI::UnitType producerType = t.whatBuilds();
 
     // make a set of all candidate producers
+	//위에서 찾은 타입(팩토리)을 내 유닛중에 있는지 본다. 
     BWAPI::Unitset candidateProducers;
     for (auto & unit : BWAPI::Broodwar->self()->getUnits())
     {
@@ -316,13 +318,19 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 		// TODO : 스캐럽, Interceptor 의 경우, max 꽉찼으면 더 못만든다
         
 		// if the type requires an addon and the producer doesn't have one
+		//짓는 건물 외에 필요정보들을 가지고 와서 필요한 애드온 및 건물 확인
+		//고스트 -> whatbuild는 배럭, requiredUnits은 아카데미와 코벌트옵스
+		//타겟유닛(시즈)을 만드는데 필요한 추가 정보를 읽어와서 필요한 것이 애드온인 경우 애드온이 있는지 확인.
 		typedef std::pair<BWAPI::UnitType, int> ReqPair;
 		for (const ReqPair & pair : t.getUnitType().requiredUnits())
 		{
 			BWAPI::UnitType requiredType = pair.first;
+			//애드온이 필요한 경우
 			if (requiredType.isAddon())
 			{
-				if (!unit->getAddon() || (unit->getAddon()->getType() != requiredType))
+				//짓는 건물(팩토리)에 에드온이 없거나 달린 애드온이 다른 애드온인 경우(테란에는 애드온이 2개씩 있는 건물이 있음)
+				//if (!unit->getAddon() || (unit->getAddon()->getType() != requiredType))
+				if (unit->getAddon() == nullptr || (unit->getAddon()->getType() != requiredType))
 				{
 					continue;
 				}
