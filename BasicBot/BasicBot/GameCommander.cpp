@@ -110,6 +110,7 @@ void GameCommander::onUnitDestroy(BWAPI::Unit unit)
 	WorkerManager::Instance().onUnitDestroy(unit);
 
 	InformationManager::Instance().onUnitDestroy(unit); 
+	if (_scoutUnits.contains(unit)) { _scoutUnits.erase(unit); }
 }
 
 void GameCommander::onUnitRenegade(BWAPI::Unit unit)
