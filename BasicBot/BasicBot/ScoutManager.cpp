@@ -21,7 +21,18 @@ ScoutManager & ScoutManager::Instance()
 	static ScoutManager instance;
 	return instance;
 }
-
+//djn ssh
+void ScoutManager::onUnitDestroy(BWAPI::Unit unit)
+{
+	/*
+	if (unit->getType().isNeutral())
+	{
+		return;
+	}
+	_scoutUnits.
+	_unitData[unit->getPlayer()].removeUnit(unit);
+	*/
+}
 void ScoutManager::update()
 {
 	if (!Config::Modules::UsingScoutManager)
@@ -57,7 +68,7 @@ void ScoutManager::drawScoutInformation(int x, int y)
 	}
 
 	BWAPI::Broodwar->drawTextScreen(x, y, "ScoutInfo: %s", _scoutStatus.c_str());
-	BWAPI::Broodwar->drawTextScreen(x, y + 10, "GasSteal: %s", _gasStealStatus.c_str());
+	//BWAPI::Broodwar->drawTextScreen(x, y + 10, "GasSteal: %s", _gasStealStatus.c_str());
 	for (size_t i(0); i < _enemyRegionVertices.size(); ++i)
 	{
 		BWAPI::Broodwar->drawCircleMap(_enemyRegionVertices[i], 4, BWAPI::Colors::Green, false);
@@ -74,14 +85,14 @@ void ScoutManager::moveScouts()
 
 	int scoutHP = _workerScout->getHitPoints() + _workerScout->getShields();
 
-	gasSteal();
+	//gasSteal();
 
 	// get the enemy base location, if we have one
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 
 	int scoutDistanceThreshold = 30;
 
-	if (_workerScout->isCarryingGas())
+	/*if (_workerScout->isCarryingGas())
 	{
 		BWAPI::Broodwar->drawCircleMap(_workerScout->getPosition(), 10, BWAPI::Colors::Purple, true);
 	}
@@ -96,7 +107,7 @@ void ScoutManager::moveScouts()
 	else if (_didGasSteal && finishedConstructingGasSteal)
 	{
 		_gasStealFinished = true;
-	}
+	}*/
 
 	// if we know where the enemy region is and where our scout is
 	if (_workerScout && enemyBaseLocation)
@@ -111,13 +122,13 @@ void ScoutManager::moveScouts()
 			_scoutUnderAttack = true;
 		}
 
-		if (!_workerScout->isUnderAttack() && !enemyWorkerInRadius())
+		if (!_workerScout->isUnderAttack()) //&& !enemyWorkerInRadius())
 		{
 			_scoutUnderAttack = false;
 		}
 
 		// if the scout is in the enemy region
-		if (scoutInRangeOfenemy)
+		if (scoutInRangeOfenemy && scoutHP > 40)
 		{
 			// get the closest enemy worker
 			BWAPI::Unit closestWorker = closestEnemyWorker();
@@ -126,7 +137,7 @@ void ScoutManager::moveScouts()
 			if (!_scoutUnderAttack)
 			{
 				// if there is a worker nearby, harass it
-				if (Config::Strategy::ScoutHarassEnemy && (!Config::Strategy::GasStealWithScout || _gasStealFinished) && closestWorker && (_workerScout->getDistance(closestWorker) < 800))
+				if (Config::Strategy::ScoutHarassEnemy && closestWorker && (_workerScout->getDistance(closestWorker) < 800))
 				{
 					_scoutStatus = "Harass enemy worker";
 					_currentRegionVertexIndex = -1;
@@ -165,20 +176,29 @@ void ScoutManager::moveScouts()
 	}
 
 	// for each start location in the level
-	if (!enemyBaseLocation)
+	if (!enemyBaseLocation) //&& !_workerScout->isMoving())
 	{
 		_scoutStatus = "Enemy base unknown, exploring";
-
+		BWTA::BaseLocation * targetLocation = nullptr;
+		int max_dist = INT_MAX;
 		for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
 		{
 			// if we haven't explored it yet
 			if (!BWAPI::Broodwar->isExplored(startLocation->getTilePosition()))
 			{
+				int dist = _workerScout->getDistance(startLocation->getPosition());
+				if (dist < max_dist)
+				{
+					max_dist = dist;
+					targetLocation = startLocation;
+
+				}				
 				// assign a zergling to go scout it
-				Micro::SmartMove(_workerScout, BWAPI::Position(startLocation->getTilePosition()));
-				return;
 			}
 		}
+		if (targetLocation)
+		  Micro::SmartMove(_workerScout, BWAPI::Position(targetLocation->getTilePosition()));
+		return;
 	}
 
 	_previousScoutHP = scoutHP;
@@ -241,7 +261,7 @@ void ScoutManager::gasSteal()
 BWAPI::Unit ScoutManager::closestEnemyWorker()
 {
 	BWAPI::Unit enemyWorker = nullptr;
-	double maxDist = 0;
+	double maxDist = INT_MAX;
 
 
 	BWAPI::Unit geyser = getEnemyGeyser();
@@ -259,9 +279,9 @@ BWAPI::Unit ScoutManager::closestEnemyWorker()
 	{
 		if (unit->getType().isWorker())
 		{
-			double dist = unit->getDistance(geyser);
+			double dist = unit->getDistance(_workerScout);
 
-			if (dist < 800 && dist > maxDist)
+			if (dist < 800 && dist < maxDist)
 			{
 				maxDist = dist;
 				enemyWorker = unit;
