@@ -68,6 +68,11 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
+				if (meleeUnit->getDistance(order.getPosition()) > 100 && order.getFarUnit()->getDistance(meleeUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 && order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != meleeUnit->getID())
+				{
+					//std::cout << "FireBat " << std::endl;
+					Micro::SmartMove(meleeUnit, order.getFarUnit()->getPosition() - meleeUnit->getPosition() + meleeUnit->getPosition());
+				} else
 				// if we're not near the order position
 				if (meleeUnit->getDistance(order.getPosition()) > 100)
 				{

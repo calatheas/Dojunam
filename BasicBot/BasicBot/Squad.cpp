@@ -99,6 +99,7 @@ void Squad::setAllUnits()
 {
 	// clean up the _units vector just in case one of them died
 	BWAPI::Unitset goodUnits;
+	int maxDist = 0;
 	for (auto & unit : _units)
 	{
 		if( unit->isCompleted() && 
@@ -108,8 +109,14 @@ void Squad::setAllUnits()
 			unit->getType() != BWAPI::UnitTypes::Unknown)
 		{
 			goodUnits.insert(unit);
+			if (maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0)
+			{
+				maxDist = unit->getDistance(_order.getPosition());
+				unitFarToOrderPosition = unit;
+			}
 		}
 	}
+	_order.setFarUnit(unitFarToOrderPosition);
 	_units = goodUnits;
 }
 
@@ -146,7 +153,7 @@ void Squad::addUnitsToMicroManagers()
 	BWAPI::Unitset transportUnits;
     BWAPI::Unitset tankUnits;
     BWAPI::Unitset medicUnits;
-
+	
 	// add _units to micro managers
 	for (auto & unit : _units)
 	{

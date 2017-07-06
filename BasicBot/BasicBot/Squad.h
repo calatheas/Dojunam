@@ -37,7 +37,8 @@ class Squad
     
 	BWAPI::Unit		getRegroupUnit();
 	BWAPI::Unit		unitClosestToEnemy();
-    
+	BWAPI::Unit		unitFarToOrderPosition;
+
 	void                        updateUnits();
 	void                        addUnitsToMicroManagers();
 	void                        setNearEnemyUnits();

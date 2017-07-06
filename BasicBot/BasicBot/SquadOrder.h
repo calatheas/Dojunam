@@ -16,7 +16,7 @@ class SquadOrder
     int                 _radius;
     BWAPI::Position     _position;
     std::string         _status;
-
+	BWAPI::Unit     _farUnit;
 public:
 
 	SquadOrder() 
@@ -52,5 +52,15 @@ public:
     {
         return _type;
     }
+	
+	BWAPI::Unit & getFarUnit()
+	{
+		return _farUnit;
+	}
+	
+	void setFarUnit(BWAPI::Unit in) 
+	{
+		_farUnit = in;
+	}
 };
 }

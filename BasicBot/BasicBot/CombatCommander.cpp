@@ -24,7 +24,7 @@ CombatCommander::CombatCommander()
 
 void CombatCommander::initializeSquads()
 {
-	SquadOrder idleOrder(SquadOrderTypes::Idle, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter(), 100, "Chill Out");
+	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter(), 100, "Chill Out");
 	_squadData.addSquad("Idle", Squad("Idle", idleOrder, IdlePriority));
 
     // the main attack squad that will pressure the enemy's closest base location
@@ -100,7 +100,8 @@ void CombatCommander::updateAttackSquads()
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
 
-	//if (candiAttackerSquad.getUnits().size() > 19)
+	if (candiAttackerSquad.getUnits().size() > 19
+		)
 	{
 		for (auto & unit : _combatUnits)
 		{

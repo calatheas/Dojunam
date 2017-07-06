@@ -16,11 +16,11 @@ void RangedManager::executeMicro(const BWAPI::Unitset & targets)
 void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 {
     const BWAPI::Unitset & rangedUnits = getUnits();
-
+	
 	// figure out targets
 	BWAPI::Unitset rangedUnitTargets;
     std::copy_if(targets.begin(), targets.end(), std::inserter(rangedUnitTargets, rangedUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });
-
+	
     for (auto & rangedUnit : rangedUnits)
 	{
 		// train sub units such as scarabs or interceptors
@@ -69,6 +69,12 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
+				if (rangedUnit->getDistance(order.getPosition()) > 100 && order.getFarUnit()->getDistance(rangedUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 && order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != rangedUnit->getID())
+				{
+					//std::cout << "Marin  " << rangedUnit->getID() << std::endl;
+					Micro::SmartMove(rangedUnit, order.getFarUnit()->getPosition() - rangedUnit->getPosition() + rangedUnit->getPosition());
+				}
+				else
 				// if we're not near the order position
 				if (rangedUnit->getDistance(order.getPosition()) > 100)
 				{

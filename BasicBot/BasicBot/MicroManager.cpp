@@ -61,7 +61,7 @@ void MicroManager::execute(const SquadOrder & inputOrder)
 			MapGrid::Instance().getUnitsNear(nearbyEnemies, unit->getPosition(), order.getRadius(), false, true);
 		}
 	}
-
+	
 	// the following block of code attacks all units on the way to the order position
 	// we want to do this if the order is attack, defend, or harass
 	if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend) 
