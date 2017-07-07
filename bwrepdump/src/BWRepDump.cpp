@@ -24,7 +24,12 @@ void BWRepDump::onStart()
 	if (CREATE_ROD) orderData = new OrderData;
 	if (CREATE_RCD) combatTracker = new CombatTracker;
 	if (CREATE_ASD) actionSelection = new ActionSelection;
-	if (CREATE_DJM) djm = new Djm;
+	if (CREATE_DJM) {
+		djm = new Djm;
+		if (djm->error_replay)
+			djm->outFile << "no terran";
+			//Broodwar->leaveGame();
+	}
 
 	showBullets = false;
 	showVisibilityData = false;
@@ -57,10 +62,15 @@ void BWRepDump::onFrame()
 	if (CREATE_ROD) orderData->onFrame();
 	if (CREATE_ASD) actionSelection->onFrame();
 
-	if (Broodwar->getFrameCount() % 24 == 0)
-		if (CREATE_DJM) djm->onFrame();
-
 	unitDestroyedThisTurn = false;
+
+	//if (Broodwar->getFrameCount() % 48 == 0)
+	if (CREATE_DJM) {
+		if (djm->error_replay)
+			return;
+
+		djm->onFrame();
+	}
 }
 
 void BWRepDump::onSendText(std::string text)
