@@ -14,29 +14,23 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 	//@도주남 김지훈 파벳 마린의 수를 구한다.
 	int countCB = 0;
 	// create a set of all medic targets
-	BWAPI::Unitset medicTargets;
-	double minDistance = std::numeric_limits<double>::max();
-	BWAPI::Position meleeUnitsetCenterP = order.getPosition();
+	BWAPI::Unitset medicTargets;	
     for (auto & unit : BWAPI::Broodwar->self()->getUnits())
     {
 		
-		if (unit->getHitPoints() < unit->getType().maxHitPoints() && !unit->getType().isMechanical() && !unit->getType().isBuilding() && unit->getOrderTargetPosition() == order.getPosition() )
+		if (unit->getHitPoints() < unit->getType().maxHitPoints() && !unit->getType().isMechanical() && !unit->getType().isBuilding() )// && unit->getOrderTargetPosition().getDistance(order.getPosition()) < 500 )
 		//if (!unit->getType().isWorker() && !unit->getType().isMechanical() && !unit->getType().isBuilding()) //@도주남 김지훈 추가했다가 원복
         {
             medicTargets.insert(unit);
         }
-		if (unit->getHitPoints() > 0 && unit->getType().canAttack() && !unit->getType().isMechanical() && !unit->getType().isBuilding() && unit->getOrderTargetPosition() == order.getPosition())
+		if (unit->getHitPoints() > 0 && unit->getType().canAttack() && !unit->getType().isMechanical() && !unit->getType().isBuilding() 
+			//&& unit->getOrderTargetPosition().getDistance(order.getPosition()) < 500
+			)
 		{
-			if (unit->getDistance(order.getPosition()) < minDistance)
-			{
-				meleeUnitsetCenterP = unit->getPosition();
-				minDistance = unit->getDistance(order.getPosition());
-			}
 			countCB++;
 		}
     }
-	//std::cout << "MedicManager::executeMicro medicTargets.size(" << medicTargets.size()<< std::endl;
-    
+	//std::cout << "MedicManager::executeMicro medicTargets.size(" << medicTargets.size()<< std::endl;	
     BWAPI::Unitset availableMedics(medics);
 
 	//@도주남 김지훈 잘생각해보자 // 적 베이스에 가장 가까운 melee 유닛을 구하자
@@ -67,7 +61,7 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 
         double closestMedicDist = std::numeric_limits<double>::infinity();
         BWAPI::Unit closestMedic = nullptr;
-
+		
         for (auto & medic : availableMedics)
         {
 			if (countCB == 0){			
@@ -97,7 +91,7 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
             break;
         }
     }
-
+	
     // the remaining medics should head to the squad order position
     for (auto & medic : availableMedics)
     {
@@ -110,20 +104,32 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 		//else
 		//@도주남 김지훈 노는 메딕을 마린혹은 파벳 중심으로 보내준다.  아 안되겠다 싶으면 본진쪽 초크포인트로 돌아온다
 		if (countCB == 0)
-		{
+		{			
 			BWAPI::UnitCommand currentCommand(medic->getLastCommand());
-			Micro::SmartMove(medic, currentCommand.getTargetPosition());		
+			Micro::SmartMove(medic, currentCommand.getTargetPosition());			
 		}
 		else
 		{
 			//if (medic->getDistance(order.getPosition()) > 100 && order.getFarUnit()->getDistance(medic->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 && order.getFarUnit()->getID() != medic->getID())
 			{
-				Micro::SmartMove(medic, meleeUnitsetCenterP);
+				//std::cout << "MedicManager::executeMicro 115 done " << std::endl;
+				BWAPI::Broodwar->drawTextMap(medic->getPosition() + BWAPI::Position(0, 30), "%s", "Marking Front ");
+				if (order.getClosestUnit())
+				{
+					//std::cout << "MedicManager::executeMicro 119 done " << std::endl;
+					Micro::SmartMove(medic, order.getClosestUnit()->getPosition());
+				}
+				else
+				{
+					//std::cout << "MedicManager::executeMicro 124 done " << std::endl;
+					BWAPI::UnitCommand currentCommand(medic->getLastCommand());
+					Micro::SmartMove(medic, currentCommand.getTargetPosition());
+				}
+				//std::cout << "MedicManager::executeMicro 121 done " << std::endl;
 			}
 		}
-
 		//	Micro::SmartAttackMove(medic, InformationManager::Instance().getSecondChokePoint(InformationManager::Instance().selfPlayer)->getCenter());
-		//
-		
+		//	
     }
+	
 }

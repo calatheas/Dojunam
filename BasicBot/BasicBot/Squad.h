@@ -11,6 +11,8 @@
 #include "CombatSimulation.h"
 #include "TankManager.h"
 #include "MedicManager.h"
+#include "VultureManager.h"
+
 
 namespace MyBot
 {
@@ -31,13 +33,15 @@ class Squad
 	TransportManager    _transportManager;
     TankManager         _tankManager;
     MedicManager        _medicManager;
+	VultureManager		 _vultureManager;
 
 	std::map<BWAPI::Unit, bool>	_nearEnemy;
 
+	BWAPI::Unit		unitFarToOrderPosition;
     
 	BWAPI::Unit		getRegroupUnit();
 	BWAPI::Unit		unitClosestToEnemy();
-	BWAPI::Unit		unitFarToOrderPosition;
+	BWAPI::Unit		unitClosestToEnemyForOrder();
 
 	void                        updateUnits();
 	void                        addUnitsToMicroManagers();

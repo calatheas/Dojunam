@@ -34,7 +34,7 @@ BWAPI::Position MicroManager::calcCenter() const
 void MicroManager::execute(const SquadOrder & inputOrder)
 {
 	// Nothing to do if we have no units
-	if (_units.empty() || !(inputOrder.getType() == SquadOrderTypes::Attack || inputOrder.getType() == SquadOrderTypes::Defend))
+	if (_units.empty() )//|| !(inputOrder.getType() == SquadOrderTypes::Attack || inputOrder.getType() == SquadOrderTypes::Defend))
 	{
 		return;
 	}

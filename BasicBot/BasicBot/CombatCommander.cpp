@@ -68,20 +68,37 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 
 
 	if (isSquadUpdateFrame())
-	{
-        updateIdleSquad();
+	{		
+        updateIdleSquad();		
         updateDropSquads();
-        updateScoutDefenseSquad();
-		updateDefenseSquads();
+        updateScoutDefenseSquad();		
+		updateDefenseSquads();		
 		updateAttackSquads();
 	}
-
+	
 	_squadData.update();
+	
 }
 
 void CombatCommander::updateIdleSquad()
 {
-    Squad & idleSquad = _squadData.getSquad("Idle");
+    Squad & idleSquad = _squadData.getSquad("Idle");	
+	if (_combatUnits.size() % 10 == 1)
+	{
+		int diff_x = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().x - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().x;
+		int diff_y = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().y - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().y;
+		if (abs(diff_x) > abs(diff_y))
+		{
+			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+				+ BWAPI::Position(diff_x*0.3 + _combatUnits.size(), 32), 100, "Move Out");
+			idleSquad.setSquadOrder(idleOrder);
+		}
+		else{
+			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+				+ BWAPI::Position(32 , diff_y*0.3 + _combatUnits.size()), 100, "Move Out");
+			idleSquad.setSquadOrder(idleOrder);
+		}
+	}
     for (auto & unit : _combatUnits)
     {
         // if it hasn't been assigned to a squad yet, put it in the low priority idle squad
@@ -89,8 +106,8 @@ void CombatCommander::updateIdleSquad()
 		if (_squadData.canAssignUnitToSquad(unit, idleSquad))
         {
             //idleSquad.addUnit(unit);
-			_squadData.assignUnitToSquad(unit, idleSquad);
-			Micro::SmartAttackMove(unit, idleSquad.getSquadOrder().getPosition());
+			_squadData.assignUnitToSquad(unit, idleSquad);			
+			Micro::SmartAttackMove(unit, idleSquad.getSquadOrder().getPosition());			
         }		
     }
 }
@@ -100,8 +117,7 @@ void CombatCommander::updateAttackSquads()
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
 
-	if (candiAttackerSquad.getUnits().size() > 19
-		)
+	if (candiAttackerSquad.getUnits().size() > 30)
 	{
 		for (auto & unit : _combatUnits)
 		{
@@ -111,9 +127,7 @@ void CombatCommander::updateAttackSquads()
 			}
 		}
 	}
-	//else
-	//	return ;
-	//
+
 	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(mainAttackSquad.calcCenter()) , 800, "Attack Enemy ChokePoint");
 	mainAttackSquad.setSquadOrder(mainAttackOrder);
 }
@@ -246,7 +260,7 @@ void CombatCommander::updateScoutDefenseSquad()
 
 void CombatCommander::updateDefenseSquads() 
 {
-	if (_combatUnits.empty()) 
+	if (_combatUnits.empty() || _combatUnits.size() == 0)
     { 
         return; 
     }
@@ -288,6 +302,7 @@ void CombatCommander::updateDefenseSquads()
 
             if (BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == myRegion)
             {
+				std::cout << "enemyUnits In My Region " << std::endl;
                 enemyUnitsInRegion.insert(unit);
             }
         }
@@ -325,6 +340,7 @@ void CombatCommander::updateDefenseSquads()
             // if we don't have a squad assigned to this region already, create one
             if (!_squadData.squadExists(squadName.str()))
             {
+				std::cout << "Defend My Region!" << std::endl;
                 SquadOrder defendRegion(SquadOrderTypes::Defend, regionCenter, 32 * 25, "Defend Region!");
                 _squadData.addSquad(squadName.str(), Squad(squadName.str(), defendRegion, BaseDefensePriority));
             }
@@ -378,7 +394,9 @@ void CombatCommander::updateDefenseSquads()
 
 void CombatCommander::updateDefenseSquadUnits(Squad & defenseSquad, const size_t & flyingDefendersNeeded, const size_t & groundDefendersNeeded)
 {
-    const BWAPI::Unitset & squadUnits = defenseSquad.getUnits();
+	//@도주남 김지훈 기존로직에서 변경함
+	//const BWAPI::Unitset & squadUnits = defenseSquad.getUnits();
+	const BWAPI::Unitset & squadUnits = _squadData.getSquad("Idle").getUnits();
     size_t flyingDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackAir);
     size_t groundDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackGround);
 

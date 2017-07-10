@@ -55,13 +55,19 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				//Stim_Packs
 				if (meleeUnit->getStimTimer() == 0 
 					&& meleeUnit->getType() == BWAPI::UnitTypes::Terran_Firebat
-					&& meleeUnit->getHitPoints() == meleeUnit->getType().maxHitPoints())
+					&& meleeUnit->getHitPoints() == meleeUnit->getType().maxHitPoints()	
+					&& meleeUnit->getPosition().getDistance(target->getPosition()) < meleeUnit->getType().groundWeapon().maxRange() + 32
+					)
 				{
-					std::string stimPacksUsed = "stimPacksUsed";
-					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x + 50, meleeUnit->getPosition().y, "%s", stimPacksUsed.c_str());
 					meleeUnit->useTech(BWAPI::TechTypes::Stim_Packs);
 				}
-				
+				if (meleeUnit->getStimTimer() == 0
+					&& meleeUnit->getType() == BWAPI::UnitTypes::Terran_Firebat)
+				{
+					std::string stimPacksUsed = "stimPacks On";
+					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x + 50, meleeUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
+
+				}
 				// attack it
 				Micro::SmartAttackUnit(meleeUnit, target);
 			}

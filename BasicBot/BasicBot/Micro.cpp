@@ -1,5 +1,6 @@
 #include "Micro.h"
 #include "CommandUtil.h"
+#include "MapTools.h"
 
 using namespace MyBot;
 
@@ -164,25 +165,42 @@ void Micro::SmartRightClick(BWAPI::Unit unit, BWAPI::Unit target)
 
 void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 {
-    if (!unit)
-    {
-        return;
-    }
+	if (!unit)
+	{
+		return;
+	}
 
-    if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
-    {
-        return;
-    }
+	if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
+	{			
+		return;
+	}
 
-    BWAPI::UnitCommand currentCommand(unit->getLastCommand());
+	BWAPI::UnitCommand currentCommand(unit->getLastCommand());
 
-    // if we've already told this unit to move to this position, ignore this command
-    if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos))
-    {
-        return;
-    }
+	while (!unit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, pos))
+	{
+		if (unit->getID() % 3 == 0)
+			pos += BWAPI::Position(1, (BWAPI::Broodwar->getFrameCount() % unit->getType().groundWeapon().maxRange()) / 2);
+		else if (unit->getID() % 3 == 1)
+			pos -= BWAPI::Position(2, (BWAPI::Broodwar->getFrameCount() % unit->getType().groundWeapon().maxRange()) / 3);
+		else
+			pos += BWAPI::Position(3, (BWAPI::Broodwar->getFrameCount() % unit->getType().groundWeapon().maxRange()) / 4);
 
-    unit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, pos);
+		if (pos.x > MapGrid::Instance().getMapWidth() || pos.y > MapGrid::Instance().getMapHeight() || pos.x < 0 || pos.y < 0)
+		{
+			pos = unit->getPosition();
+			break;
+		}
+	}
+	//std::cout << "SmartLaySpiderMine 195 done " << std::endl;
+	// if we've already told this unit to move to this position, ignore this command
+	if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos))
+	{			
+		return;
+	}
+	//std::cout << "SmartLaySpiderMine 201 done " << std::endl;
+	unit->useTech(BWAPI::TechTypes::Spider_Mines, pos);
+	//std::cout << "SmartLaySpiderMine 203 done " << std::endl;
 }
 
 void Micro::SmartRepair(BWAPI::Unit unit, BWAPI::Unit target)

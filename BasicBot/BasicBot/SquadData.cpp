@@ -8,9 +8,9 @@ SquadData::SquadData()
 }
 
 void SquadData::update()
-{
-	updateAllSquads();
-    verifySquadUniqueMembership();
+{	
+	updateAllSquads();	
+    verifySquadUniqueMembership();	
 }
 
 void SquadData::clearSquadData()
@@ -74,7 +74,9 @@ void SquadData::updateAllSquads()
 {
 	for (auto & kv : _squads)
 	{
+		//std::cout << kv.second.getName() <<  " start " << std::endl;
 		kv.second.update();
+		//std::cout << kv.second.getName() << " done " << std::endl; // idle
 	}
 }
 

@@ -42,12 +42,18 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 
 				if (rangedUnit->getStimTimer() == 0
 					&& rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
-					&& rangedUnit->getHitPoints() == rangedUnit->getType().maxHitPoints() )
+					&& rangedUnit->getHitPoints() == rangedUnit->getType().maxHitPoints() 
+					&& //@도주남 김지훈 상대가 공격 범위에 들어오면  스팀팩을 사용한다.
+					target->getPosition().getDistance(rangedUnit->getPosition()) < rangedUnit->getType().groundWeapon().maxRange() + 32 )
 				{
-					std::string stimPacksUsed = "stimPacksUsed";
-					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x + 50, rangedUnit->getPosition().y, "%s", stimPacksUsed.c_str());
 					rangedUnit->useTech(BWAPI::TechTypes::Stim_Packs);
 				}
+				else if (rangedUnit->getStimTimer() > 0)
+				{
+					std::string stimPacksUsed = "stimPacks ON";
+					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x + 50, rangedUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
+				}
+
 
 				// attack it
                 if (Config::Micro::KiteWithRangedUnits)

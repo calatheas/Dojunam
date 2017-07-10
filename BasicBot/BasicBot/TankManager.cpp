@@ -19,7 +19,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
     int siegeTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 32;
 	int  tankTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange() - 32;
     bool haveSiege = BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode);
-
+	
 	// for each zealot
 	for (auto & tank : tanks)
 	{
@@ -92,7 +92,10 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                     else
                     {
     					// move to it
-    					Micro::SmartAttackMove(tank, order.getPosition());
+						if (order.getPosition().getDistance(order.getClosestUnit()->getPosition()) > order.getPosition().getDistance(tank->getPosition()) && !tankNearChokepoint)
+							tank->holdPosition();
+						else
+    						Micro::SmartAttackMove(tank, order.getPosition());
                     }
 				}
 			}
