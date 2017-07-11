@@ -33,7 +33,7 @@ void Squad::update()
 	updateUnits();
 	
 	// determine whether or not we should regroup
-	//bool needToRegroup = needsToRegroup();
+	bool needToRegroup = needsToRegroup();
 
 	// draw some debug info
 	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
@@ -44,32 +44,30 @@ void Squad::update()
 	}
 
 	// if we do need to regroup, do it
-	//if (needToRegroup)
-	//{
-	//	BWAPI::Position regroupPosition = calcRegroupPosition();
-	//
-	//	if (Config::Debug::DrawCombatSimulationInfo)
-	//	{
-	//		BWAPI::Broodwar->drawTextScreen(200, 150, "REGROUP");
-	//	}
-	//
-	//	BWAPI::Broodwar->drawCircleMap(regroupPosition.x, regroupPosition.y, 30, BWAPI::Colors::Purple, true);
-	//
-	//	_meleeManager.regroup(regroupPosition);
-	//	_rangedManager.regroup(regroupPosition);
-	//	_tankManager.regroup(regroupPosition);
-	//	_medicManager.regroup(regroupPosition);
-	//	_vultureManager.regroup(regroupPosition);
-	//}
-	//else // otherwise, execute micro
+	if (needToRegroup)
+	{
+		BWAPI::Position regroupPosition = calcRegroupPosition();
+	
+		if (Config::Debug::DrawCombatSimulationInfo)
+		{
+			BWAPI::Broodwar->drawTextScreen(200, 150, "REGROUP");
+		}
+	
+		BWAPI::Broodwar->drawCircleMap(regroupPosition.x, regroupPosition.y, 30, BWAPI::Colors::Purple, true);
+	
+		_meleeManager.regroup(regroupPosition);
+		_rangedManager.regroup(regroupPosition);
+		_tankManager.regroup(regroupPosition);
+		_medicManager.regroup(regroupPosition);
+		_vultureManager.regroup(regroupPosition);
+	}
+	else // otherwise, execute micro
 	{
 		_meleeManager.execute(_order);		
 		_rangedManager.execute(_order);
 		_vultureManager.execute(_order);
 		_medicManager.execute(_order);
-		//std::cout << "_tankManager start " << std::endl;
-		_tankManager.execute(_order);		
-		//std::cout << "_tankManager done " << std::endl;
+		_tankManager.execute(_order);
 		_transportManager.update();
 		_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
 		_detectorManager.execute(_order);
@@ -103,6 +101,8 @@ void Squad::setAllUnits()
 	// clean up the _units vector just in case one of them died
 	BWAPI::Unitset goodUnits;
 	int maxDist = 0;
+	//@도주남 김지훈 메딕이 힐링이 가능한 캐릭터가 몇명인지 확인한다.  의견을 들어보고 적용 여부 결정
+	int isOrganicCount = 0;
 	for (auto & unit : _units)
 	{
 		if (unit->isCompleted() &&
@@ -113,16 +113,34 @@ void Squad::setAllUnits()
 			unit->getType() != BWAPI::UnitTypes::Unknown)
 		{
 			goodUnits.insert(unit);
+			if (unit->getType().isOrganic() && unit->getType() != BWAPI::UnitTypes::Terran_Medic)
+				isOrganicCount++;
 			if ((maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0) && unit->getType() != BWAPI::UnitTypes::Terran_Vulture)
 			{
 				maxDist = unit->getDistance(_order.getPosition());
 				unitFarToOrderPosition = unit;
 			}
 		}
-	}
-	_order.setFarUnit(unitFarToOrderPosition);
+	}	
 	_units.clear();
 	_units = goodUnits;
+	if (isOrganicCount == 0)
+	{
+		goodUnits.clear();
+		for (auto & unit : _units)
+		{
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Medic && unit != unitFarToOrderPosition)
+			{
+				unit->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+			}
+			else
+				goodUnits.insert(unit);
+		}
+		_units.clear();
+		_units = goodUnits;
+	}
+	_order.setCanMedicTargets(isOrganicCount);
+	_order.setFarUnit(unitFarToOrderPosition);	
 	_order.setClosestUnit(unitClosestToEnemyForOrder());	
 	if (_order.getClosestUnit() == nullptr)
 		_order.setClosestUnit(unitFarToOrderPosition);

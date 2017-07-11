@@ -61,7 +61,7 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				{
 					meleeUnit->useTech(BWAPI::TechTypes::Stim_Packs);
 				}
-				if (meleeUnit->getStimTimer() == 0
+				if (meleeUnit->getStimTimer() > 0
 					&& meleeUnit->getType() == BWAPI::UnitTypes::Terran_Firebat)
 				{
 					std::string stimPacksUsed = "stimPacks On";
@@ -74,16 +74,21 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
-				if (meleeUnit->getDistance(order.getPosition()) > 100 && order.getFarUnit()->getDistance(meleeUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 && order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != meleeUnit->getID())
+				if (meleeUnit->getDistance(order.getPosition()) > 100 
+					&& order.getFarUnit()->getDistance(meleeUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 
+					&& order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != meleeUnit->getID()
+					&& order.getStatus() != "Idle")
 				{
 					//std::cout << "FireBat " << std::endl;
-					Micro::SmartMove(meleeUnit, order.getFarUnit()->getPosition() - meleeUnit->getPosition() + meleeUnit->getPosition());
+					//Micro::SmartMove(meleeUnit, order.getFarUnit()->getPosition() - meleeUnit->getPosition() + meleeUnit->getPosition());
+					meleeUnit->holdPosition();
+					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x + 50, meleeUnit->getPosition().y + 50, "%s", "Hold On Position");
 				} else
 				// if we're not near the order position
 				if (meleeUnit->getDistance(order.getPosition()) > 100)
 				{
 					// move to it
-					Micro::SmartMove(meleeUnit, order.getPosition());
+					Micro::SmartAttackMove(meleeUnit, order.getPosition());
 					
 				}
 			}

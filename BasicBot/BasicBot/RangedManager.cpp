@@ -48,9 +48,9 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				{
 					rangedUnit->useTech(BWAPI::TechTypes::Stim_Packs);
 				}
-				else if (rangedUnit->getStimTimer() > 0)
+				else if (rangedUnit->getStimTimer() > 0 && rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine)
 				{
-					std::string stimPacksUsed = "stimPacks ON";
+					std::string stimPacksUsed = "stimPacks On";
 					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x + 50, rangedUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
 				}
 
@@ -75,7 +75,11 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
-				if (rangedUnit->getDistance(order.getPosition()) > 100 && order.getFarUnit()->getDistance(rangedUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 && order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != rangedUnit->getID())
+				if (rangedUnit->getDistance(order.getPosition()) > 100 
+					&& order.getFarUnit()->getDistance(rangedUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 
+					&& order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != rangedUnit->getID()
+					&& order.getStatus() != "Move Out"
+					)
 				{
 					//std::cout << "Marin  " << rangedUnit->getID() << std::endl;
 					Micro::SmartMove(rangedUnit, order.getFarUnit()->getPosition() - rangedUnit->getPosition() + rangedUnit->getPosition());

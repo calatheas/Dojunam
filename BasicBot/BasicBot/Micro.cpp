@@ -180,11 +180,11 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 	while (!unit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, pos))
 	{
 		if (unit->getID() % 3 == 0)
-			pos += BWAPI::Position(1, (BWAPI::Broodwar->getFrameCount() % unit->getType().groundWeapon().maxRange()) / 2);
+			pos += BWAPI::Position(1, (BWAPI::Broodwar->getFrameCount() % 30));
 		else if (unit->getID() % 3 == 1)
-			pos -= BWAPI::Position(2, (BWAPI::Broodwar->getFrameCount() % unit->getType().groundWeapon().maxRange()) / 3);
+			pos -= BWAPI::Position(2, (BWAPI::Broodwar->getFrameCount() % 33));
 		else
-			pos += BWAPI::Position(3, (BWAPI::Broodwar->getFrameCount() % unit->getType().groundWeapon().maxRange()) / 4);
+			pos += BWAPI::Position(3, (BWAPI::Broodwar->getFrameCount() % 41));
 
 		if (pos.x > MapGrid::Instance().getMapWidth() || pos.y > MapGrid::Instance().getMapHeight() || pos.x < 0 || pos.y < 0)
 		{
@@ -195,7 +195,8 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 	//std::cout << "SmartLaySpiderMine 195 done " << std::endl;
 	// if we've already told this unit to move to this position, ignore this command
 	if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos))
-	{			
+	{	
+		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0,20), "%s", "Keep Going for Mining");
 		return;
 	}
 	//std::cout << "SmartLaySpiderMine 201 done " << std::endl;
