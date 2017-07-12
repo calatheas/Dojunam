@@ -148,6 +148,7 @@
     <ClCompile Include="BasicBot\UnitData.cpp" />
     <ClCompile Include="BasicBot\UnitData_boss.cpp" />
     <ClCompile Include="BasicBot\UXManager.cpp" />
+    <ClCompile Include="BasicBot\VultureManager.cpp" />
     <ClCompile Include="BasicBot\WorkerData.cpp" />
     <ClCompile Include="BasicBot\WorkerManager.cpp" />
   </ItemGroup>
@@ -212,6 +213,7 @@
     <ClInclude Include="BasicBot\UnitData.h" />
     <ClInclude Include="BasicBot\UnitData_boss.h" />
     <ClInclude Include="BasicBot\UXManager.h" />
+    <ClInclude Include="BasicBot\VultureManager.h" />
     <ClInclude Include="BasicBot\WorkerData.h" />
     <ClInclude Include="BasicBot\WorkerManager.h" />
   </ItemGroup>
