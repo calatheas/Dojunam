@@ -518,7 +518,15 @@ void ConstructionManager::checkForDeadlockConstruction()
 				&& InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().selfPlayer).find(desiredPositionRegion) == InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().selfPlayer).end()
 				&& InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().enemyPlayer).find(desiredPositionRegion) != InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().enemyPlayer).end())
 			{
-				isDeadlockCase = true;
+				//커맨드 센터 건물지역이 이상한 경우에는 다른 지역 다시 탐색하여 멀티 한다.
+				//일반적으로 적진이 바로 옆인 경우는 이 로직을 한번 수행하게 된다.
+				if (unitType == BWAPI::UnitTypes::Terran_Command_Center){
+					std::cout << "Command center position changed" << std::endl;
+					b.desiredPosition = MapTools::Instance().getNextExpansion(b.desiredPosition);
+				}
+				else{
+					isDeadlockCase = true;
+				}
 			}
 
 			// 선행 건물/유닛이 있는데 

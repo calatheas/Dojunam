@@ -1087,24 +1087,19 @@ void BuildManager::queueGasSteal()
 void BuildManager::onUnitComplete(BWAPI::Unit unit){
 	//@도주남 김유진 
 	//고칠점 아카데미가 부서지고 다시 지을때는 유효하지 않은 코드임
-	if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-		for (auto &u : BWAPI::Broodwar->self()->getUnits()){
-			if (unit->getType() == BWAPI::UnitTypes::Terran_Academy && unit->isCompleted()){
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
-				break;
+	if (unit->getPlayer() == InformationManager::Instance().selfPlayer){
+		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+			std::cout << "onUnitComplete : Command_Center" << std::endl;
+			for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+				if (u->getType() == BWAPI::UnitTypes::Terran_Academy && u->isCompleted()){
+					buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
+					std::cout << "add comsat" << std::endl;
+					break;
+				}
 			}
 		}
-
-		for (auto &unit_in_region : unit->getRegion()->getUnits()){
-			if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field ||
-				unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_2 ||
-				unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_3){
-				InformationManager::Instance().numExpansion++;
-				break;
-			}
+		else if (unit->getType() == BWAPI::UnitTypes::Terran_Academy){
+			buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
 		}
-	}
-	else if (unit->getType() == BWAPI::UnitTypes::Terran_Academy){
-		buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), false);
 	}
 }

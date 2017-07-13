@@ -78,7 +78,7 @@ namespace MyBot
 		/// Unit 에 대한 정보를 업데이트합니다
 		void					onUnitCreate(BWAPI::Unit unit)		{ updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다
-		void					onUnitComplete(BWAPI::Unit unit)    { updateUnitInfo(unit); }
+		void					onUnitComplete(BWAPI::Unit unit);
 		/// Unit 에 대한 정보를 업데이트합니다
 		void					onUnitMorph(BWAPI::Unit unit)       { updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다

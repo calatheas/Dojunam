@@ -212,7 +212,8 @@ namespace MyBot
 		void                    reset();							///< resets the distance and fringe vectors, call before each search    
 		void                    setBWAPIMapData();					///< reads in the map data from bwapi and stores it in our map format
 		void                    resetFringe();
-		BWAPI::TilePosition     getTilePosition(int index);		
+		BWAPI::TilePosition     getTilePosition(int index);
+		BWAPI::TilePosition _selectNextExpansion(std::deque<BWAPI::TilePosition> &positions);
 
 		/// from 에서 to 까지 지상유닛이 이동할 경우의 거리 (walk distance). 못가는 곳이면 -1.  
 		/// computeDistance 를 수행해서 _allMaps 에 저장한다
@@ -241,7 +242,9 @@ namespace MyBot
 		const std::vector<BWAPI::TilePosition> & getClosestTilesTo(BWAPI::Position pos);
 
 		BWAPI::TilePosition     getNextExpansion();
-		BWAPI::TilePosition     getNextExpansion(BWAPI::Player player);
+		std::deque<BWAPI::TilePosition> getNextExpansions();
+		BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::TilePosition &exceptPosition);
+		bool isStartLocation(BWAPI::TilePosition &tp);
 	};
 
 }

@@ -607,7 +607,12 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
 
 const bool StrategyManager::shouldExpandNow() const
 {
-
+	//@도주남 김유진 현재 커맨드센터 지어지고 있으면 그 때동안은 멀티 추가 안함
+	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+		if (u->getType() == BWAPI::UnitTypes::Terran_Command_Center && !u->isCompleted()){
+			return false;
+		}
+	}
 	// if there is no place to expand to, we can't expand
 	if (MapTools::Instance().getNextExpansion() == BWAPI::TilePositions::None)
 	{

@@ -472,14 +472,28 @@ void MapTools::parseMap()
 
 BWAPI::TilePosition MapTools::getNextExpansion()
 {
-	return getNextExpansion(BWAPI::Broodwar->self());
+	return _selectNextExpansion(getNextExpansions());
 }
 
-BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::Player player)
+BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::TilePosition &exceptPosition)
+{
+	std::deque<BWAPI::TilePosition> &expansions = getNextExpansions();
+	for (int i = 0; i < expansions.size(); i++){
+		if (expansions[i] == exceptPosition){
+			expansions.erase(expansions.begin() + i);
+			break;
+		}
+	}
+	return _selectNextExpansion(expansions);
+}
+
+std::deque<BWAPI::TilePosition> MapTools::getNextExpansions()
 {
 	BWTA::BaseLocation * closestBase = nullptr;
 	double minDistance = 100000;
 
+	std::deque<BWAPI::TilePosition> candidate_pos;
+	BWAPI::Player player = InformationManager::Instance().selfPlayer;
 	BWAPI::TilePosition homeTile = player->getStartLocation();
 
 	// for each base location
@@ -529,38 +543,65 @@ BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::Player player)
 				continue;
 			}
 
-			//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다
-			if (InformationManager::Instance().numExpansion > 1 && (InformationManager::Instance().numExpansion % 2 != 0)){
-				bool isStart = false;
-				for (auto start : BWTA::getStartLocations()){
-					if (base->getPosition() == start->getPosition()){
-						isStart = true;
-						break;
-					}
-				}
-				std::cout << "searching base position : " << base->getPosition() << " / isStart:" << isStart << std::endl;
-
-				if (!isStart){
-					continue;
-				}
-			}
-
 			//가능한 베이스지역 중에서 최소값을 구한다.
 			if (!closestBase || distanceFromHome < minDistance)
 			{
 				closestBase = base;
 				minDistance = distanceFromHome;
+				candidate_pos.push_front(base->getTilePosition());
+			}
+			else{
+				candidate_pos.push_back(base->getTilePosition());
+			}
+		}
+		
+	}
+
+	return candidate_pos;
+}
+
+bool MapTools::isStartLocation(BWAPI::TilePosition &tp){
+	for (auto start : BWTA::getStartLocations()){
+		if (tp == start->getTilePosition()){
+			return true;
+		}
+	}
+	return false;
+}
+
+BWAPI::TilePosition MapTools::_selectNextExpansion(std::deque<BWAPI::TilePosition> &positions){
+	std::cout << "multi point candiates:";
+	for (auto &tmp : positions){
+		std::cout << tmp << "/";
+	}
+	std::cout << std::endl;
+
+	if (!positions.empty()){
+		BWAPI::TilePosition rst(-1, -1);
+
+		//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다
+		if (InformationManager::Instance().numExpansion > 1 && (InformationManager::Instance().numExpansion % 2 == 0)){
+			for (auto &expansion_position : positions){
+				if (!isStartLocation(expansion_position)){
+					rst = expansion_position;
+					break;
+				}
+				else{
+					continue;
+				}
 			}
 		}
 
-	}
+		//일반적인 경우는 제일 가까운 멀티선정
+		if (rst.x == -1){
+			return positions.front();
+		}
+		else{
+			return rst;
+		}
 
-	if (closestBase)
-	{
-		return closestBase->getTilePosition();
 	}
-	else
-	{
+	else{
 		return BWAPI::TilePositions::None;
 	}
 }
