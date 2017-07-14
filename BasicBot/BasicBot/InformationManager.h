@@ -64,7 +64,8 @@ namespace MyBot
 		BWAPI::Player       enemyPlayer;	///< 적군 Player		
 		BWAPI::Race			enemyRace;		///< 적군 Player의 종족  
 
-		int numExpansion;
+		BWAPI::Unitset selfExpansions; //아군 멀티들
+
 		bool hasCloakedUnits;
 		bool hasFlyingUnits;
 		

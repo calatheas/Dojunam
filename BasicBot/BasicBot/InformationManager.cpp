@@ -34,7 +34,6 @@ InformationManager::InformationManager()
 
 	updateChokePointAndExpansionLocation();
 
-	numExpansion = 0;
 	hasCloakedUnits = false;
 	hasFlyingUnits = false;
 }
@@ -103,20 +102,13 @@ void InformationManager::onUnitDestroy(BWAPI::Unit unit)
 
     _unitData[unit->getPlayer()].removeUnit(unit);
 
-	if (unit->getPlayer() == selfPlayer){
-		//커맨드센터 파괴되면 멀티숫자 줄임
-		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-			//numExpansion는 본진 포함개수
-			for (auto &unit_in_region : unit->getUnitsInRadius(400)){
-				if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field ||
-					unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_2 ||
-					unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_3){
-					numExpansion--;
-					break;
-				}
-			}
-			std::cout << "numExpansion:" << numExpansion << std::endl;
+	if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+		auto & it = selfExpansions.find(unit);
+		if (it != selfExpansions.end())
+		{
+			selfExpansions.erase(it);
 		}
+		std::cout << "onUnitDestroy numExpansion:" << selfExpansions.size() << std::endl;
 	}
 }
 
@@ -739,11 +731,11 @@ void InformationManager::onUnitComplete(BWAPI::Unit unit){
 				if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field ||
 					unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_2 ||
 					unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_3){
-					numExpansion++;
+					selfExpansions.insert(unit);
 					break;
 				}
 			}
-			std::cout << "numExpansion:" << numExpansion << std::endl;
+			std::cout << "onUnitComplete numExpansion:" << selfExpansions.size() << std::endl;
 		}
 	}
 }

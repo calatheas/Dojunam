@@ -477,7 +477,7 @@ BWAPI::TilePosition MapTools::getNextExpansion()
 
 BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::TilePosition &exceptPosition)
 {
-	std::deque<BWAPI::TilePosition> &expansions = getNextExpansions();
+	std::vector<BWAPI::TilePosition> &expansions = getNextExpansions();
 	for (int i = 0; i < expansions.size(); i++){
 		if (expansions[i] == exceptPosition){
 			expansions.erase(expansions.begin() + i);
@@ -487,20 +487,34 @@ BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::TilePosition &exceptPositi
 	return _selectNextExpansion(expansions);
 }
 
-std::deque<BWAPI::TilePosition> MapTools::getNextExpansions()
+std::vector<BWAPI::TilePosition> MapTools::getNextExpansions()
 {
 	BWTA::BaseLocation * closestBase = nullptr;
 	double minDistance = 100000;
 
-	std::deque<BWAPI::TilePosition> candidate_pos;
+	std::vector<std::pair<double, BWAPI::TilePosition>> candidate_pos;
 	BWAPI::Player player = InformationManager::Instance().selfPlayer;
+	BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
 	BWAPI::TilePosition homeTile = player->getStartLocation();
 
 	// for each base location
 	for (BWTA::BaseLocation * base : BWTA::getBaseLocations())
 	{
+		//우리본진, 적진, 적 앞마당은 멀티에서 제외
+		if (base == BWTA::getStartLocation(player)) continue;
+
+		if (InformationManager::Instance().getMainBaseLocation(enemy) != nullptr &&
+			InformationManager::Instance().getMainBaseLocation(enemy)->getTilePosition() == base->getTilePosition()){
+			continue;
+		}
+
+		if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr &&
+			InformationManager::Instance().getFirstExpansionLocation(enemy)->getTilePosition() == base->getTilePosition()){
+			continue;
+		}
+
 		// if the base has gas
-		if (!base->isMineralOnly() && !(base == BWTA::getStartLocation(player)))
+		if (!base->isMineralOnly())
 		{
 			// get the tile position of the base
 			BWAPI::TilePosition tile = base->getTilePosition();
@@ -534,8 +548,6 @@ std::deque<BWAPI::TilePosition> MapTools::getNextExpansions()
 			BWAPI::Position thisTile = BWAPI::Position(tile);
 			double distanceFromHome = MapTools::Instance().getGroundDistance(thisTile, myBasePosition);
 
-
-
 			// if it is not connected, continue
 			// 섬에는 못지음(내 생각)
 			if (!BWTA::isConnected(homeTile, tile) || distanceFromHome < 0)
@@ -544,6 +556,7 @@ std::deque<BWAPI::TilePosition> MapTools::getNextExpansions()
 			}
 
 			//가능한 베이스지역 중에서 최소값을 구한다.
+			/*
 			if (!closestBase || distanceFromHome < minDistance)
 			{
 				closestBase = base;
@@ -553,11 +566,17 @@ std::deque<BWAPI::TilePosition> MapTools::getNextExpansions()
 			else{
 				candidate_pos.push_back(base->getTilePosition());
 			}
+			*/
+			candidate_pos.push_back(std::make_pair(distanceFromHome, base->getTilePosition()));
 		}
-		
 	}
 
-	return candidate_pos;
+	//최소거리로 정렬
+	std::sort(candidate_pos.begin(), candidate_pos.end(), 
+		[](std::pair<double, BWAPI::TilePosition> &a, std::pair<double, BWAPI::TilePosition> &b){ return a.first < b.first; });
+	std::vector<BWAPI::TilePosition> result;
+	for (auto &i : candidate_pos) result.push_back(i.second);
+	return result;
 }
 
 bool MapTools::isStartLocation(BWAPI::TilePosition &tp){
@@ -569,10 +588,14 @@ bool MapTools::isStartLocation(BWAPI::TilePosition &tp){
 	return false;
 }
 
-BWAPI::TilePosition MapTools::_selectNextExpansion(std::deque<BWAPI::TilePosition> &positions){
+BWAPI::TilePosition MapTools::_selectNextExpansion(std::vector<BWAPI::TilePosition> &positions){
+	std::cout << "start pt:" << BWTA::getStartLocation(InformationManager::Instance().selfPlayer)->getTilePosition() << std::endl;
+	if (InformationManager::Instance().getFirstExpansionLocation(InformationManager::Instance().selfPlayer) != nullptr)
+		std::cout << "first multi:" << InformationManager::Instance().getFirstExpansionLocation(InformationManager::Instance().selfPlayer)->getTilePosition() << std::endl;
+		
 	std::cout << "multi point candiates:";
 	for (auto &tmp : positions){
-		std::cout << tmp << "/";
+		std::cout << "(" << tmp.x << "," << tmp.y << "," << isStartLocation(tmp) << ") / ";
 	}
 	std::cout << std::endl;
 
@@ -580,9 +603,9 @@ BWAPI::TilePosition MapTools::_selectNextExpansion(std::deque<BWAPI::TilePositio
 		BWAPI::TilePosition rst(-1, -1);
 
 		//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다
-		if (InformationManager::Instance().numExpansion > 1 && (InformationManager::Instance().numExpansion % 2 == 0)){
+		if (InformationManager::Instance().selfExpansions.size() > 1 && (InformationManager::Instance().selfExpansions.size() % 2 == 0)){
 			for (auto &expansion_position : positions){
-				if (!isStartLocation(expansion_position)){
+				if (isStartLocation(expansion_position)){
 					rst = expansion_position;
 					break;
 				}
