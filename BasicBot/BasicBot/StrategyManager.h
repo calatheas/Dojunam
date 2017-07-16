@@ -9,8 +9,8 @@
 #include "BuildManager.h"
 #include "ConstructionManager.h"
 #include "ScoutManager.h"
-#include "StrategyManager.h"
 #include "BuildOrder.h"
+#include "MetaType.h"
 
 namespace MyBot
 {
@@ -45,9 +45,7 @@ namespace MyBot
 		BuildOrder _openingBuildOrder;
 		std::string _main_strategy;
 		const BuildOrder                _emptyBuildOrder;
-		const MetaPairVector getProtossBuildOrderGoal() const;
 		const MetaPairVector getTerranBuildOrderGoal();
-		const MetaPairVector getZergBuildOrderGoal() const;
 		void setOpeningBookBuildOrder();
 		bool changeMainStrategy(std::map<std::string, int> & numUnits);
 		bool checkStrategyLimit(std::string &name, std::map<std::string, int> & numUnits);
@@ -70,5 +68,6 @@ namespace MyBot
 		const BuildOrder & getOpeningBookBuildOrder() const;
 		const MetaPairVector getBuildOrderGoal();
 		const bool shouldExpandNow() const;
+		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
 	};
 }

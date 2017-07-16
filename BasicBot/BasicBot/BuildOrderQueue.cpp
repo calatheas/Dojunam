@@ -283,3 +283,20 @@ std::deque< BuildOrderItem > * BuildOrderQueue::getQueue()
 {
 	return &queue;
 }
+
+void BuildOrderQueue::setCurrentItemBlocking(bool flag)
+{
+	// is the current highest priority item not blocking a skip
+	queue[queue.size() - 1 - numSkippedItems].blocking = flag;
+}
+
+void BuildOrderQueue::removeByIndex(int idx){
+	// remove the back element of the vector
+	queue.erase(queue.begin()+idx);
+
+	//assert((int)(queue.size()) < size);
+
+	// if the list is not empty, set the highest accordingly
+	highestPriority = queue.empty() ? 0 : queue.back().priority;
+	lowestPriority = queue.empty() ? 0 : lowestPriority;
+}

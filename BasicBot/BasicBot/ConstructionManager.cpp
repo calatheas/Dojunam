@@ -635,18 +635,18 @@ std::vector<BWAPI::UnitType> ConstructionManager::buildingsQueued()
 // constructionQueue에 해당 type 의 Item 이 존재하는지 카운트한다. queryTilePosition 을 입력한 경우, 위치간 거리까지도 고려한다
 int ConstructionManager::getConstructionQueueItemCount(BWAPI::UnitType queryType, BWAPI::TilePosition queryTilePosition)
 {
-	// queryTilePosition 을 입력한 경우, 거리의 maxRange. 타일단위
-	int maxRange = 16;
-
-	const BWAPI::Point<int, 32> queryTilePositionPoint(queryTilePosition.x, queryTilePosition.y);
-
 	int count = 0;
 	for (auto & b : constructionQueue)
 	{
 		if (b.type == queryType)
 		{
-			if (queryType.isBuilding() && queryTilePosition != BWAPI::TilePositions::None)
+			if (queryTilePosition != BWAPI::TilePositions::None && queryType.isBuilding())
 			{
+				// queryTilePosition 을 입력한 경우, 거리의 maxRange. 타일단위
+				int maxRange = 16;
+
+				const BWAPI::Point<int, 32> queryTilePositionPoint(queryTilePosition.x, queryTilePosition.y);
+
 				if (queryTilePositionPoint.getDistance(b.desiredPosition) <= maxRange) {
 					count++;
 				}
