@@ -36,12 +36,18 @@ namespace MyBot
 
 		void				checkBuildOrderQueueDeadlockAndAndFixIt();
 		void				checkBuildOrderQueueDeadlockAndRemove();
+		bool verifyBuildAddonCommand(BWAPI::Unit u);
+
 		bool				_enemyCloakedDetected;
 		bool detectSupplyDeadlock();
+		
+		int maxDepotWorkers;
 
 	public:
 		/// static singleton 객체를 리턴합니다
 		static BuildManager &	Instance();
+
+		void onStart();
 
 		/// buildQueue 에 대해 Dead lock 이 있으면 제거하고, 가장 우선순위가 높은 BuildOrderItem 를 실행되도록 시도합니다
 		void				update();
@@ -61,6 +67,8 @@ namespace MyBot
 		void		onUnitComplete(BWAPI::Unit unit);
 
 		void                setBuildOrder(const BuildOrder & buildOrder);
+		void executeWorkerTraining();
+		
 	};
 
 

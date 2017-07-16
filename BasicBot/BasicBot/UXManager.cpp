@@ -92,7 +92,7 @@ void UXManager::update()
 	if (Config::Debug::DrawWorkerInfo)
 	{
 		// 각 일꾼들의 임무 상황
-		drawWorkerStateOnScreen(5, 60);
+		drawWorkerStateOnScreen(5, 180);
 
 		// 베이스캠프당 일꾼 수
 		drawWorkerCountOnMap();

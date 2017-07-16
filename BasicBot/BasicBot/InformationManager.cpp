@@ -36,12 +36,29 @@ InformationManager::InformationManager()
 
 	hasCloakedUnits = false;
 	hasFlyingUnits = false;
+
+	mapName = 'N';
 }
 
 //kyj
 const UIMap & InformationManager::getUnitInfo(BWAPI::Player player) const
 {
 	return getUnitData(player).getUnitAndUnitInfoMap();
+}
+
+void InformationManager::onStart(){
+	std::string mapFileName = BWAPI::Broodwar->mapFileName();
+	for (auto & c : mapFileName) c = std::toupper(c);
+
+	if (mapFileName.find("HUNTER") > -1){
+		mapName = 'H';
+	}
+	else if (mapFileName.find("FIGHTING") > -1){
+		mapName = 'F';
+	}
+	else{
+		mapName = 'L';
+	}
 }
 
 
@@ -738,4 +755,8 @@ void InformationManager::onUnitComplete(BWAPI::Unit unit){
 			std::cout << "onUnitComplete numExpansion:" << selfExpansions.size() << std::endl;
 		}
 	}
+}
+
+char InformationManager::getMapName(){
+	return mapName;
 }

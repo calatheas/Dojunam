@@ -8,6 +8,19 @@ BuildManager::BuildManager()
 	setBuildOrder(StrategyManager::Instance().getOpeningBookBuildOrder());
 }
 
+void BuildManager::onStart(){
+	if (InformationManager::Instance().getMapName() == 'H'){
+		maxDepotWorkers = 10; //미네랄10덩어리
+	}
+	else if (InformationManager::Instance().getMapName() == 'H'){
+		maxDepotWorkers = 9; //미네랄9덩어리
+	}
+	else{
+		maxDepotWorkers = 8; //미네랄8덩어리
+	}
+
+}
+
 // 빌드오더 큐에 있는 것에 대해 생산 / 건설 / 리서치 / 업그레이드를 실행한다
 void BuildManager::update()
 {
@@ -77,6 +90,9 @@ void BuildManager::update()
 
 		_enemyCloakedDetected = true;
 	}
+
+	//커맨드센터는 작업이 없으면 일꾼을 만든다.
+	executeWorkerTraining();
 }
 
 void BuildManager::consumeBuildQueue(){
@@ -189,7 +205,7 @@ void BuildManager::consumeBuildQueue(){
 			//자원이 충분한데 처리가 안되면 일단 블로킹을 해제해서 자원수급을 원활하게 돌림
 			if (currentItem.blocking && hasEnoughResources(currentItem.metaType)){
 				buildQueue.setCurrentItemBlocking(false);
-				std::cout << currentItem.metaType.getName() << "is changed non block item" << std::endl;
+				//std::cout << currentItem.metaType.getName() << "is changed non block item" << std::endl;
 			}
 
 			break;
@@ -265,10 +281,9 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 			빌드온 짓는 명령한지 10프레임이 안됐다면 제외, 딴 명령으로 바뀔수도 있나보다.
 			*/
 			//1. (검증필요) if (!unit->canBuildAddon()) { continue; }
-			if (unit->getLastCommand().getType() == BWAPI::UnitCommandTypes::Build_Addon
-				&& (BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame() < 10))
+			if (!verifyBuildAddonCommand(unit))
 			{
-				std::cout << "addon frame-delay" << std::endl;
+				//std::cout << "addon frame-delay" << std::endl;
 				continue;
 			}
 
@@ -884,16 +899,26 @@ void BuildManager::checkBuildOrderQueueDeadlockAndAndFixIt()
 void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 {
 	//큐를 lowest부터 돌면서 non block 빌드만 남았는지 체크 -> 모두다 non block이면 뭔가 문제들이 있었던 빌드이므로 아래 로직 체크해서 하나씩 지운다.
-	for (int i = 0; i <buildQueue.size() - 1; i++){
+	for (int i = 0; i <buildQueue.size(); i++){
 		if (buildQueue[i].blocking) return;
 	}
 
+	/*
+	std::cout << "every build is non block" << std::endl;
+	for (int i = 0; i <buildQueue.size() - 1; i++){
+		std::cout << buildQueue[i].metaType.getName() << " ";
+	}
+	std::cout << std::endl;
+	*/
+
 	for (int i = buildQueue.size()-1; i >=0 ; i--){
-		bool isDeadlockCase = true;
+		bool isDeadlockCase = false;
 		BuildOrderItem &currentItem = buildQueue[i];
 
 		// producerType을 먼저 알아낸다
 		BWAPI::UnitType producerType = currentItem.metaType.whatBuilds();
+
+		//std::cout << "target:" << currentItem.metaType.getName() << "/producer:" << producerType;
 
 		// 건물이나 유닛의 경우
 		if (currentItem.metaType.isUnit())
@@ -905,6 +930,7 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 			if (!isProducerWillExist(producerType)) {
 				isDeadlockCase = true;
 			}
+
 
 			// Refinery 건물의 경우, Refinery 가 건설되지 않은 Geyser가 있는 경우에만 가능
 			// TODO TODO TODO TODO
@@ -920,6 +946,9 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 					}
 				}
 			}
+
+			// 애드온을 지어야 되는데 전부 애드온이 차있는 경우
+			// TODO TODO TODO TODO
 		}
 
 
@@ -963,10 +992,11 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 		}
 
 		if (isDeadlockCase) {
-			std::cout << std::endl << "Build Order Dead lock case -> remove BuildOrderItem " << currentItem.metaType.getName() << std::endl;
+			std::cout << std::endl << "Build Order Dead lock case -> remove " << currentItem.metaType.getName() << std::endl;
 
 			buildQueue.removeByIndex(i);
 		}
+
 	}
 }
 
@@ -1044,4 +1074,45 @@ bool BuildManager::detectSupplyDeadlock()
 	}
 
 	return false;
+}
+
+//아주 예외적임
+//매프레임 빈 커맨드센터 1개씩 돌면서 일꾼생산
+//단, BOSS매니저 계산중에는 동작하지 않음
+//단, 초기빌드 수행시는 동작하지 않음
+//멀티 공격받고 있으면 동작하지 않음
+//해당 멀티 수급할 정도만 생산 
+void BuildManager::executeWorkerTraining(){
+	if (!StrategyManager::Instance().isInitialBuildOrderFinished){
+		return;
+	}
+
+	if (BOSSManager::Instance().isSearchInProgress()){
+		return;
+	}
+	
+	//InformationManager::Instance().selfExpansions 사용안함
+	//WorkerManager::Instance().getWorkerData().getDepots() 사용 %%%% 두개가 비슷한것으로 판단되나.. 각자 연관된 모듈이 다르므로 합치지 않고 간다.
+	for (BWAPI::Unit u : WorkerManager::Instance().getWorkerData().getDepots()){
+		if (!u->isIdle()) continue;
+		if (u->isUnderAttack()) continue;
+		if (!verifyBuildAddonCommand(u)) continue;
+		
+		int tmpWorkerCnt = WorkerManager::Instance().getWorkerData().getDepotWorkerCount(u);
+		if (tmpWorkerCnt > -1 && tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(u)*1.5) ){
+			u->train(BWAPI::UnitTypes::Terran_SCV);
+			return;
+		}
+	}
+}
+bool BuildManager::verifyBuildAddonCommand(BWAPI::Unit u){
+	//브루드워를 통과하는데 시간이 좀 걸림, 이 체크 안하고 isidle 같은걸로 확인이 안되서 명령이 덮어써짐
+	if (u->getLastCommand().getType() == BWAPI::UnitCommandTypes::Build_Addon
+		&& (BWAPI::Broodwar->getFrameCount() - u->getLastCommandFrame() < 10))
+	{
+		return false;
+	}
+	else{
+		return true;
+	}
 }

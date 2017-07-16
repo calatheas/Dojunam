@@ -33,13 +33,9 @@ namespace MyBot
 	{
 		StrategyManager();
 
-		bool isInitialBuildOrderFinished;
-
 		void executeWorkerTraining();
 		void executeSupplyManagement();
 		void executeBasicCombatUnitTraining();
-
-		bool isFullScaleAttackStarted;
 
 		std::map<std::string, Strategy> _strategies;
 		BuildOrder _openingBuildOrder;
@@ -53,6 +49,9 @@ namespace MyBot
 		std::map<std::string, std::vector<int>> unit_ratio_table;
 
 	public:
+		bool isInitialBuildOrderFinished;
+		bool isFullScaleAttackStarted;
+
 		/// static singleton 객체를 리턴합니다
 		static StrategyManager &	Instance();
 

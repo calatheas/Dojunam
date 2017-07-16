@@ -96,6 +96,9 @@ void StrategyManager::onEnd(bool isWinner)
 
 void StrategyManager::update()
 {
+	//1. 초기 빌드는 onstart에서 세팅
+	//2. todo) update에서 초기빌드 깨졌는지 확인
+	//3. 초기빌드가 깨지거나 초기빌드를 다 사용하면 isInitialBuildOrderFinished 세팅하여 다이나믹 빌드오더 체제로 전환
 	if (BuildManager::Instance().buildQueue.isEmpty()) {
 		isInitialBuildOrderFinished = true;
 	}
@@ -170,101 +173,11 @@ void StrategyManager::executeWorkerTraining()
 	}
 }
 
-// Supply DeadLock 예방 및 SupplyProvider 가 부족해질 상황 에 대한 선제적 대응으로서 SupplyProvider를 추가 건설/생산한다
-void StrategyManager::executeSupplyManagement()
-{
-	// InitialBuildOrder 진행중에는 아무것도 하지 않습니다
-	if (isInitialBuildOrderFinished == false) {
-		return;
-	}
-
-	// 1초에 한번만 실행
-	if (BWAPI::Broodwar->getFrameCount() % 24 != 0) {
-		return;
-	}
-
-	// 게임에서는 서플라이 값이 200까지 있지만, BWAPI 에서는 서플라이 값이 400까지 있다
-	// 저글링 1마리가 게임에서는 서플라이를 0.5 차지하지만, BWAPI 에서는 서플라이를 1 차지한다
-	if (BWAPI::Broodwar->self()->supplyTotal() <= 400)
-	{
-		// 서플라이가 다 꽉찼을때 새 서플라이를 지으면 지연이 많이 일어나므로, supplyMargin (게임에서의 서플라이 마진 값의 2배)만큼 부족해지면 새 서플라이를 짓도록 한다
-		// 이렇게 값을 정해놓으면, 게임 초반부에는 서플라이를 너무 일찍 짓고, 게임 후반부에는 서플라이를 너무 늦게 짓게 된다
-		int supplyMargin = 12;
-
-		// currentSupplyShortage 를 계산한다
-		int currentSupplyShortage = BWAPI::Broodwar->self()->supplyUsed() + supplyMargin - BWAPI::Broodwar->self()->supplyTotal();
-
-		if (currentSupplyShortage > 0) {
-
-			// 생산/건설 중인 Supply를 센다
-			int onBuildingSupplyCount = 0;
-
-			// 저그 종족인 경우, 생산중인 Zerg_Overlord (Zerg_Egg) 를 센다. Hatchery 등 건물은 세지 않는다
-			if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Zerg) {
-				for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-				{
-					if (unit->getType() == BWAPI::UnitTypes::Zerg_Egg && unit->getBuildType() == BWAPI::UnitTypes::Zerg_Overlord) {
-						onBuildingSupplyCount += BWAPI::UnitTypes::Zerg_Overlord.supplyProvided();
-					}
-					// 갓태어난 Overlord 는 아직 SupplyTotal 에 반영안되어서, 추가 카운트를 해줘야함 
-					if (unit->getType() == BWAPI::UnitTypes::Zerg_Overlord && unit->isConstructing()) {
-						onBuildingSupplyCount += BWAPI::UnitTypes::Zerg_Overlord.supplyProvided();
-					}
-				}
-			}
-			// 저그 종족이 아닌 경우, 건설중인 Protoss_Pylon, Terran_Supply_Depot 를 센다. Nexus, Command Center 등 건물은 세지 않는다
-			else {
-				onBuildingSupplyCount += ConstructionManager::Instance().getConstructionQueueItemCount(InformationManager::Instance().getBasicSupplyProviderUnitType()) * InformationManager::Instance().getBasicSupplyProviderUnitType().supplyProvided();
-			}
-
-			std::cout << "currentSupplyShortage : " << currentSupplyShortage << " onBuildingSupplyCount : " << onBuildingSupplyCount << std::endl;
-
-			if (currentSupplyShortage > onBuildingSupplyCount) {
-
-				// BuildQueue 최상단에 SupplyProvider 가 있지 않으면 enqueue 한다
-				bool isToEnqueue = true;
-				if (!BuildManager::Instance().buildQueue.isEmpty()) {
-					BuildOrderItem currentItem = BuildManager::Instance().buildQueue.getHighestPriorityItem();
-					if (currentItem.metaType.isUnit() && currentItem.metaType.getUnitType() == InformationManager::Instance().getBasicSupplyProviderUnitType()) {
-						isToEnqueue = false;
-					}
-				}
-				if (isToEnqueue) {
-					std::cout << "enqueue supply provider " << InformationManager::Instance().getBasicSupplyProviderUnitType().getName().c_str() << std::endl;
-					BuildManager::Instance().buildQueue.queueAsHighestPriority(MetaType(InformationManager::Instance().getBasicSupplyProviderUnitType()), true);
-				}
-			}
-
-		}
-	}
-}
-
-void StrategyManager::executeBasicCombatUnitTraining()
-{
-	// InitialBuildOrder 진행중에는 아무것도 하지 않습니다
-	if (isInitialBuildOrderFinished == false) {
-		return;
-	}
-
-	// 기본 병력 추가 훈련
-	if (BWAPI::Broodwar->self()->minerals() >= 200 && BWAPI::Broodwar->self()->supplyUsed() < 390) {
-		{
-			for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-			{
-				if (unit->getType() == InformationManager::Instance().getBasicCombatBuildingType()) {
-					if (unit->isTraining() == false || unit->getLarva().size() > 0) {
-						if (BuildManager::Instance().buildQueue.getItemCount(InformationManager::Instance().getBasicCombatUnitType()) == 0) {
-							BuildManager::Instance().buildQueue.queueAsLowestPriority(InformationManager::Instance().getBasicCombatUnitType());
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 const MetaPairVector StrategyManager::getBuildOrderGoal()
 {
+	//초기빌드 이후에만 작업가능
+	if (!isInitialBuildOrderFinished) false;
+
 	BWAPI::Race myRace = BWAPI::Broodwar->self()->getRace();
 
 	if (myRace == BWAPI::Races::Protoss)

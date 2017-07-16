@@ -589,15 +589,17 @@ bool MapTools::isStartLocation(BWAPI::TilePosition &tp){
 }
 
 BWAPI::TilePosition MapTools::_selectNextExpansion(std::vector<BWAPI::TilePosition> &positions){
+	/*
 	std::cout << "start pt:" << BWTA::getStartLocation(InformationManager::Instance().selfPlayer)->getTilePosition() << std::endl;
 	if (InformationManager::Instance().getFirstExpansionLocation(InformationManager::Instance().selfPlayer) != nullptr)
 		std::cout << "first multi:" << InformationManager::Instance().getFirstExpansionLocation(InformationManager::Instance().selfPlayer)->getTilePosition() << std::endl;
-		
+
 	std::cout << "multi point candiates:";
 	for (auto &tmp : positions){
 		std::cout << "(" << tmp.x << "," << tmp.y << "," << isStartLocation(tmp) << ") / ";
 	}
 	std::cout << std::endl;
+	*/
 
 	if (!positions.empty()){
 		BWAPI::TilePosition rst(-1, -1);

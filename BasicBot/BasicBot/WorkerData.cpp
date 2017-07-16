@@ -566,3 +566,13 @@ void WorkerData::printWorkerJob()
 		std::cout << "worker " << it.first->getID() << " job " << it.second << std::endl;
 	}
 }
+
+int WorkerData::getDepotWorkerCount(BWAPI::Unit &u){
+	if (u->getType().isResourceDepot()){
+		return depotWorkerCount[u];
+	}
+	else{
+		return -1;
+	}
+
+}
