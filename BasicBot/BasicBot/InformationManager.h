@@ -49,7 +49,7 @@ namespace MyBot
 		void                    updateBaseLocationInfo();
 		void					updateChokePointAndExpansionLocation();
 		void                    updateOccupiedRegions(BWTA::Region * region, BWAPI::Player player);
-
+		char mapName;
 
 	public:
 
@@ -58,13 +58,15 @@ namespace MyBot
 
 		/// static singleton 객체를 리턴합니다
 		static InformationManager & Instance();
+		void onStart();
 			
 		BWAPI::Player       selfPlayer;		///< 아군 Player		
 		BWAPI::Race			selfRace;		///< 아군 Player의 종족		
 		BWAPI::Player       enemyPlayer;	///< 적군 Player		
 		BWAPI::Race			enemyRace;		///< 적군 Player의 종족  
 
-		int numExpansion;
+		BWAPI::Unitset selfExpansions; //아군 멀티들
+
 		bool hasCloakedUnits;
 		bool hasFlyingUnits;
 		
@@ -78,7 +80,7 @@ namespace MyBot
 		/// Unit 에 대한 정보를 업데이트합니다
 		void					onUnitCreate(BWAPI::Unit unit)		{ updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다
-		void					onUnitComplete(BWAPI::Unit unit)    { updateUnitInfo(unit); }
+		void					onUnitComplete(BWAPI::Unit unit);
 		/// Unit 에 대한 정보를 업데이트합니다
 		void					onUnitMorph(BWAPI::Unit unit)       { updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다
@@ -168,5 +170,7 @@ namespace MyBot
 
 		void                    enemyHasCloakedUnits(BWAPI::Unit u);
 		void                    enemyHasFlyingUnits(BWAPI::Unit u);
+
+		char getMapName();
 	};
 }

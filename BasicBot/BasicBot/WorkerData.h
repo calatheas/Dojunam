@@ -109,6 +109,6 @@ namespace MyBot
 
 		BWAPI::Unitset          getMineralPatchesNearDepot(BWAPI::Unit depot);
 		void                    addToMineralPatch(BWAPI::Unit unit, int num);
-
+		int getDepotWorkerCount(BWAPI::Unit &u);
 	};
 }

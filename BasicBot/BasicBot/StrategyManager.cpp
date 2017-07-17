@@ -17,76 +17,38 @@ StrategyManager::StrategyManager()
 
 void StrategyManager::onStart()
 {
-	setOpeningBookBuildOrder();
+	if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran){
+		setOpeningBookBuildOrder();
+	}
 }
 
 void StrategyManager::setOpeningBookBuildOrder(){
-	std::string str_build_order;
-	if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran){
-		//_main_strategy = "Terran_MarineRush";
-		//_main_strategy = "Terran_Mechanic";
-		_main_strategy = "Terran_Bionic";
-		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV SCV Academy SCV SCV Marine Supply_Depot Marine Marine Marine Marine Marine Marine Marine Stim_Packs Medic Medic Firebat Firebat";
-		str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
-		//str_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks Refinery SCV SCV SCV SCV Factory Factory SCV SCV SCV SCV Supply_Depot Siege_Tank_Siege_Mode Tank_Siege_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode Siege_Tank_Tank_Mode";
+	//전체 전략 세팅
+	initStrategies();
+
+	//초기 전략 선택
+	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran){
+		_main_strategy = Strategy::main_strategies::Bionic;
 	}
-	else if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss){
-		_main_strategy = "Protoss_ZealotRush";
-		str_build_order = "Probe Probe Probe Probe Pylon Probe Gateway Gateway Probe Probe Zealot Pylon Zealot Zealot";
+	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Zerg){
+		_main_strategy = Strategy::main_strategies::Bionic;
+	}
+	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
+		_main_strategy = Strategy::main_strategies::Bionic;
 	}
 	else{
-		_main_strategy = "Zerg_ZerglingRush";
-		str_build_order = "Drone Spawning_Pool Zergling Zergling Zergling Zergling";
+		_main_strategy = Strategy::main_strategies::Bionic;
 	}
 
-	std::istringstream iss(str_build_order);
-
+	//초기 빌드 큐에 세팅
+	std::istringstream iss(_strategies[_main_strategy].opening_build_order);
 	std::vector<std::string> vec_build_order{ std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{} };
-
 	for (auto &i : vec_build_order){
 		_openingBuildOrder.add(MetaType(i));
 	}
 
-	//@도주남 김유진 전략별 유닛최대치 세팅
-	_strategies["Terran_Bionic"] = Strategy();
-	_strategies["Terran_Bionic"].pre_strategy_name = "None";
-	_strategies["Terran_Bionic"].next_strategy_name = "Terran_Bionic_Tank";
-	_strategies["Terran_Bionic"].num_unit_limit["Marines"] = 12; //마린18이상이면 테크진화
-	//_strategies["Terran_Bionic"].num_unit_limit["Barracks"] = 4; //배럭4개 이상
-	_strategies["Terran_Bionic"].num_unit_limit["Medics"] = -1; //-1은 테크진화에 영향없음
-	_strategies["Terran_Bionic"].num_unit_limit["Firebats"] = -1;
-
-	_strategies["Terran_Bionic_Tank"] = Strategy();
-	_strategies["Terran_Bionic_Tank"].pre_strategy_name = "None";
-	_strategies["Terran_Bionic_Tank"].next_strategy_name = "Terran_Mechanic";
-	_strategies["Terran_Bionic_Tank"].num_unit_limit["Tanks"] = 5;
-
-	_strategies["Terran_Mechanic"] = Strategy();
-	_strategies["Terran_Mechanic"].pre_strategy_name = "None";
-	_strategies["Terran_Mechanic"].next_strategy_name = "None";
-	_strategies["Terran_Mechanic"].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
-
-	_strategies["Terran_Mechanic_Goliath"] = Strategy();
-	_strategies["Terran_Mechanic_Goliath"].pre_strategy_name = "None";
-	_strategies["Terran_Mechanic_Goliath"].next_strategy_name = "None";
-	_strategies["Terran_Mechanic_Goliath"].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
-
-	//_strategies["Terran_Mechanic_Vessel"] = Strategy();
-	//_strategies["Terran_Mechanic_Vessel"].pre_strategy_name = "None";
-	//_strategies["Terran_Mechanic_Vessel"].next_strategy_name = "None";
-
-	//@도주남 김유진 유닛비율 테이블
-	std::cout << "Medic ratio" << std::endl;
-	unit_ratio_table["Medics"].push_back(0);
-	unit_ratio_table["Medics"].push_back(0); //index 1 부터 시작
-	for (int i = 1; i < 201; i++){
-		if (i%10 == 0)
-			std::cout << unit_ratio_table["Medics"][i - 1] << " ";
-
-		unit_ratio_table["Medics"].push_back(int(log(i) / log(1.5)));
-	}
-	std::cout << std::endl;
-	
+	//@도주남 김유진 유닛비율 테이블 - 마린대메딕 비율
+	initUnitRatioTable();
 }
 
 void StrategyManager::onEnd(bool isWinner)
@@ -95,6 +57,9 @@ void StrategyManager::onEnd(bool isWinner)
 
 void StrategyManager::update()
 {
+	//1. 초기 빌드는 onstart에서 세팅
+	//2. todo) update에서 초기빌드 깨졌는지 확인
+	//3. 초기빌드가 깨지거나 초기빌드를 다 사용하면 isInitialBuildOrderFinished 세팅하여 다이나믹 빌드오더 체제로 전환
 	if (BuildManager::Instance().buildQueue.isEmpty()) {
 		isInitialBuildOrderFinished = true;
 	}
@@ -169,125 +134,33 @@ void StrategyManager::executeWorkerTraining()
 	}
 }
 
-// Supply DeadLock 예방 및 SupplyProvider 가 부족해질 상황 에 대한 선제적 대응으로서 SupplyProvider를 추가 건설/생산한다
-void StrategyManager::executeSupplyManagement()
-{
-	// InitialBuildOrder 진행중에는 아무것도 하지 않습니다
-	if (isInitialBuildOrderFinished == false) {
-		return;
-	}
-
-	// 1초에 한번만 실행
-	if (BWAPI::Broodwar->getFrameCount() % 24 != 0) {
-		return;
-	}
-
-	// 게임에서는 서플라이 값이 200까지 있지만, BWAPI 에서는 서플라이 값이 400까지 있다
-	// 저글링 1마리가 게임에서는 서플라이를 0.5 차지하지만, BWAPI 에서는 서플라이를 1 차지한다
-	if (BWAPI::Broodwar->self()->supplyTotal() <= 400)
-	{
-		// 서플라이가 다 꽉찼을때 새 서플라이를 지으면 지연이 많이 일어나므로, supplyMargin (게임에서의 서플라이 마진 값의 2배)만큼 부족해지면 새 서플라이를 짓도록 한다
-		// 이렇게 값을 정해놓으면, 게임 초반부에는 서플라이를 너무 일찍 짓고, 게임 후반부에는 서플라이를 너무 늦게 짓게 된다
-		int supplyMargin = 12;
-
-		// currentSupplyShortage 를 계산한다
-		int currentSupplyShortage = BWAPI::Broodwar->self()->supplyUsed() + supplyMargin - BWAPI::Broodwar->self()->supplyTotal();
-
-		if (currentSupplyShortage > 0) {
-
-			// 생산/건설 중인 Supply를 센다
-			int onBuildingSupplyCount = 0;
-
-			// 저그 종족인 경우, 생산중인 Zerg_Overlord (Zerg_Egg) 를 센다. Hatchery 등 건물은 세지 않는다
-			if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Zerg) {
-				for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-				{
-					if (unit->getType() == BWAPI::UnitTypes::Zerg_Egg && unit->getBuildType() == BWAPI::UnitTypes::Zerg_Overlord) {
-						onBuildingSupplyCount += BWAPI::UnitTypes::Zerg_Overlord.supplyProvided();
-					}
-					// 갓태어난 Overlord 는 아직 SupplyTotal 에 반영안되어서, 추가 카운트를 해줘야함 
-					if (unit->getType() == BWAPI::UnitTypes::Zerg_Overlord && unit->isConstructing()) {
-						onBuildingSupplyCount += BWAPI::UnitTypes::Zerg_Overlord.supplyProvided();
-					}
-				}
-			}
-			// 저그 종족이 아닌 경우, 건설중인 Protoss_Pylon, Terran_Supply_Depot 를 센다. Nexus, Command Center 등 건물은 세지 않는다
-			else {
-				onBuildingSupplyCount += ConstructionManager::Instance().getConstructionQueueItemCount(InformationManager::Instance().getBasicSupplyProviderUnitType()) * InformationManager::Instance().getBasicSupplyProviderUnitType().supplyProvided();
-			}
-
-			std::cout << "currentSupplyShortage : " << currentSupplyShortage << " onBuildingSupplyCount : " << onBuildingSupplyCount << std::endl;
-
-			if (currentSupplyShortage > onBuildingSupplyCount) {
-
-				// BuildQueue 최상단에 SupplyProvider 가 있지 않으면 enqueue 한다
-				bool isToEnqueue = true;
-				if (!BuildManager::Instance().buildQueue.isEmpty()) {
-					BuildOrderItem currentItem = BuildManager::Instance().buildQueue.getHighestPriorityItem();
-					if (currentItem.metaType.isUnit() && currentItem.metaType.getUnitType() == InformationManager::Instance().getBasicSupplyProviderUnitType()) {
-						isToEnqueue = false;
-					}
-				}
-				if (isToEnqueue) {
-					std::cout << "enqueue supply provider " << InformationManager::Instance().getBasicSupplyProviderUnitType().getName().c_str() << std::endl;
-					BuildManager::Instance().buildQueue.queueAsHighestPriority(MetaType(InformationManager::Instance().getBasicSupplyProviderUnitType()), true);
-				}
-			}
-
-		}
-	}
-}
-
-void StrategyManager::executeBasicCombatUnitTraining()
-{
-	// InitialBuildOrder 진행중에는 아무것도 하지 않습니다
-	if (isInitialBuildOrderFinished == false) {
-		return;
-	}
-
-	// 기본 병력 추가 훈련
-	if (BWAPI::Broodwar->self()->minerals() >= 200 && BWAPI::Broodwar->self()->supplyUsed() < 390) {
-		{
-			for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-			{
-				if (unit->getType() == InformationManager::Instance().getBasicCombatBuildingType()) {
-					if (unit->isTraining() == false || unit->getLarva().size() > 0) {
-						if (BuildManager::Instance().buildQueue.getItemCount(InformationManager::Instance().getBasicCombatUnitType()) == 0) {
-							BuildManager::Instance().buildQueue.queueAsLowestPriority(InformationManager::Instance().getBasicCombatUnitType());
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 const MetaPairVector StrategyManager::getBuildOrderGoal()
 {
+	//초기빌드 이후에만 작업가능
+	if (!isInitialBuildOrderFinished) false;
+
 	BWAPI::Race myRace = BWAPI::Broodwar->self()->getRace();
 
 	if (myRace == BWAPI::Races::Protoss)
 	{
-		return getProtossBuildOrderGoal();
+		return MetaPairVector();
 	}
 	else if (myRace == BWAPI::Races::Terran)
 	{
 		return getTerranBuildOrderGoal();
 	}
-	else if (myRace == BWAPI::Races::Zerg)
+	else
 	{
-		return getZergBuildOrderGoal();
+		return MetaPairVector();
 	}
-
-	return MetaPairVector();
 }
 
 
 bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 	//@도주남 김유진 다음 빌드오더로 변환체크
-	std::cout << "main stragety:" << _main_strategy << " next_strategy:" << _strategies[_main_strategy].next_strategy_name << std::endl;
+	std::cout << "main stragety:" << _main_strategy << " next_strategy:" << _strategies[_main_strategy].next_strategy << std::endl;
 	std::cout << " num_marines:" << numUnits["Marines"] << " limit_marines:" << _strategies[_main_strategy].num_unit_limit["Marines"] << std::endl;
-	if (_strategies[_main_strategy].next_strategy_name != "None"){
+	if (_strategies[_main_strategy].next_strategy != Strategy::main_strategies::None){
 		bool _changeStrategy = true;
 		for (auto &i : _strategies[_main_strategy].num_unit_limit){
 			if (numUnits[i.first] < i.second){
@@ -297,12 +170,12 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 		}
 
 		if (_changeStrategy){
-			_main_strategy = _strategies[_main_strategy].next_strategy_name;
+			_main_strategy = _strategies[_main_strategy].next_strategy;
 		}
 	}
 
 	//@도주남 김유진 이전 빌드오더로 변환체크
-	if (_strategies[_main_strategy].pre_strategy_name != "None"){
+	if (_strategies[_main_strategy].pre_strategy != Strategy::main_strategies::None){
 		bool _changeStrategy = true;
 		for (auto &i : _strategies[_main_strategy].num_unit_limit){
 			if (i.second != -1 && numUnits[i.first] > i.second){
@@ -312,13 +185,13 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 		}
 
 		if (_changeStrategy){
-			_main_strategy = _strategies[_main_strategy].pre_strategy_name;
+			_main_strategy = _strategies[_main_strategy].pre_strategy;
 		}
 	}
 
-	if (_main_strategy == "Terran_Mechanic"){
+	if (_main_strategy == Strategy::main_strategies::Mechanic){
 		if (InformationManager::Instance().hasFlyingUnits){
-			_main_strategy = "Terran_Mechanic_Goliath";
+			_main_strategy = Strategy::main_strategies::Mechanic_Goliath;
 			return true;
 		}
 	}
@@ -335,94 +208,6 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 	
 
 	return false;
-}
-
-const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
-{
-	// the goal to return
-	MetaPairVector goal;
-
-	int numZealots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Zealot);
-	int numPylons = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Pylon);
-	int numDragoons = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dragoon);
-	int numProbes = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Probe);
-	int numNexusCompleted = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
-	int numNexusAll = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
-	int numCyber = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
-	int numCannon = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon);
-	int numScout = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Corsair);
-	int numReaver = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Reaver);
-	int numDarkTeplar = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar);
-
-	if (_main_strategy == "Protoss_ZealotRush")
-	{
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 8));
-
-		// once we have a 2nd nexus start making dragoons
-		if (numNexusAll >= 2)
-		{
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons + 4));
-		}
-	}
-	else if (_main_strategy == "Protoss_DragoonRush")
-	{
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons + 6));
-	}
-	else if (_main_strategy == "Protoss_Drop")
-	{
-		if (numZealots == 0)
-		{
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 4));
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Shuttle, 1));
-		}
-		else
-		{
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 8));
-		}
-	}
-	else if (_main_strategy == "Protoss_DTRush")
-	{
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dark_Templar, numDarkTeplar + 2));
-
-		// if we have a 2nd nexus then get some goons out
-		if (numNexusAll >= 2)
-		{
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons + 4));
-		}
-	}
-	else
-	{
-		//UAB_ASSERT_WARNING(false, "Unknown Protoss Strategy Name: %s", Config::Strategy::StrategyName.c_str());
-	}
-
-	// if we have 3 nexus, make an observer
-	if (numNexusCompleted >= 3)
-	{
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Observer, 1));
-	}
-
-	// add observer to the goal if the enemy has cloaked units
-	if (InformationManager::Instance().hasCloakedUnits)
-	{
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1));
-
-		if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Robotics_Facility) > 0)
-		{
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Observatory, 1));
-		}
-		if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Observatory) > 0)
-		{
-			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Observer, 1));
-		}
-	}
-
-	// if we want to expand, insert a nexus into the build order
-	if (shouldExpandNow())
-	{
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Nexus, numNexusAll + 1));
-	}
-
-	return goal;
 }
 
 const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
@@ -447,16 +232,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	
 	std::cout << "changeMainStrategy : " << changeMainStrategy(numUnits) << " main strategy : " << _main_strategy << std::endl;
 
-	if (_main_strategy == "Terran_MarineRush")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["Marines"] + 8));
-
-		if (numUnits["Marines"] > 5 && numUnits["Bay"] == 0)
-		{
-			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Engineering_Bay, 1));
-		}
-	}
-	else if (_main_strategy == "Terran_Bionic")
+	if (_main_strategy == Strategy::main_strategies::Bionic)
 	{
 		int goal_num_marines = numUnits["Marines"] + 4;
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, goal_num_marines));
@@ -470,7 +246,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Stim_Packs, 1));
 	}
-	else if (_main_strategy == "Terran_Bionic_Tank")
+	else if (_main_strategy == Strategy::main_strategies::Bionic_Tank)
 	{
 		int goal_num_marines = numUnits["Marines"]+numUnits["Barracks"];
 		int goal_num_tanks = numUnits["Tanks"] + 2;
@@ -482,7 +258,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 	}
 
-	else if (_main_strategy == "Terran_Mechanic")
+	else if (_main_strategy == Strategy::main_strategies::Mechanic)
 	{
 		int goal_num_tanks = numUnits["Tanks"] + numUnits["Factorys"];
 		//int goal_num_vultures = (goal_num_tanks - numUnits["Vultures"]) > numUnits["Factorys"] * 2 ? numUnits["Vultures"]+numUnits["Factorys"] : goal_num_tanks;
@@ -497,7 +273,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Ion_Thrusters, 1));
 	}
 
-	else if (_main_strategy == "Terran_Mechanic_Goliath")
+	else if (_main_strategy == Strategy::main_strategies::Mechanic_Goliath)
 	{
 		int goal_num_tanks = numUnits["Tanks"] + 2;
 		int goal_num_vultures = numUnits["Vultures"] + 2;
@@ -511,27 +287,6 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Spider_Mines, 1));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Ion_Thrusters, 1));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Charon_Boosters, 1));
-	}
-
-	else if (_main_strategy == "Terran_4RaxMarines")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numUnits["Marines"] + 8));
-	}
-	else if (_main_strategy == "Terran_VultureRush")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, numUnits["Vultures"] + 8));
-
-		if (numUnits["Vultures"] > 8)
-		{
-			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
-			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, 4));
-		}
-	}
-	else if (_main_strategy == "Terran_TankPush")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, 6));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Goliath, numUnits["Goliath"] + 6));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 	}
 	else
 	{
@@ -547,67 +302,14 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	return goal;
 }
 
-const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
-{
-	// the goal to return
-	std::vector<MetaPair> goal;
-
-	int numWorkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone);
-	int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
-	int numMutas = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Mutalisk);
-	int numDrones = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone);
-	int zerglings = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Zergling);
-	int numHydras = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk);
-	int numScourge = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Scourge);
-	int numGuardians = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Guardian);
-
-	int mutasWanted = numMutas + 6;
-	int hydrasWanted = numHydras + 6;
-
-	if (_main_strategy == "Zerg_ZerglingRush")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Zergling, zerglings + 6));
-	}
-	else if (_main_strategy == "Zerg_2HatchHydra")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 8));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Grooved_Spines, 1));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 4));
-	}
-	else if (_main_strategy == "Zerg_3HatchMuta")
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 12));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 4));
-	}
-	else if (_main_strategy == "Zerg_3HatchScourge")
-	{
-		if (numScourge > 40)
-		{
-			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 12));
-		}
-		else
-		{
-			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Scourge, numScourge + 12));
-		}
-
-
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 4));
-	}
-
-	if (shouldExpandNow())
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numWorkers + 10));
-	}
-
-	return goal;
-}
-
 const bool StrategyManager::shouldExpandNow() const
 {
-
+	//@도주남 김유진 현재 커맨드센터 지어지고 있으면 그 때동안은 멀티 추가 안함
+	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+		if (u->getType() == BWAPI::UnitTypes::Terran_Command_Center && !u->isCompleted()){
+			return false;
+		}
+	}
 	// if there is no place to expand to, we can't expand
 	if (MapTools::Instance().getNextExpansion() == BWAPI::TilePositions::None)
 	{
@@ -647,4 +349,73 @@ const bool StrategyManager::shouldExpandNow() const
 	}
 
 	return false;
+}
+
+//각 건물에 대한 설치전략
+BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrategy(MetaType type){
+	//서플라이 5개까지만 본진커맨드 주변, 이후 본진 외곽
+	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
+		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 5){
+			std::cout << "build supply depot on MainBaseBackYard" << std::endl;
+			return BuildOrderItem::SeedPositionStrategy::MainBaseBackYard;
+		}
+	}
+
+	return BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
+}
+
+int StrategyManager::getUnitLimit(MetaType type){
+	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Barracks){
+		return 4;
+	}
+
+	return -1;
+}
+
+void StrategyManager::initStrategies(){
+	/*
+	@도주남 김유진 전략구조체 세팅
+	1. 전략이름정의 : enum
+	2. 이전/다음 전략 세팅
+	3. 초기빌드 세팅
+	4. 이전/다음 전략 넘어가는 조건 세팅
+	*/
+	_strategies[Strategy::main_strategies::Bionic] = Strategy();
+	_strategies[Strategy::main_strategies::Bionic].pre_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Bionic].next_strategy = Strategy::main_strategies::Bionic_Tank;
+	_strategies[Strategy::main_strategies::Bionic].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
+	_strategies[Strategy::main_strategies::Bionic].num_unit_limit["Marines"] = 12; //마린18이상이면 테크진화
+	_strategies[Strategy::main_strategies::Bionic].num_unit_limit["Medics"] = -1; //-1은 테크진화에 영향없음
+	_strategies[Strategy::main_strategies::Bionic].num_unit_limit["Firebats"] = -1;
+
+	_strategies[Strategy::main_strategies::Bionic_Tank] = Strategy();
+	_strategies[Strategy::main_strategies::Bionic_Tank].pre_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Bionic_Tank].next_strategy = Strategy::main_strategies::Mechanic;
+	_strategies[Strategy::main_strategies::Bionic_Tank].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
+	_strategies[Strategy::main_strategies::Bionic_Tank].num_unit_limit["Tanks"] = 5;
+
+	_strategies[Strategy::main_strategies::Mechanic] = Strategy();
+	_strategies[Strategy::main_strategies::Mechanic].pre_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Mechanic].next_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Mechanic].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
+	_strategies[Strategy::main_strategies::Mechanic].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
+
+	_strategies[Strategy::main_strategies::Mechanic_Goliath] = Strategy();
+	_strategies[Strategy::main_strategies::Mechanic_Goliath].pre_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Mechanic_Goliath].next_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Mechanic_Goliath].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
+	_strategies[Strategy::main_strategies::Mechanic_Goliath].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
+}
+void StrategyManager::initUnitRatioTable(){
+	//@도주남 김유진 유닛비율 테이블
+	std::cout << "Medic ratio" << std::endl;
+	unit_ratio_table["Medics"].push_back(0);
+	unit_ratio_table["Medics"].push_back(0); //index 1 부터 시작
+	for (int i = 1; i < 201; i++){
+		if (i % 10 == 0)
+			std::cout << unit_ratio_table["Medics"][i - 1] << " ";
+
+		unit_ratio_table["Medics"].push_back(int(log(i) / log(1.5)));
+	}
+	std::cout << std::endl;
 }

@@ -34,15 +34,31 @@ InformationManager::InformationManager()
 
 	updateChokePointAndExpansionLocation();
 
-	numExpansion = 1;
 	hasCloakedUnits = false;
 	hasFlyingUnits = false;
+
+	mapName = 'N';
 }
 
 //kyj
 const UIMap & InformationManager::getUnitInfo(BWAPI::Player player) const
 {
 	return getUnitData(player).getUnitAndUnitInfoMap();
+}
+
+void InformationManager::onStart(){
+	std::string mapFileName = BWAPI::Broodwar->mapFileName();
+	for (auto & c : mapFileName) c = std::toupper(c);
+
+	if (mapFileName.find("HUNTER") > -1){
+		mapName = 'H';
+	}
+	else if (mapFileName.find("FIGHTING") > -1){
+		mapName = 'F';
+	}
+	else{
+		mapName = 'L';
+	}
 }
 
 
@@ -102,6 +118,15 @@ void InformationManager::onUnitDestroy(BWAPI::Unit unit)
     }
 
     _unitData[unit->getPlayer()].removeUnit(unit);
+
+	if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+		auto & it = selfExpansions.find(unit);
+		if (it != selfExpansions.end())
+		{
+			selfExpansions.erase(it);
+		}
+		std::cout << "onUnitDestroy numExpansion:" << selfExpansions.size() << std::endl;
+	}
 }
 
 bool InformationManager::isCombatUnitType(BWAPI::UnitType type) const
@@ -713,4 +738,25 @@ void InformationManager::enemyHasFlyingUnits(BWAPI::Unit u){
 		hasFlyingUnits = true;
 		return;
 	}
+}
+
+void InformationManager::onUnitComplete(BWAPI::Unit unit){
+	if (unit->getPlayer() == selfPlayer){
+		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+			//numExpansion는 본진 포함개수
+			for (auto &unit_in_region : unit->getUnitsInRadius(400)){
+				if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field ||
+					unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_2 ||
+					unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field_Type_3){
+					selfExpansions.insert(unit);
+					break;
+				}
+			}
+			std::cout << "onUnitComplete numExpansion:" << selfExpansions.size() << std::endl;
+		}
+	}
+}
+
+char InformationManager::getMapName(){
+	return mapName;
 }

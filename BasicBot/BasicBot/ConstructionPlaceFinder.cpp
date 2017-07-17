@@ -330,7 +330,7 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 			}
 		}
 	}
-	else if (constructionPlaceSearchMethod == ConstructionPlaceSearchMethod::NewMethod) {
+	else if (constructionPlaceSearchMethod == ConstructionPlaceSearchMethod::CrossMethod) {
 	}
 
 	return resultPosition;
@@ -495,6 +495,25 @@ bool ConstructionPlaceFinder::canBuildHere(BWAPI::TilePosition position, const C
 
 BWAPI::TilePosition ConstructionPlaceFinder::getRefineryPositionNear(BWAPI::TilePosition seedPosition) const
 {
+	/*
+	멀티중에 빈 가스 아무거나 선택
+	*/
+	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Refinery) >= InformationManager::Instance().selfExpansions.size()){
+		return BWAPI::TilePositions::None;
+	}
+	else{
+		for (auto &e : InformationManager::Instance().selfExpansions){
+			for (auto &u : e->getUnitsInRadius(300)){
+				if (u->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser){
+					return u->getInitialTilePosition();
+				}
+			}
+		}
+	}
+
+	return BWAPI::TilePositions::None;
+
+	/******************일단 제외********************/
 	if (seedPosition == BWAPI::TilePositions::None || seedPosition == BWAPI::TilePositions::Unknown || seedPosition == BWAPI::TilePositions::Invalid || seedPosition.isValid() == false)
 	{
 		seedPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition();

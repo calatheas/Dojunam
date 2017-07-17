@@ -16,9 +16,19 @@ void GameCommander::onStart()
 	if (startLocation == BWAPI::TilePositions::None || startLocation == BWAPI::TilePositions::Unknown) {
 		return;
 	}
+
+	//맵정보 세팅
+	InformationManager::Instance().onStart();
+
+	//초기화용
 	BOSS::init();
 
+	//초기빌드 세팅
 	StrategyManager::Instance().onStart();
+
+	//맵정보에 따른 resourcedepot 당 일꾼 최대수 결정
+	BuildManager::Instance().onStart();
+	
 }
 
 void GameCommander::onEnd(bool isWinner)
@@ -46,13 +56,13 @@ void GameCommander::onFrame()
 	
 	if (isToFindError) std::cout << "c";
 
+	BOSSManager::Instance().update(49.0); //순서가 중요?
+
 	// economy and base managers
 	// 일꾼 유닛에 대한 명령 (자원 채취, 이동 정도) 지시 및 정리
 	WorkerManager::Instance().update();
 	
 	if (isToFindError) std::cout << "d";
-
-	BOSSManager::Instance().update(49.0);
 	
 	// 빌드오더큐를 관리하며, 빌드오더에 따라 실제 실행(유닛 훈련, 테크 업그레이드 등)을 지시한다.
 	BuildManager::Instance().update();
@@ -70,7 +80,7 @@ void GameCommander::onFrame()
 	if (isToFindError) std::cout << "g";
 
 	// 전략적 판단 및 유닛 컨트롤
-	//StrategyManager::Instance().update();
+	StrategyManager::Instance().update();
 
 	if (isToFindError) std::cout << "h)";
 	//@도주남 김지훈 전투유닛 셋팅

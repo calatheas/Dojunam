@@ -14,7 +14,7 @@ namespace MyBot
 	{
 		enum { 
 			SpiralMethod = 0,	///< 나선형으로 돌아가며 탐색
-			NewMethod = 1		///< 예비
+			CrossMethod = 1		///< 십자형
 		};
 	}
 

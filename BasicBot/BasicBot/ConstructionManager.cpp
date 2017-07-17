@@ -485,7 +485,8 @@ void ConstructionManager::checkForDeadlockConstruction()
 					testLocation = b.finalPosition;
 				}
 				else {
-					testLocation = ConstructionPlaceFinder::Instance().getBuildLocationNear(b.type, b.desiredPosition);
+					//testLocation = ConstructionPlaceFinder::Instance().getBuildLocationNear(b.type, b.desiredPosition);
+					testLocation = ConstructionPlaceFinder::Instance().getRefineryPositionNear(b.desiredPosition);
 				}
 
 				// Refinery 를 지으려는 장소를 찾을 수 없으면 dead lock
@@ -518,7 +519,15 @@ void ConstructionManager::checkForDeadlockConstruction()
 				&& InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().selfPlayer).find(desiredPositionRegion) == InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().selfPlayer).end()
 				&& InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().enemyPlayer).find(desiredPositionRegion) != InformationManager::Instance().getOccupiedRegions(InformationManager::Instance().enemyPlayer).end())
 			{
-				isDeadlockCase = true;
+				//커맨드 센터 건물지역이 이상한 경우에는 다른 지역 다시 탐색하여 멀티 한다.
+				//일반적으로 적진이 바로 옆인 경우는 이 로직을 한번 수행하게 된다.
+				if (unitType == BWAPI::UnitTypes::Terran_Command_Center){
+					std::cout << "Command center position changed" << std::endl;
+					b.desiredPosition = MapTools::Instance().getNextExpansion(b.desiredPosition);
+				}
+				else{
+					isDeadlockCase = true;
+				}
 			}
 
 			// 선행 건물/유닛이 있는데 
@@ -627,18 +636,18 @@ std::vector<BWAPI::UnitType> ConstructionManager::buildingsQueued()
 // constructionQueue에 해당 type 의 Item 이 존재하는지 카운트한다. queryTilePosition 을 입력한 경우, 위치간 거리까지도 고려한다
 int ConstructionManager::getConstructionQueueItemCount(BWAPI::UnitType queryType, BWAPI::TilePosition queryTilePosition)
 {
-	// queryTilePosition 을 입력한 경우, 거리의 maxRange. 타일단위
-	int maxRange = 16;
-
-	const BWAPI::Point<int, 32> queryTilePositionPoint(queryTilePosition.x, queryTilePosition.y);
-
 	int count = 0;
 	for (auto & b : constructionQueue)
 	{
 		if (b.type == queryType)
 		{
-			if (queryType.isBuilding() && queryTilePosition != BWAPI::TilePositions::None)
+			if (queryTilePosition != BWAPI::TilePositions::None && queryType.isBuilding())
 			{
+				// queryTilePosition 을 입력한 경우, 거리의 maxRange. 타일단위
+				int maxRange = 16;
+
+				const BWAPI::Point<int, 32> queryTilePositionPoint(queryTilePosition.x, queryTilePosition.y);
+
 				if (queryTilePositionPoint.getDistance(b.desiredPosition) <= maxRange) {
 					count++;
 				}

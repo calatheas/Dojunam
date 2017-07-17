@@ -138,5 +138,8 @@ namespace MyBot
 		BuildOrderItem operator [] (int i);							///< overload the bracket operator for ease of use
 
 		std::deque< BuildOrderItem > *			getQueue();
+
+		void setCurrentItemBlocking(bool flag);
+		void removeByIndex(int idx);
 	};
 }
