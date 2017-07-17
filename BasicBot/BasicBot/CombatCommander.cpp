@@ -83,19 +83,19 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 void CombatCommander::updateIdleSquad()
 {
     Squad & idleSquad = _squadData.getSquad("Idle");	
-	if (_combatUnits.size() % 10 == 1)
+	//if (_combatUnits.size() % 10 == 1)
 	{
 		int diff_x = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().x - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().x;
 		int diff_y = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().y - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().y;
 		if (abs(diff_x) > abs(diff_y))
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position((diff_x)*0.2 + _combatUnits.size(), 32), 100, "Move Out");
+				+ BWAPI::Position(_combatUnits.size(), 32), 100, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 		else{
 			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(32, (diff_y)*0.2 + _combatUnits.size()), 100, "Move Out");
+				+ BWAPI::Position(32, _combatUnits.size()), 100, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 	}

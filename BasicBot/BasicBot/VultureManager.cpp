@@ -9,6 +9,8 @@ VultureManager::VultureManager()
 	{
 		if (chokepoint == InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self()))
 			continue ;
+		if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy()))
+			continue;
 		chokePointMineCounter[secondChokePointCount] = 0;
 		chokePointForVulture[secondChokePointCount] = chokepoint->getCenter();
 		secondChokePointCount++;
@@ -53,19 +55,35 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % secondChokePointCount];
 					//std::cout << " vulture No.  " << vultureUnit->getID() << " set Mine pos ( " << mineSetPosition.x << ", " << mineSetPosition.y << ")" << std::endl;
 					BWAPI::Broodwar->drawTextMap(mineSetPosition, "%s", "Mine Set Here");
-					int mineCount = vultureUnit->getSpiderMineCount();
-					Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition);
-					BWAPI::UnitCommand currentCommand(vultureUnit->getLastCommand());
-					if (mineCount == vultureUnit->getSpiderMineCount() && currentCommand.getTargetPosition() == vultureUnit->getPosition() )
-					{
-						if (vultureUnit->canUseTech(BWAPI::TechTypes::Spider_Mines, vultureUnit->getPosition() - BWAPI::Position(0, 1)))
-						{
-							//std::cout << " vulture No.  " << vultureUnit->getID() << " set Mine pos ( " << mineSetPosition.x << ", " << mineSetPosition.y << ")" << std::endl;
-							vultureUnit->useTech(BWAPI::TechTypes::Spider_Mines, vultureUnit->getPosition() - BWAPI::Position(0, 1));
-							//Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition + BWAPI::Position(1, 0));
-							//chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % secondChokePointCount] -= BWAPI::Position(0, 1);
+					//int mineCount = vultureUnit->getSpiderMineCount();
+					while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition))
+					{						
+						if (vultureUnit->getID() % 4 == 0)
+							mineSetPosition += BWAPI::Position(1, 1);
+						else if (vultureUnit->getID() % 4 == 1)
+							mineSetPosition += BWAPI::Position(1, -1);
+						else if (vultureUnit->getID() % 4 == 2)
+							mineSetPosition += BWAPI::Position(-1, 1);
+						else if (vultureUnit->getID() % 4 == 3)
+							mineSetPosition += BWAPI::Position(-1, -1);
+						if (!mineSetPosition.isValid())
+						{							
+							mineSetPosition = vultureUnit->getPosition();
+							break;
 						}
 					}
+					Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition);
+					//BWAPI::UnitCommand currentCommand(vultureUnit->getLastCommand());
+					//if (mineCount == vultureUnit->getSpiderMineCount() && currentCommand.getTargetPosition() == vultureUnit->getPosition() )
+					//{
+					//	if (vultureUnit->canUseTech(BWAPI::TechTypes::Spider_Mines, vultureUnit->getPosition() - BWAPI::Position(0, 1)))
+					//	{
+					//		//std::cout << " vulture No.  " << vultureUnit->getID() << " set Mine pos ( " << mineSetPosition.x << ", " << mineSetPosition.y << ")" << std::endl;
+					//		vultureUnit->useTech(BWAPI::TechTypes::Spider_Mines, vultureUnit->getPosition() - BWAPI::Position(0, 1));
+					//		//Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition + BWAPI::Position(1, 0));
+					//		//chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % secondChokePointCount] -= BWAPI::Position(0, 1);
+					//	}
+					//}
 					//std::cout << "getSpiderMineCount>0  69 done " << std::endl;
 					continue;
 				}
