@@ -20,9 +20,19 @@ namespace MyBot
 
 	struct Strategy
 	{
-		std::string next_strategy_name;
-		std::string pre_strategy_name;
+		enum main_strategies{
+			None,
+			Bionic,
+			Bionic_Tank,
+			Mechanic,
+			Mechanic_Goliath,
+			Mechanic_Vessel
+		};
+
+		main_strategies next_strategy;
+		main_strategies pre_strategy;
 		std::map<std::string, int> num_unit_limit;
+		std::string opening_build_order;
 	};
 
 	/// 상황을 판단하여, 정찰, 빌드, 공격, 방어 등을 수행하도록 총괄 지휘를 하는 class
@@ -37,9 +47,9 @@ namespace MyBot
 		void executeSupplyManagement();
 		void executeBasicCombatUnitTraining();
 
-		std::map<std::string, Strategy> _strategies;
+		std::map<Strategy::main_strategies, Strategy> _strategies;
 		BuildOrder _openingBuildOrder;
-		std::string _main_strategy;
+		Strategy::main_strategies _main_strategy;
 		const BuildOrder                _emptyBuildOrder;
 		const MetaPairVector getTerranBuildOrderGoal();
 		void setOpeningBookBuildOrder();
@@ -47,6 +57,9 @@ namespace MyBot
 		bool checkStrategyLimit(std::string &name, std::map<std::string, int> & numUnits);
 
 		std::map<std::string, std::vector<int>> unit_ratio_table;
+
+		void initStrategies();
+		void initUnitRatioTable();
 
 	public:
 		bool isInitialBuildOrderFinished;
@@ -68,5 +81,6 @@ namespace MyBot
 		const MetaPairVector getBuildOrderGoal();
 		const bool shouldExpandNow() const;
 		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
+		int getUnitLimit(MetaType type);
 	};
 }

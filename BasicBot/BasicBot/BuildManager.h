@@ -36,7 +36,10 @@ namespace MyBot
 
 		void				checkBuildOrderQueueDeadlockAndAndFixIt();
 		void				checkBuildOrderQueueDeadlockAndRemove();
+
+		//addon 관련 : 예외처리판단함수, addon 달려있는지 확인하는 함수
 		bool verifyBuildAddonCommand(BWAPI::Unit u);
+		bool hasAddon(BWAPI::Unit u);
 
 		bool				_enemyCloakedDetected;
 		bool detectSupplyDeadlock();

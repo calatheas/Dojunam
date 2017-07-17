@@ -485,7 +485,8 @@ void ConstructionManager::checkForDeadlockConstruction()
 					testLocation = b.finalPosition;
 				}
 				else {
-					testLocation = ConstructionPlaceFinder::Instance().getBuildLocationNear(b.type, b.desiredPosition);
+					//testLocation = ConstructionPlaceFinder::Instance().getBuildLocationNear(b.type, b.desiredPosition);
+					testLocation = ConstructionPlaceFinder::Instance().getRefineryPositionNear(b.desiredPosition);
 				}
 
 				// Refinery 를 지으려는 장소를 찾을 수 없으면 dead lock

@@ -91,6 +91,8 @@ void BuildManager::update()
 		_enemyCloakedDetected = true;
 	}
 
+	checkBuildOrderQueueDeadlockAndRemove();
+
 	//커맨드센터는 작업이 없으면 일꾼을 만든다.
 	executeWorkerTraining();
 }
@@ -211,8 +213,6 @@ void BuildManager::consumeBuildQueue(){
 			break;
 		}
 	}
-
-	checkBuildOrderQueueDeadlockAndRemove();
 }
 
 void BuildManager::performBuildOrderSearch()
@@ -281,14 +281,8 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 			빌드온 짓는 명령한지 10프레임이 안됐다면 제외, 딴 명령으로 바뀔수도 있나보다.
 			*/
 			//1. (검증필요) if (!unit->canBuildAddon()) { continue; }
-			if (!verifyBuildAddonCommand(unit))
-			{
-				//std::cout << "addon frame-delay" << std::endl;
-				continue;
-			}
-
-			// if the unit already has an addon, it can't make one
-			if (unit->getAddon() || unit->getAddon() != nullptr) { continue; }
+			//2. 프레임 딜레이 및 애드온 가지고 있는지 판단
+			if (hasAddon(unit)) continue;
 
 			bool isBlocked = false;
 
@@ -898,6 +892,11 @@ void BuildManager::checkBuildOrderQueueDeadlockAndAndFixIt()
 
 void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 {
+	/*
+		getProducer에서 대부분 로직 체크. 다만, 기다려야 되는 상황이 있기 때문에 당장 처리하지 못하면 non block빌드로 전환하여 다음 기회에 수행할 수 있도록 한다.
+		모두 non block 빌드가 된 경우에는 빌드큐에 있는 다른 빌드가 수행된 이후에도 이 빌드를 처리할 수 없는 상태이므로(즉, 순서 잘못이 아니다. 아에 빌드큐에 있는 것으로 해결이 안되는 상황)
+		이 때는 필요한 건물이 현재 건설중인 건물이 있지 않으면 삭제처리한다.
+	*/
 	//큐를 lowest부터 돌면서 non block 빌드만 남았는지 체크 -> 모두다 non block이면 뭔가 문제들이 있었던 빌드이므로 아래 로직 체크해서 하나씩 지운다.
 	for (int i = 0; i <buildQueue.size(); i++){
 		if (buildQueue[i].blocking) return;
@@ -930,7 +929,18 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 			if (!isProducerWillExist(producerType)) {
 				isDeadlockCase = true;
 			}
+			// 애드온인 경우, 모든 팩토리가 애드온이 달렸거나 달리는중이면 데드락
+			else if (currentItem.metaType.getUnitType().isAddon()){
+				bool all_producer_has_addon = true;
+				for (BWAPI::Unit u : BWAPI::Broodwar->self()->getUnits()){
+					if (u->getType() == producerType && !hasAddon(u)){
+						all_producer_has_addon = false;
+						break;
+					}
+				}
 
+				if (all_producer_has_addon) isDeadlockCase = true;
+			}
 
 			// Refinery 건물의 경우, Refinery 가 건설되지 않은 Geyser가 있는 경우에만 가능
 			// TODO TODO TODO TODO
@@ -946,9 +956,6 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 					}
 				}
 			}
-
-			// 애드온을 지어야 되는데 전부 애드온이 차있는 경우
-			// TODO TODO TODO TODO
 		}
 
 
@@ -1007,8 +1014,30 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 {
 	buildQueue.clearAll();
 
+	//현재 큐까지 값을 반영하여 limit 수치를 계산해야 하므로 카운트맵을 하나 만듬
+	std::map<std::string, int> buildItemCnt;
+
+	for (size_t i(0); i < buildOrder.size(); ++i){
+		if (buildItemCnt.find(buildOrder[i].getName()) == buildItemCnt.end())
+			buildItemCnt[buildOrder[i].getName()] = 0;
+		else
+			buildItemCnt[buildOrder[i].getName()]++;
+	}
+
 	for (size_t i(0); i<buildOrder.size(); ++i)
 	{
+		//유닛 최대값을 관리하여 그 이상은 안만들도록 한다.
+		if (buildOrder[i].isUnit()){
+			int unitLimit = StrategyManager::Instance().getUnitLimit(buildOrder[i]);
+			int currentUnitNum = BWAPI::Broodwar->self()->completedUnitCount(buildOrder[i].getUnitType()) + BWAPI::Broodwar->self()->incompleteUnitCount(buildOrder[i].getUnitType()) + buildItemCnt[buildOrder[i].getName()];
+
+			if (unitLimit != -1 && currentUnitNum >= unitLimit){
+				std::cout << "[unit limit]-" << buildOrder[i].getName() << "is only created " << unitLimit << std::endl;
+				buildItemCnt[buildOrder[i].getName()]--;
+				continue;
+			}
+		}
+
 		if (buildOrder[i].isBuilding()){
 			buildQueue.queueAsLowestPriority(buildOrder[i], StrategyManager::Instance().getBuildSeedPositionStrategy(buildOrder[i]), true);
 		}
@@ -1096,7 +1125,7 @@ void BuildManager::executeWorkerTraining(){
 	for (BWAPI::Unit u : WorkerManager::Instance().getWorkerData().getDepots()){
 		if (!u->isIdle()) continue;
 		if (u->isUnderAttack()) continue;
-		if (!verifyBuildAddonCommand(u)) continue;
+		if (!verifyBuildAddonCommand(u)) continue; //빌드애드온 시작하자마자 다른 오더를 바로 내리면 안됨
 		
 		int tmpWorkerCnt = WorkerManager::Instance().getWorkerData().getDepotWorkerCount(u);
 		if (tmpWorkerCnt > -1 && tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(u)*1.5) ){
@@ -1115,4 +1144,15 @@ bool BuildManager::verifyBuildAddonCommand(BWAPI::Unit u){
 	else{
 		return true;
 	}
+}
+
+bool BuildManager::hasAddon(BWAPI::Unit u){
+	//프레임 딜레이 체크하여 딜레이 동안은 다른명령을 내리면 안됨(즉, 애드온이 있는것처럼 판단)
+	if (!verifyBuildAddonCommand(u))
+		return true;
+	// if the unit already has an addon, it can't make one
+	else if (u->getAddon() || u->getAddon() != nullptr)
+		return true;
+	else
+		return false;
 }

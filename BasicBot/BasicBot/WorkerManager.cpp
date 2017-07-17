@@ -650,6 +650,7 @@ void WorkerManager::onUnitShow(BWAPI::Unit unit)
 	// add the depot if it exists
 	if (unit->getType().isResourceDepot() && unit->getPlayer() == BWAPI::Broodwar->self())
 	{
+		std::cout << "onUnitShow - addDepot:" << unit->getPosition() << std::endl;
 		workerData.addDepot(unit);
 	}
 
