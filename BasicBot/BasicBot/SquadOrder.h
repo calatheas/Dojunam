@@ -17,8 +17,8 @@ class SquadOrder
     BWAPI::Position     _position;
     std::string         _status;
 	BWAPI::Unit     _farUnit;
-	BWAPI::Unit     _closestUnit;
-	int                 _canMedicTargets;
+	BWAPI::Unit     _closestUnit;	
+	BWAPI::Unitset	_organicUnits;
 public:
 
 	SquadOrder() 
@@ -33,7 +33,9 @@ public:
 		, _radius(radius) 
 		, _status(status)
 	{
-		_canMedicTargets = 0;
+		_farUnit = nullptr;
+		_closestUnit = nullptr;
+		_organicUnits.clear();
 	}
 
 	const std::string & getStatus() const 
@@ -76,14 +78,14 @@ public:
 		_closestUnit = in;
 	}
 
-	int getCanMedicTargets()
+	BWAPI::Unitset  getOrganicUnits()
 	{
-		return _canMedicTargets;
+		return _organicUnits;
 	}
 
-	void setCanMedicTargets(int in)
+	void setOrganicUnits(BWAPI::Unitset  in)
 	{
-		_canMedicTargets = in;
+		_organicUnits = in;
 	}
 };
 }

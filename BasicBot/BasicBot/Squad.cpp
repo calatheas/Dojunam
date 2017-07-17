@@ -102,7 +102,8 @@ void Squad::setAllUnits()
 	BWAPI::Unitset goodUnits;
 	int maxDist = 0;
 	//@도주남 김지훈 메딕이 힐링이 가능한 캐릭터가 몇명인지 확인한다.  의견을 들어보고 적용 여부 결정
-	int isOrganicCount = 0;
+	BWAPI::Unitset organicUnits;
+	unitFarToOrderPosition = nullptr;
 	for (auto & unit : _units)
 	{
 		if (unit->isCompleted() &&
@@ -113,18 +114,20 @@ void Squad::setAllUnits()
 			unit->getType() != BWAPI::UnitTypes::Unknown)
 		{
 			goodUnits.insert(unit);
-			if (unit->getType().isOrganic() && unit->getType() != BWAPI::UnitTypes::Terran_Medic)
-				isOrganicCount++;
 			if ((maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0) && unit->getType() != BWAPI::UnitTypes::Terran_Vulture)
 			{
 				maxDist = unit->getDistance(_order.getPosition());
 				unitFarToOrderPosition = unit;
 			}
+			if (unit->getType().isOrganic() && unit->getType() != BWAPI::UnitTypes::Terran_Medic)
+			{
+				organicUnits.insert(unit);
+			}
 		}
 	}	
 	_units.clear();
 	_units = goodUnits;
-	if (isOrganicCount == 0)
+	if (organicUnits.size() == 0)
 	{
 		goodUnits.clear();
 		for (auto & unit : _units)
@@ -138,12 +141,14 @@ void Squad::setAllUnits()
 		}
 		_units.clear();
 		_units = goodUnits;
-	}
-	_order.setCanMedicTargets(isOrganicCount);
+	}	
+	else
+		_order.setOrganicUnits(organicUnits);
+
 	_order.setFarUnit(unitFarToOrderPosition);	
 	_order.setClosestUnit(unitClosestToEnemyForOrder());	
 	if (_order.getClosestUnit() == nullptr)
-		_order.setClosestUnit(unitFarToOrderPosition);
+		_order.setClosestUnit(nullptr);
 }
 
 void Squad::setNearEnemyUnits()
@@ -514,7 +519,7 @@ BWAPI::Unit Squad::unitClosestToEnemyForOrder()
 
 	for (auto & unit : _units)
 	{
-		if (unit->getType() == BWAPI::UnitTypes::Terran_Medic || !unit->getType().isOrganic())
+		if (unit->getType() == BWAPI::UnitTypes::Terran_Medic)
 		{
 			continue;
 		}
@@ -534,7 +539,7 @@ BWAPI::Unit Squad::unitClosestToEnemyForOrder()
 	{
 		for (auto & unit : _units)
 		{
-			if (unit->getType() == BWAPI::UnitTypes::Terran_Medic || !unit->getType().isOrganic())
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Medic)
 			{
 				continue;
 			}

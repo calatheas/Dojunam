@@ -90,12 +90,12 @@ void CombatCommander::updateIdleSquad()
 		if (abs(diff_x) > abs(diff_y))
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(diff_x*0.3 + _combatUnits.size(), 32), 100, "Move Out");
+				+ BWAPI::Position((diff_x)*0.2 + _combatUnits.size(), 32), 100, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 		else{
 			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(32 , diff_y*0.3 + _combatUnits.size()), 100, "Move Out");
+				+ BWAPI::Position(32, (diff_y)*0.2 + _combatUnits.size()), 100, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 	}
@@ -107,7 +107,7 @@ void CombatCommander::updateIdleSquad()
         {
             //idleSquad.addUnit(unit);
 			_squadData.assignUnitToSquad(unit, idleSquad);			
-			Micro::SmartAttackMove(unit, idleSquad.getSquadOrder().getPosition());			
+			Micro::SmartAttackMove(unit, idleSquad.getSquadOrder().getPosition());
         }		
     }
 }
@@ -117,7 +117,7 @@ void CombatCommander::updateAttackSquads()
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
 
-	if (candiAttackerSquad.getUnits().size() > 30)
+	if (candiAttackerSquad.getUnits().size() > 30 || (mainAttackSquad.getUnits().size() > 7) )
 	{
 		for (auto & unit : _combatUnits)
 		{

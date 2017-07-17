@@ -94,9 +94,14 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                     else
                     {
     					// move to it
-						if (order.getPosition().getDistance(order.getClosestUnit()->getPosition()) > order.getPosition().getDistance(tank->getPosition()) && !tankNearChokepoint)
+						if (order.getClosestUnit() != nullptr 
+							&& order.getClosestUnit() == tank 
+							&& !tankNearChokepoint
+							&& order.getFarUnit() != nullptr
+							&& order.getFarUnit()->getDistance(tank->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 64
+							&& order.getFarUnit() != tank )
 						{
-							BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 30), "%d", "Hold On Position");
+							BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 30), "%s", "Hold On Position");
 							tank->holdPosition();
 						}
 						else
