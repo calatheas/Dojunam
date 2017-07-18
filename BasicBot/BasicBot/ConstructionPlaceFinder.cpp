@@ -387,7 +387,7 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 			}
 		}
 	}
-	else 
+	else
 	{
 		//make sure we leave space for add-ons. These types of units can have addon:
 		if (b.type == BWAPI::UnitTypes::Terran_Command_Center ||
@@ -399,6 +399,7 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 		}
 
 		// 상하좌우에 buildingGapSpace 만큼 간격을 띄운다
+		horizontalOnly = true; //@도주남 김지훈
 		if (horizontalOnly == false)
 		{
 			startx = position.x - buildingGapSpace;
@@ -408,17 +409,17 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 		}
 		// 좌우로만 buildingGapSpace 만큼 간격을 띄운다
 		else {
-			startx = position.x - buildingGapSpace;
+			startx = position.x - 2;
 			starty = position.y;
 			endx = position.x + width + buildingGapSpace;
-			endy = position.y + height;
+			endy = position.y + height + 1;
 		}
 
 		// 테란종족 건물의 경우 다른 건물의 Addon 공간을 확보해주기 위해, 왼쪽 2칸은 반드시 GapSpace가 되도록 한다
 		if (b.type.getRace() == BWAPI::Races::Terran) {
 			if (buildingGapSpace < 2) {
 				startx = position.x - 2;
-				endx = position.x + width + buildingGapSpace;
+				endx = position.x + width + buildingGapSpace + 1;
 			}
 		}
 

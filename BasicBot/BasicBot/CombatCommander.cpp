@@ -117,7 +117,7 @@ void CombatCommander::updateAttackSquads()
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
 
-	if (candiAttackerSquad.getUnits().size() > 30 || (mainAttackSquad.getUnits().size() > 7) )
+	if (candiAttackerSquad.getUnits().size() > 40 || (mainAttackSquad.getUnits().size() > 7) )
 	{
 		for (auto & unit : _combatUnits)
 		{
