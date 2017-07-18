@@ -89,8 +89,6 @@ void GameCommander::onFrame()
 	CombatCommander::Instance().update(_combatUnits);
 	
 	ComsatManager::Instance().update();
-
-	ExpansionManager::Instance().update(); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
 }
 
 void GameCommander::onUnitShow(BWAPI::Unit unit)			
@@ -114,18 +112,16 @@ void GameCommander::onUnitCreate(BWAPI::Unit unit)
 void GameCommander::onUnitComplete(BWAPI::Unit unit)
 {
 	InformationManager::Instance().onUnitComplete(unit);
-	ExpansionManager::Instance().onUnitComplete(unit); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
 	BuildManager::Instance().onUnitComplete(unit);
+	WorkerManager::Instance().onUnitComplete(unit);
 }
 
 void GameCommander::onUnitDestroy(BWAPI::Unit unit)		
 {
-	InformationManager::Instance().onUnitDestroy(unit);
-	ExpansionManager::Instance().onUnitDestroy(unit); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
-
 	// ResourceDepot 및 Worker 에 대한 처리
 	WorkerManager::Instance().onUnitDestroy(unit);
 
+	InformationManager::Instance().onUnitDestroy(unit); 
 	if (_scoutUnits.contains(unit)) { _scoutUnits.erase(unit); }
 }
 

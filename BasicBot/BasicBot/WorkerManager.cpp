@@ -14,12 +14,47 @@ void WorkerManager::finishedWithWorker(BWAPI::Unit unit)
 	}
 }
 
+//719
+void WorkerManager::onUnitComplete(BWAPI::Unit unit){
+	if (!BWAPI::Broodwar->isReplay()) {
+		
+		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center && unit->getPlayer()->isNeutral() == false && unit->getPlayer() == BWAPI::Broodwar->self())
+		{
 
+			int com_num = 0;
 
+			for (auto & unit_c : BWAPI::Broodwar->self()->getUnits())
+			{
+				if (unit_c->isCompleted() && unit_c->getType() == BWAPI::UnitTypes::Terran_Command_Center)
+				{
+					com_num++;
+				}
+			}
+			printf("onUnitComplete : %d\n", WorkerManager::Instance().workerData.getWorkers().size());
 
+			//std::size_t iter_count = workerData.getWorkers().size() / 3;
 
+			int checkscv = 0;
 
+			for (auto & unit__ : workerData.getWorkers())
+			{
+				//WorkerData workerData = WorkerManager::Instance().getWorkerData();
 
+				if (unit__->isCompleted() && workerData.getWorkerJob(unit__) == WorkerData::Minerals)
+				{
+					if ((checkscv++ % com_num) == 0) {
+						
+						workerData.setWorkerJob(unit__, WorkerData::Move, WorkerMoveData(0, 0, unit->getPosition()));
+						printf("onUnitComplete : %d, target: %d\n", unit__->getID(), unit->getID());
+					}
+					//	CommandUtil::move(unit__, unit->getPosition());
+				}
+			}
+
+			//handleMoveWorkers();
+		}
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 WorkerManager::WorkerManager() 
@@ -137,7 +172,6 @@ void WorkerManager::updateWorkerStatus()
 	}
 }
 
-
 void WorkerManager::handleGasWorkers()
 {
 	// for each unit we have
@@ -194,7 +228,7 @@ void WorkerManager::handleMoveWorkers()
 			WorkerMoveData data = workerData.getWorkerMoveData(worker);
 
 			// 목적지에 도착한 경우 이동 명령을 해제한다
-			if (worker->getPosition().getDistance(data.position) < 4) {
+			if (worker->getPosition().getDistance(data.position) < 100) {
 				setIdleWorker(worker);
 			}
 			else {
@@ -206,9 +240,83 @@ void WorkerManager::handleMoveWorkers()
 
 
 
-// bad micro for combat workers
+// 719
 void WorkerManager::handleCombatWorkers()
-{
+{//ssh
+
+	int numworker = 0;
+	for (auto & worker : workerData.getWorkers())
+	{
+		numworker++;
+	}
+	if (numworker > 13)
+		return;
+		BWTA::BaseLocation * selfBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self());
+		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 15, BWAPI::Colors::Yellow, true);
+		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 5, BWAPI::Colors::Yellow, true);
+		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 20, BWAPI::Colors::Yellow, true);
+		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 20, BWAPI::Colors::Yellow, true);
+		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 400, BWAPI::Colors::Yellow, true);
+		//일꾼처리
+		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+		{
+			if (unit->getType().isWorker())
+			{
+				if (_enemyworkerUnits.contains(unit))
+					continue;
+				int enemyworkerdistance = MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
+				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
+
+				if (scoutInRangeOfenemy)
+				{
+					for (auto & worker : workerData.getWorkers())
+					{
+						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == 0 && worker->isCompleted() == true)
+						{
+							if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
+							{
+								_enemyworkerUnits.insert(unit);
+								CommandUtil::attackUnit(worker, unit);
+								return;
+							}
+
+						}
+					}
+
+				}
+			}
+		}
+
+
+		//질럿저글링 처리
+		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+		{
+			
+			if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling || unit->getType() == BWAPI::UnitTypes::Protoss_Zealot)
+			{
+			
+				int enemyworkerdistance = MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
+				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
+
+				if (scoutInRangeOfenemy)
+				{
+					for (auto & worker : workerData.getWorkers())
+					{
+						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == 0 && worker->isCompleted() == true)
+						{
+							workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
+							if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
+							{
+								CommandUtil::attackMove(worker, unit->getPosition());
+							}
+
+						}
+					}
+
+				}
+			}
+		}
+	/*
 	for (auto & worker : workerData.getWorkers())
 	{
 		if (!worker) continue;
@@ -224,10 +332,12 @@ void WorkerManager::handleCombatWorkers()
 			}
 		}
 	}
+	*/
 }
 
 BWAPI::Unit WorkerManager::getClosestEnemyUnitFromWorker(BWAPI::Unit worker)
 {
+	//ssh
 	if (!worker) return nullptr;
 
 	BWAPI::Unit closestUnit = nullptr;
@@ -310,7 +420,7 @@ BWAPI::Unit WorkerManager::chooseRepairWorkerClosestTo(BWAPI::Position p, int ma
 			continue;
 		}
 
-		if (worker->isCompleted() 
+		if (worker->isCompleted() && !worker->isCarryingGas() && !worker->isCarryingMinerals()
 			&& (workerData.getWorkerJob(worker) == WorkerData::Minerals || workerData.getWorkerJob(worker) == WorkerData::Idle || workerData.getWorkerJob(worker) == WorkerData::Move))
 		{
 			double dist = worker->getDistance(p);
@@ -451,7 +561,7 @@ BWAPI::Unit WorkerManager::chooseGasWorkerFromMineralWorkers(BWAPI::Unit refiner
 	{
 		if (!unit) continue;
 		
-		if (unit->isCompleted() && (workerData.getWorkerJob(unit) == WorkerData::Minerals))
+		if (unit->isCompleted() && !unit->isCarryingMinerals() && (workerData.getWorkerJob(unit) == WorkerData::Minerals))
 		{
 			double distance = unit->getDistance(refinery);
 			if (!closestWorker || distance < closestDistance)
@@ -503,7 +613,7 @@ BWAPI::Unit WorkerManager::chooseConstuctionWorkerClosestTo(BWAPI::UnitType buil
 		}
 
 		// Move / Idle Worker 가 없을때, 다른 Worker 중에서 차출한다 
-		if (unit->isCompleted() && workerData.getWorkerJob(unit) != WorkerData::Move && workerData.getWorkerJob(unit) != WorkerData::Idle && workerData.getWorkerJob(unit) != WorkerData::Build)
+		if (unit->isCompleted() && !unit->isCarryingGas() && !unit->isCarryingMinerals() && workerData.getWorkerJob(unit) != WorkerData::Move && workerData.getWorkerJob(unit) != WorkerData::Idle && workerData.getWorkerJob(unit) != WorkerData::Build)
 		{
 			// if it is a new closest distance, set the pointer
 			double distance = unit->getDistance(BWAPI::Position(buildingPosition));
@@ -556,7 +666,7 @@ BWAPI::Unit WorkerManager::chooseMoveWorkerClosestTo(BWAPI::Position p)
 		if (!unit) continue;
 
 		// only consider it if it's a mineral worker
-		if (unit->isCompleted() && (workerData.getWorkerJob(unit) == WorkerData::Minerals || workerData.getWorkerJob(unit) == WorkerData::Idle))
+		if (unit->isCompleted() && !unit->isCarryingGas() && !unit->isCarryingMinerals() && (workerData.getWorkerJob(unit) == WorkerData::Minerals || workerData.getWorkerJob(unit) == WorkerData::Idle))
 		{
 			// if it is a new closest distance, set the pointer
 			double distance = unit->getDistance(p);
@@ -651,11 +761,9 @@ void WorkerManager::onUnitShow(BWAPI::Unit unit)
 	/*
 	if (unit->getType().isResourceDepot() && unit->getPlayer() == BWAPI::Broodwar->self())
 	{
-	std::cout << "onUnitShow - addDepot:" << unit->getPosition() << std::endl;
-	workerData.addDepot(unit);
+		workerData.addDepot(unit);
 	}
 	*/
-
 
 	// add the worker
 	if (unit->getType().isWorker() && unit->getPlayer() == BWAPI::Broodwar->self() && unit->getHitPoints() >= 0)
@@ -701,10 +809,9 @@ void WorkerManager::onUnitDestroy(BWAPI::Unit unit)
 	/*
 	if (unit->getType().isResourceDepot() && unit->getPlayer() == BWAPI::Broodwar->self())
 	{
-	workerData.removeDepot(unit);
+		workerData.removeDepot(unit);
 	}
 	*/
-
 
 	if (unit->getType().isWorker() && unit->getPlayer() == BWAPI::Broodwar->self()) 
 	{

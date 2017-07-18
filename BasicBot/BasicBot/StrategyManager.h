@@ -12,7 +12,6 @@
 #include "BuildOrder.h"
 #include "MetaType.h"
 #include "ExpansionManager.h"
-
 namespace MyBot
 {
 
@@ -26,6 +25,8 @@ namespace MyBot
 			Bionic,
 			Bionic_Tank,
 			Mechanic,
+			One_Fac_Multi,
+			Two_Fac,
 			Mechanic_Goliath,
 			Mechanic_Vessel
 		};
@@ -80,10 +81,9 @@ namespace MyBot
 
 		const BuildOrder & getOpeningBookBuildOrder() const;
 		const MetaPairVector getBuildOrderGoal();
-	
+		
 		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
 		int getUnitLimit(MetaType type);
-
 		double weightByFrame(double max_weight);
 	};
 }

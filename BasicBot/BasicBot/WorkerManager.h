@@ -9,18 +9,24 @@
 
 namespace MyBot
 {
+
 	/// 일꾼 유닛들의 상태를 관리하고 컨트롤하는 class
 	class WorkerManager
 	{
+		//719
+		//ssh
+		BWAPI::Unitset          _enemyworkerUnits;
 	public:
 		/// 각 Worker 에 대한 WorkerJob 상황을 저장하는 자료구조 객체
 		WorkerData  workerData;
+
 
 		/// 일꾼 중 한명을 Repair Worker 로 정해서, 전체 수리 대상을 하나씩 순서대로 수리합니다
 		BWAPI::Unit currentRepairWorker;
 				
 		void        updateWorkerStatus();
-
+		//719
+		void		onUnitComplete(BWAPI::Unit unit);
 		/// Idle 일꾼을 Mineral 일꾼으로 만듭니다
 		void        handleIdleWorkers();
 
