@@ -35,7 +35,8 @@ void StrategyManager::setOpeningBookBuildOrder(){
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
 		//_main_strategy = Strategy::main_strategies::Mechanic;
-		_main_strategy = Strategy::main_strategies::Two_Fac;
+		//_main_strategy = Strategy::main_strategies::Two_Fac;
+		_main_strategy = Strategy::main_strategies::Bionic;
 	}
 	else{
 		_main_strategy = Strategy::main_strategies::Bionic;
@@ -430,6 +431,9 @@ int StrategyManager::getUnitLimit(MetaType type){
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Barracks){
 		return 4;
 	}
+	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Factory){
+		return 8;
+	}
 
 	return -1;
 }
@@ -471,7 +475,7 @@ void StrategyManager::initStrategies(){
 	_strategies[Strategy::main_strategies::Two_Fac] = Strategy();
 	_strategies[Strategy::main_strategies::Two_Fac].pre_strategy = Strategy::main_strategies::None;
 	_strategies[Strategy::main_strategies::Two_Fac].next_strategy = Strategy::main_strategies::None;
-	_strategies[Strategy::main_strategies::Two_Fac].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV SCV SCV Factory SCV SCV SCV SCV SCV Machine_Shop SCV Factory Supply_Depot Siege_Tank_Tank_Mode SCV Vulture SCV Supply_Depot Vulture SCV Vulture Machine_Shop Vulture Vulture Vulture Vulture";
+	_strategies[Strategy::main_strategies::Two_Fac].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV SCV SCV Factory Marine SCV SCV SCV SCV Machine_Shop SCV Factory Supply_Depot Siege_Tank_Tank_Mode SCV Vulture SCV Supply_Depot Vulture SCV Vulture Machine_Shop Vulture Vulture Vulture Vulture";
 	_strategies[Strategy::main_strategies::Two_Fac].num_unit_limit["Tanks"] = 12; //마린18이상이면 테크진화
 
 	_strategies[Strategy::main_strategies::Mechanic_Goliath] = Strategy();

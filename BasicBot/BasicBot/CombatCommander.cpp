@@ -302,7 +302,7 @@ void CombatCommander::updateDefenseSquads()
 
             if (BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == myRegion)
             {
-				std::cout << "enemyUnits In My Region " << std::endl;
+				//std::cout << "enemyUnits In My Region " << std::endl;
                 enemyUnitsInRegion.insert(unit);
             }
         }
