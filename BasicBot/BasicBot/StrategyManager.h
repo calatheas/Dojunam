@@ -11,7 +11,7 @@
 #include "ScoutManager.h"
 #include "BuildOrder.h"
 #include "MetaType.h"
-#include "ExpansionManager.h"
+
 namespace MyBot
 {
 
@@ -62,6 +62,8 @@ namespace MyBot
 
 		void initStrategies();
 		void initUnitRatioTable();
+		bool hasTech(BWAPI::TechType tech);
+		bool obtainNextUpgrade(BWAPI::UpgradeType upgType);
 
 	public:
 		bool isInitialBuildOrderFinished;
@@ -81,7 +83,7 @@ namespace MyBot
 
 		const BuildOrder & getOpeningBookBuildOrder() const;
 		const MetaPairVector getBuildOrderGoal();
-		
+		const bool shouldExpandNow() const;
 		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
 		int getUnitLimit(MetaType type);
 		double weightByFrame(double max_weight);
