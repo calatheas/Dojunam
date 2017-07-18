@@ -176,6 +176,9 @@
     <ClCompile Include="BasicBot\VultureManager.cpp">
       <Filter>combat\micro</Filter>
     </ClCompile>
+    <ClCompile Include="BasicBot\ExpansionManager.cpp">
+      <Filter>BotSource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicBot\MyBotModule.h">
@@ -364,6 +367,9 @@
     </ClInclude>
     <ClInclude Include="BasicBot\VultureManager.h">
       <Filter>combat\micro</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicBot\ExpansionManager.h">
+      <Filter>BotSource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

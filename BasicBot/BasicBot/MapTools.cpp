@@ -605,7 +605,8 @@ BWAPI::TilePosition MapTools::_selectNextExpansion(std::vector<BWAPI::TilePositi
 		BWAPI::TilePosition rst(-1, -1);
 
 		//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다
-		if (InformationManager::Instance().selfExpansions.size() > 1 && (InformationManager::Instance().selfExpansions.size() % 2 == 0)){
+		int tmpSize = ExpansionManager::Instance().getExpansions().size();
+		if (tmpSize > 1 && (tmpSize % 2 == 0)){
 			for (auto &expansion_position : positions){
 				if (isStartLocation(expansion_position)){
 					rst = expansion_position;

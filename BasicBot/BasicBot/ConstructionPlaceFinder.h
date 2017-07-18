@@ -6,6 +6,7 @@
 #include "MetaType.h"
 #include "BuildOrderQueue.h"
 #include "InformationManager.h"
+#include "ExpansionManager.h"
 
 namespace MyBot
 {

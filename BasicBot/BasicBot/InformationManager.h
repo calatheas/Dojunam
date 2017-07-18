@@ -65,8 +65,6 @@ namespace MyBot
 		BWAPI::Player       enemyPlayer;	///< 적군 Player		
 		BWAPI::Race			enemyRace;		///< 적군 Player의 종족  
 
-		BWAPI::Unitset selfExpansions; //아군 멀티들
-
 		bool hasCloakedUnits;
 		bool hasFlyingUnits;
 		
@@ -80,7 +78,7 @@ namespace MyBot
 		/// Unit 에 대한 정보를 업데이트합니다
 		void					onUnitCreate(BWAPI::Unit unit)		{ updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다
-		void					onUnitComplete(BWAPI::Unit unit);
+		void					onUnitComplete(BWAPI::Unit unit)    { updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다
 		void					onUnitMorph(BWAPI::Unit unit)       { updateUnitInfo(unit); }
 		/// Unit 에 대한 정보를 업데이트합니다

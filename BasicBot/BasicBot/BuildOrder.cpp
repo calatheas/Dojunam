@@ -47,3 +47,8 @@ MetaType & BuildOrder::operator [] (const size_t & index)
 {
     return _buildOrder[index];
 }
+
+void BuildOrder::clear()
+{
+	_buildOrder.clear();
+}

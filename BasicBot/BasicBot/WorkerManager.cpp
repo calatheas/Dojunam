@@ -648,11 +648,14 @@ void WorkerManager::onUnitShow(BWAPI::Unit unit)
 	if (!unit) return;
 
 	// add the depot if it exists
+	/*
 	if (unit->getType().isResourceDepot() && unit->getPlayer() == BWAPI::Broodwar->self())
 	{
-		std::cout << "onUnitShow - addDepot:" << unit->getPosition() << std::endl;
-		workerData.addDepot(unit);
+	std::cout << "onUnitShow - addDepot:" << unit->getPosition() << std::endl;
+	workerData.addDepot(unit);
 	}
+	*/
+
 
 	// add the worker
 	if (unit->getType().isWorker() && unit->getPlayer() == BWAPI::Broodwar->self() && unit->getHitPoints() >= 0)
@@ -695,10 +698,13 @@ void WorkerManager::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (!unit) return;
 
+	/*
 	if (unit->getType().isResourceDepot() && unit->getPlayer() == BWAPI::Broodwar->self())
 	{
-		workerData.removeDepot(unit);
+	workerData.removeDepot(unit);
 	}
+	*/
+
 
 	if (unit->getType().isWorker() && unit->getPlayer() == BWAPI::Broodwar->self()) 
 	{

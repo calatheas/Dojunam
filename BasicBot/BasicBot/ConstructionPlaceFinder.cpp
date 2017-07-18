@@ -25,7 +25,7 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationWithSeedPositionAnd
 	// TODO 과제 : 그 근처에서 못찾으면 어떻게 할지 생각해볼 과제이다 
 	if (seedPosition != BWAPI::TilePositions::None  && seedPosition.isValid() )
 	{
-		//std::cout << "getBuildLocationNear " << seedPosition.x << ", " << seedPosition.y << std::endl;
+		std::cout << "getBuildLocationNear " << seedPosition.x << ", " << seedPosition.y << std::endl;
 		desiredPosition = getBuildLocationNear(buildingType, seedPosition);
 	}
 	// seedPosition 을 입력하지 않은 경우
@@ -177,8 +177,6 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 {
 	if (buildingType.isRefinery())
 	{
-		//std::cout << "getRefineryPositionNear "<< std::endl;
-
 		return getRefineryPositionNear(desiredPosition);
 	}
 
@@ -496,28 +494,17 @@ bool ConstructionPlaceFinder::canBuildHere(BWAPI::TilePosition position, const C
 BWAPI::TilePosition ConstructionPlaceFinder::getRefineryPositionNear(BWAPI::TilePosition seedPosition) const
 {
 	/*
-	멀티중에 빈 가스 아무거나 선택
+	무조건 시드포인트 전략
+	초기빌드만 제외
 	*/
-	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Refinery) >= InformationManager::Instance().selfExpansions.size()){
-		return BWAPI::TilePositions::None;
-	}
-	else{
-		for (auto &e : InformationManager::Instance().selfExpansions){
-			for (auto &u : e->getUnitsInRadius(300)){
-				if (u->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser){
-					return u->getInitialTilePosition();
-				}
-			}
-		}
-	}
-
-	return BWAPI::TilePositions::None;
-
-	/******************일단 제외********************/
 	if (seedPosition == BWAPI::TilePositions::None || seedPosition == BWAPI::TilePositions::Unknown || seedPosition == BWAPI::TilePositions::Invalid || seedPosition.isValid() == false)
 	{
 		seedPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition();
 	}
+	else if (seedPosition != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition()){
+		return seedPosition;
+	}
+
 	
 	BWAPI::TilePosition closestGeyser = BWAPI::TilePositions::None;
 	double minGeyserDistanceFromSeedPosition = 100000000;

@@ -49,7 +49,7 @@ void WorkerData::addWorker(BWAPI::Unit unit, enum WorkerJob job, BWAPI::UnitType
 	workers.insert(unit);
 	setWorkerJob(unit, job, jobUnitType);
 }
-
+/*
 void WorkerData::addDepot(BWAPI::Unit unit)
 {
 	if (!unit) { return; }
@@ -58,12 +58,17 @@ void WorkerData::addDepot(BWAPI::Unit unit)
 	depots.insert(unit);
 	depotWorkerCount[unit] = 0;
 }
+*/
+BWAPI::Unitset WorkerData::getDepots()
+{
+	return BWAPI::Unitset();
+}
+
 
 void WorkerData::removeDepot(BWAPI::Unit unit)
 {	
 	if (!unit) { return; }
 
-	depots.erase(unit);
 	depotWorkerCount.erase(unit);
 
 	// re-balance workers in here
@@ -76,12 +81,6 @@ void WorkerData::removeDepot(BWAPI::Unit unit)
 		}
 	}
 }
-
-BWAPI::Unitset WorkerData::getDepots()
-{
-	return depots;
-}
-
 
 void WorkerData::addToMineralPatch(BWAPI::Unit unit, int num)
 {

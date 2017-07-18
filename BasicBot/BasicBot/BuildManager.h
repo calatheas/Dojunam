@@ -5,6 +5,7 @@
 #include "ConstructionManager.h"
 #include "BuildOrder.h"
 #include "BOSSManager.h"
+#include "ExpansionManager.h"
 
 namespace MyBot
 {
@@ -37,9 +38,8 @@ namespace MyBot
 		void				checkBuildOrderQueueDeadlockAndAndFixIt();
 		void				checkBuildOrderQueueDeadlockAndRemove();
 
-		//addon 관련 : 예외처리판단함수, addon 달려있는지 확인하는 함수
+		//addon 관련 : 예외처리판단함수
 		bool verifyBuildAddonCommand(BWAPI::Unit u);
-		bool hasAddon(BWAPI::Unit u);
 
 		bool				_enemyCloakedDetected;
 		bool detectSupplyDeadlock();
@@ -70,8 +70,12 @@ namespace MyBot
 		void		onUnitComplete(BWAPI::Unit unit);
 
 		void                setBuildOrder(const BuildOrder & buildOrder);
+		void                addBuildOrderOneItem(MetaType buildOrder, BWAPI::TilePosition position = BWAPI::TilePositions::None);
 		void executeWorkerTraining();
-		
+
+		//addon 달려있는지 확인하는 함수
+		bool hasAddon(BWAPI::Unit u);
+		bool hasUnitInQueue(BWAPI::UnitType ut);
 	};
 
 

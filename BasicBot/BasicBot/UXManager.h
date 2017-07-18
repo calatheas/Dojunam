@@ -9,6 +9,7 @@
 #include "ConstructionManager.h"
 #include "ScoutManager.h"
 #include "StrategyManager.h"
+#include "kyj.h"
 
 namespace MyBot
 {

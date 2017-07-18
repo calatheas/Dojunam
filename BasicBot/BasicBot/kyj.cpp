@@ -1,5 +1,8 @@
 ﻿//kyj.cpp
 #include "kyj.h"
+
+using namespace MyBot;
+
 Kyj & Kyj::Instance()
 {
 	static Kyj instance;
@@ -26,5 +29,16 @@ void Kyj::onSendText(std::string text){
 		catch (std::exception &e){
 			std::cout << e.what() << std::endl;
 		}
+	}
+	else if (text.find("expansions") == 0){
+		/*
+		BWAPI::Unit target;
+
+		for (auto &e : ExpansionManager::Instance().getExpansions()){
+			for (auto u : e->getUnitsInRadius(300)){
+				std::cout << u->getType().getName() << std::endl;
+			}
+		}
+		*/
 	}
 }

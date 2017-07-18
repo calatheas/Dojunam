@@ -56,7 +56,7 @@ namespace Config
 		bool DrawBuildingInfo = true;
 		bool DrawMouseCursorInfo = true;
 		bool DrawEnemyUnitInfo = true;
-		bool DrawBWTAInfo = false;
+		bool DrawBWTAInfo = true;
 		bool DrawMapGrid = false;
 		bool DrawUnitTargetInfo = true;
 

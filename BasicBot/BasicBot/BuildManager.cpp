@@ -264,6 +264,7 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 		if (!unit->isCompleted())                               { continue; }
 		if (unit->isTraining())                                 { continue; }
 		if (unit->isResearching())                              { continue; }
+		if (unit->isUpgrading())                                { continue; }
 		// if unit is lifted, unit should land first
 		if (unit->isLifted())                                   { continue; }
 
@@ -309,10 +310,8 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 					BWAPI::Unitset uot = BWAPI::Broodwar->getUnitsOnTile(tilePos.x, tilePos.y);
 					for (auto & u : uot) {
 						if (u->getPlayer() != InformationManager::Instance().selfPlayer) {
-							isBlocked = false;
-						}
-						else{
 							isBlocked = true;
+							break;
 						}
 					}
 				}
@@ -1012,7 +1011,7 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 //@도주남 김유진 설치전략 추가
 void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 {
-	buildQueue.clearAll();
+	//buildQueue.clearAll(); //중간중간 빌드 추가되므로 삭제
 
 	//현재 큐까지 값을 반영하여 limit 수치를 계산해야 하므로 카운트맵을 하나 만듬
 	std::map<std::string, int> buildItemCnt;
@@ -1031,7 +1030,7 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 			int unitLimit = StrategyManager::Instance().getUnitLimit(buildOrder[i]);
 			int currentUnitNum = BWAPI::Broodwar->self()->completedUnitCount(buildOrder[i].getUnitType()) + BWAPI::Broodwar->self()->incompleteUnitCount(buildOrder[i].getUnitType()) + buildItemCnt[buildOrder[i].getName()];
 
-			if (unitLimit != -1 && currentUnitNum >= unitLimit){
+			if (unitLimit != -1 && currentUnitNum > unitLimit){
 				std::cout << "[unit limit]-" << buildOrder[i].getName() << "is only created " << unitLimit << std::endl;
 				buildItemCnt[buildOrder[i].getName()]--;
 				continue;
@@ -1048,6 +1047,11 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 	}
 }
 
+void BuildManager::addBuildOrderOneItem(MetaType buildOrder, BWAPI::TilePosition position)
+{
+	buildQueue.queueAsHighestPriority(buildOrder, position, true);
+}
+
 //dhj ssh
 void BuildManager::queueGasSteal()
 {
@@ -1055,24 +1059,7 @@ void BuildManager::queueGasSteal()
 }
 
 void BuildManager::onUnitComplete(BWAPI::Unit unit){
-	//@도주남 김유진 
-	//고칠점 아카데미가 부서지고 다시 지을때는 유효하지 않은 코드임
-	if (unit->getPlayer() == InformationManager::Instance().selfPlayer){
-		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-			std::cout << "onUnitComplete : Command_Center" << std::endl;
-			for (auto &u : BWAPI::Broodwar->self()->getUnits()){
-				if (u->getType() == BWAPI::UnitTypes::Terran_Academy && u->isCompleted()){
-					buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), true);
-					std::cout << "add comsat" << std::endl;
-					break;
-				}
-			}
-		}
-		else if (unit->getType() == BWAPI::UnitTypes::Terran_Academy){
-			std::cout << "onUnitComplete : Terran_Academy -> add comsat" << std::endl;
-			buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station), true);
-		}
-	}
+	return;
 }
 
 bool BuildManager::detectSupplyDeadlock()
@@ -1122,13 +1109,16 @@ void BuildManager::executeWorkerTraining(){
 	
 	//InformationManager::Instance().selfExpansions 사용안함
 	//WorkerManager::Instance().getWorkerData().getDepots() 사용 %%%% 두개가 비슷한것으로 판단되나.. 각자 연관된 모듈이 다르므로 합치지 않고 간다.
-	for (BWAPI::Unit u : WorkerManager::Instance().getWorkerData().getDepots()){
+	for (BWAPI::Unit u : ExpansionManager::Instance().getExpansions()){
 		if (!u->isIdle()) continue;
 		if (u->isUnderAttack()) continue;
 		if (!verifyBuildAddonCommand(u)) continue; //빌드애드온 시작하자마자 다른 오더를 바로 내리면 안됨
 		
 		int tmpWorkerCnt = WorkerManager::Instance().getWorkerData().getDepotWorkerCount(u);
-		if (tmpWorkerCnt > -1 && tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(u)*1.5) ){
+
+		//최대생산량 = 현재남은 미네랄덩어리수 * 1.5 * 초기가중치(1.3)
+		if (tmpWorkerCnt > -1 && 
+			tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(u)*1.5*StrategyManager::Instance().weightByFrame(1.3)) ){
 			u->train(BWAPI::UnitTypes::Terran_SCV);
 			return;
 		}
@@ -1155,4 +1145,15 @@ bool BuildManager::hasAddon(BWAPI::Unit u){
 		return true;
 	else
 		return false;
+}
+
+bool BuildManager::hasUnitInQueue(BWAPI::UnitType ut){
+	for (int i = buildQueue.size() - 1; i >= 0; i--){
+		BuildOrderItem &currentItem = buildQueue[i];
+		if (currentItem.metaType.isUnit() &&
+			currentItem.metaType.getUnitType() == ut)
+			return true;
+	}
+
+	return false;
 }

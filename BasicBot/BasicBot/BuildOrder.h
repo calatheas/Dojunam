@@ -24,6 +24,7 @@ public:
 
     const MetaType & operator [] (const size_t & index) const;
     MetaType & operator [] (const size_t & index);
+	void clear();
 };
 
 }

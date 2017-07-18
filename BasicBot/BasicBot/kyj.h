@@ -2,8 +2,13 @@
 #pragma once
 #include "Common.h"
 #include <exception>
-class Kyj{
-public:
-	static Kyj & Instance();
-	void onSendText(std::string text);
-};
+#include "ExpansionManager.h"
+namespace MyBot{
+	class Kyj{
+
+	public:
+		bool mouseEnable = false;
+		static Kyj & Instance();
+		void onSendText(std::string text);
+	};
+}

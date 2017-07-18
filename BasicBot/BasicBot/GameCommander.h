@@ -11,7 +11,7 @@
 #include "kyj.h"
 #include "CombatCommander.h"
 #include "ComsatManager.h"
-
+#include "ExpansionManager.h"
 
 namespace MyBot
 {

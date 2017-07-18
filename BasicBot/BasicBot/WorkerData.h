@@ -44,7 +44,7 @@ namespace MyBot
 		BWAPI::Unitset								  workers;
 
 		/// ResourceDepot 목록
-		BWAPI::Unitset								  depots;
+		//BWAPI::Unitset								  depots;
 
 		std::map<BWAPI::Unit, enum WorkerJob>         workerJobMap;
 		std::map<BWAPI::Unit, BWAPI::Unit>			  workerMineralMap;

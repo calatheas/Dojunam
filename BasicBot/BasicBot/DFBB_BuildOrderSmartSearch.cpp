@@ -59,7 +59,10 @@ void DFBB_BuildOrderSmartSearch::calculateSearchSettings()
     _goal.setGoalMax(resourceDepot, _initialState.getUnitData().getNumTotal(resourceDepot));
 
     // set the number of refineries
-    _goal.setGoalMax(refinery, std::min((UnitCountType)3, calculateRefineriesRequired()));
+    //_goal.setGoalMax(refinery, std::min((UnitCountType)3, calculateRefineriesRequired()));
+
+	// no create refinery
+	_goal.setGoalMax(refinery, _initialState.getUnitData().getNumTotal(refinery));
 
     // set the maximum number of workers to an initial ridiculously high upper bound
     //_goal.setGoalMax(worker, std::min(_initialState.getUnitData().getNumTotal(worker) + 20, 100));
