@@ -8,27 +8,7 @@ ExpansionManager & ExpansionManager::Instance()
 	return instance;
 }
 void ExpansionManager::onSendText(std::string text){
-	if (text.find("speed ") == 0){
-		try{
-			int tmpSpeed = std::stoi(text.substr(text.find(" ") + 1));
-			BWAPI::Broodwar->setLocalSpeed(tmpSpeed);
-			std::cout << "setLocalSpeed=" << tmpSpeed << std::endl;
-		}
-		catch (std::exception &e){
-			std::cout << e.what() << std::endl;
-		}
-	}
-	//잘안먹음
-	else if (text.find("setFrameSkip ") == 0){
-		try{
-			int tmpSkip = std::stoi(text.substr(text.find(" ") + 1));
-			BWAPI::Broodwar->setFrameSkip(tmpSkip);
-			std::cout << "setFrameSkip=" << tmpSkip << std::endl;
-		}
-		catch (std::exception &e){
-			std::cout << e.what() << std::endl;
-		}
-	}
+
 }
 
 const std::vector<BWAPI::Unit> & ExpansionManager::getExpansions(){
@@ -38,14 +18,17 @@ const std::vector<BWAPI::Unit> & ExpansionManager::getExpansions(){
 // 유닛이 파괴/사망한 경우, 해당 유닛 정보를 삭제한다
 void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == BWAPI::Broodwar->self() &&
-		unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-		for (int i = 0; i < expansions.size(); i++){
-			if (unit->getID() == expansions[i]->getID()){
-				expansions.erase(expansions.begin() + i);
-				WorkerManager::Instance().getWorkerData().removeDepot(unit);
-				std::cout << "onUnitDestroy numExpansion:" << expansions.size() << std::endl;
-				break;
+	if (unit->getPlayer() == BWAPI::Broodwar->self()){
+
+
+		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+			for (int i = 0; i < expansions.size(); i++){
+				if (unit->getID() == expansions[i]->getID()){
+					expansions.erase(expansions.begin() + i);
+					WorkerManager::Instance().getWorkerData().removeDepot(unit);
+					std::cout << "onUnitDestroy numExpansion:" << expansions.size() << std::endl;
+					break;
+				}
 			}
 		}
 	}
@@ -58,6 +41,7 @@ void ExpansionManager::onUnitComplete(BWAPI::Unit unit){
 		for (auto &unit_in_region : unit->getUnitsInRadius(400)){
 			if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
 				expansions.push_back(unit);
+				complexity[unit] = 0;
 				std::cout << "onUnitComplete numExpansion:" << expansions.size() << std::endl;
 				break;
 			}
@@ -165,4 +149,26 @@ bool ExpansionManager::shouldExpandNow()
 	}
 
 	return false;
+}
+
+void ExpansionManager::changeComplexity(BWAPI::Unit &unit){
+	for (auto &e : expansions){
+		if (unit->getRegion()->getCenter() == e->getRegion()->getCenter()){
+			if (complexity.find(e) == complexity.end()){
+				complexity[e] = 0.0;
+			}
+			
+			complexity[e] += (unit->getType().width() * unit->getType().height()) /
+				((e->getRegion()->getBoundsRight() - e->getRegion()->getBoundsLeft())*(e->getRegion()->getBoundsBottom() - e->getRegion()->getBoundsTop()));
+
+				/*
+				std::cout << "my base-" << r->getID() << ":(" << r->getBoundsLeft() << "," << r->getBoundsTop() << "," << r->getBoundsRight() << "," << r->getBoundsBottom() << ")/"
+				<< r->getCenter() << std::endl;
+				break;
+				}
+				for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+				std::cout << u->getType() << ":" << u->getType().width() << "," << u->getType().height() << std::endl;
+				*/
+		}
+	}
 }

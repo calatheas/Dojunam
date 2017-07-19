@@ -29,8 +29,23 @@ void GameCommander::onStart()
 	//맵정보에 따른 resourcedepot 당 일꾼 최대수 결정
 	BuildManager::Instance().onStart();
 
-}
+	/*리젼 정보 확인용
+	for (auto &r : BWAPI::Broodwar->getAllRegions()){
+		std::cout << r->getID() << ":(" << r->getBoundsLeft() << "," << r->getBoundsTop() << "," << r->getBoundsRight() << "," << r->getBoundsBottom() << ")/"
+			<< r->getCenter() << std::endl;
+	}
 
+	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+		BWAPI::Region r = u->getRegion();
+		std::cout << "my base-" << r->getID() << ":(" << r->getBoundsLeft() << "," << r->getBoundsTop() << "," << r->getBoundsRight() << "," << r->getBoundsBottom() << ")/"
+			<< r->getCenter() << std::endl;
+		break;
+	}
+	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+		std::cout << u->getType() << ":" << u->getType().width() << "," << u->getType().height() << std::endl;
+	}
+	*/
+}
 void GameCommander::onEnd(bool isWinner)
 {
 	StrategyManager::Instance().onEnd(isWinner);
