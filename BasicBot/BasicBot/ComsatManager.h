@@ -17,8 +17,11 @@ namespace MyBot
 		ComsatManager();
 		void setScanPosition();
 		void setCommand();
+		void setCommandForScout();
 		void clearScanPosition();
 		void setNextEnableFrame();
+
+		BWAPI::Position getScanPositionForScout();
 
 		public:
 			void update();
