@@ -10,7 +10,7 @@ GameCommander::GameCommander(){
 GameCommander::~GameCommander(){
 }
 
-void GameCommander::onStart()
+void GameCommander::onStart() 
 {
 	BWAPI::TilePosition startLocation = BWAPI::Broodwar->self()->getStartLocation();
 	if (startLocation == BWAPI::TilePositions::None || startLocation == BWAPI::TilePositions::Unknown) {
@@ -38,7 +38,7 @@ void GameCommander::onEnd(bool isWinner)
 
 void GameCommander::onFrame()
 {
-	if (BWAPI::Broodwar->isPaused()
+	if (BWAPI::Broodwar->isPaused() 
 		|| BWAPI::Broodwar->self() == nullptr || BWAPI::Broodwar->self()->isDefeated() || BWAPI::Broodwar->self()->leftGame()
 		|| BWAPI::Broodwar->enemy() == nullptr || BWAPI::Broodwar->enemy()->isDefeated() || BWAPI::Broodwar->enemy()->leftGame()) {
 		return;
@@ -53,11 +53,10 @@ void GameCommander::onFrame()
 
 	// 각 유닛의 위치를 자체 MapGrid 자료구조에 저장
 	MapGrid::Instance().update();
-
+		
 	if (isToFindError) std::cout << "c";
 
 	BOSSManager::Instance().update(49.0); //순서가 중요?
-
 	// economy and base managers
 	// 일꾼 유닛에 대한 명령 (자원 채취, 이동 정도) 지시 및 정리
 	WorkerManager::Instance().update();
@@ -93,38 +92,46 @@ void GameCommander::onFrame()
 	ExpansionManager::Instance().update(); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
 }
 
-void GameCommander::onUnitShow(BWAPI::Unit unit)
-{
-	InformationManager::Instance().onUnitShow(unit);
+// BasicBot 1.1 Patch Start ////////////////////////////////////////////////
+// 일꾼 탄생/파괴 등에 대한 업데이트 로직 버그 수정 : onUnitShow 가 아니라 onUnitComplete 에서 처리하도록 수정
+void GameCommander::onUnitShow(BWAPI::Unit unit)			
+{ 
+	InformationManager::Instance().onUnitShow(unit); 
 
 	// ResourceDepot 및 Worker 에 대한 처리
 	WorkerManager::Instance().onUnitShow(unit);
 }
 
-void GameCommander::onUnitHide(BWAPI::Unit unit)
+// BasicBot 1.1 Patch End //////////////////////////////////////////////////
+
+void GameCommander::onUnitHide(BWAPI::Unit unit)			
 {
-	InformationManager::Instance().onUnitHide(unit);
+	InformationManager::Instance().onUnitHide(unit); 
 }
 
 void GameCommander::onUnitCreate(BWAPI::Unit unit)
-{
+{ 
 	InformationManager::Instance().onUnitCreate(unit);
 }
 
+// BasicBot 1.1 Patch Start ////////////////////////////////////////////////
+// 일꾼 탄생/파괴 등에 대한 업데이트 로직 버그 수정 : onUnitShow 가 아니라 onUnitComplete 에서 처리하도록 수정
 void GameCommander::onUnitComplete(BWAPI::Unit unit)
 {
 	InformationManager::Instance().onUnitComplete(unit);
 	ExpansionManager::Instance().onUnitComplete(unit); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
 	BuildManager::Instance().onUnitComplete(unit);
 
+	// ResourceDepot 및 Worker 에 대한 처리
 	WorkerManager::Instance().onUnitComplete(unit);
 }
+
+// BasicBot 1.1 Patch End //////////////////////////////////////////////////
 
 void GameCommander::onUnitDestroy(BWAPI::Unit unit)
 {
 	InformationManager::Instance().onUnitDestroy(unit);
 	ExpansionManager::Instance().onUnitDestroy(unit); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
-
 	// ResourceDepot 및 Worker 에 대한 처리
 	WorkerManager::Instance().onUnitDestroy(unit);
 
@@ -140,7 +147,7 @@ void GameCommander::onUnitRenegade(BWAPI::Unit unit)
 }
 
 void GameCommander::onUnitMorph(BWAPI::Unit unit)
-{
+{ 
 	InformationManager::Instance().onUnitMorph(unit);
 
 	// Zerg 종족 Worker 의 Morph 에 대한 처리
@@ -155,13 +162,30 @@ void GameCommander::onUnitEvade(BWAPI::Unit unit)
 {
 }
 
+// BasicBot 1.1 Patch Start ////////////////////////////////////////////////
+// onNukeDetect, onPlayerLeft, onSaveGame 이벤트를 처리할 수 있도록 메소드 추가
+
+void GameCommander::onNukeDetect(BWAPI::Position target)
+{
+}
+
+void GameCommander::onPlayerLeft(BWAPI::Player player)
+{
+}
+
+void GameCommander::onSaveGame(std::string gameName)
+{
+}
+
+// BasicBot 1.1 Patch End //////////////////////////////////////////////////
+
 void GameCommander::onSendText(std::string text)
 {
 	Kyj::Instance().onSendText(text);
 }
 
 void GameCommander::onReceiveText(BWAPI::Player player, std::string text)
-{
+{	
 }
 
 //@도주남 김지훈 

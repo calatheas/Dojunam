@@ -83,7 +83,17 @@ namespace MyBot
 				//djn ssh
 		void setScoutUnits();
 
+		// BasicBot 1.1 Patch Start ////////////////////////////////////////////////
+		// onNukeDetect, onPlayerLeft, onSaveGame 이벤트를 처리할 수 있도록 메소드 추가
 
+		/// 핵미사일 발사가 감지되었을 때 발생하는 이벤트를 처리합니다
+		void onNukeDetect(BWAPI::Position target);
+
+		/// 다른 플레이어가 대결을 나갔을 때 발생하는 이벤트를 처리합니다
+		void onPlayerLeft(BWAPI::Player player);
+
+		/// 게임을 저장할 때 발생하는 이벤트를 처리합니다
+		void onSaveGame(std::string gameName);
 	};
 
 }
