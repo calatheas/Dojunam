@@ -1,4 +1,4 @@
-﻿#include "ExpansionManager.h"
+#include "ExpansionManager.h"
 
 using namespace MyBot;
 
@@ -20,7 +20,7 @@ void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == BWAPI::Broodwar->self()){
 
-
+		//본진 및 멀티 커맨드센터 관리
 		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
 			for (int i = 0; i < expansions.size(); i++){
 				if (unit->getID() == expansions[i]->getID()){
@@ -31,20 +31,35 @@ void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 				}
 			}
 		}
+
+		//아군 건물은 혼잡도 계산을 한다. (단, 커맨드센터 파괴시에는 혼잡도 자체가 삭제되므로 뺀다.)
+		if (unit->getType().isBuilding()){
+			if (unit->getType() != BWAPI::UnitTypes::Terran_Command_Center){
+				changeComplexity(unit, false); //decrease complexity;
+			}
+			else{
+				complexity.erase(unit);
+			}
+		}
 	}
 }
 
 void ExpansionManager::onUnitComplete(BWAPI::Unit unit){
-	if (unit->getPlayer() == BWAPI::Broodwar->self() &&
-		unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-		//numExpansion는 본진 포함개수
-		for (auto &unit_in_region : unit->getUnitsInRadius(400)){
-			if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
-				expansions.push_back(unit);
-				complexity[unit] = 0;
-				std::cout << "onUnitComplete numExpansion:" << expansions.size() << std::endl;
-				break;
+	if (unit->getPlayer() == BWAPI::Broodwar->self()){
+		if(unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+			//numExpansion는 본진 포함개수
+			for (auto &unit_in_region : unit->getUnitsInRadius(400)){
+				if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
+					expansions.push_back(unit);
+					std::cout << "onUnitComplete numExpansion:" << expansions.size() << std::endl;
+					break;
+				}
 			}
+		}
+		
+		//아군 건물은 혼잡도 계산을 한다.
+		if(unit->getType().isBuilding()){
+			changeComplexity(unit); //increase complexity;
 		}
 	}
 }
@@ -151,23 +166,23 @@ bool ExpansionManager::shouldExpandNow()
 	return false;
 }
 
-void ExpansionManager::changeComplexity(BWAPI::Unit &command_center, bool isAdd){
+void ExpansionManager::changeComplexity(BWAPI::Unit &unit, bool isAdd){
 	for (auto &e : expansions){
-		if (command_center->getRegion()->getCenter() == e->getRegion()->getCenter()){
+		BWTA::Region *expansion_r = BWTA::getRegion(e->getPosition());
+
+		if (expansion_r->getPolygon().isInside(unit->getPosition())){
 			if (complexity.find(e) == complexity.end()){
 				complexity[e] = 0.0;
 			}
 
-			std::cout << "changed " << command_center->getID() << " compexity : " << complexity[e] << " -> ";
-
-			int approximate_region_size = ((e->getRegion()->getBoundsRight() - e->getRegion()->getBoundsLeft())*(e->getRegion()->getBoundsBottom() - e->getRegion()->getBoundsTop()));
+			std::cout << "expansion " << e->getID() << " compexity : " << complexity[e] << " -> ";
 			
 			if (isAdd)	
-				complexity[e] += (command_center->getType().width() * command_center->getType().height()) / approximate_region_size;
+				complexity[e] += (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
 			else
-				complexity[e] -= (command_center->getType().width() * command_center->getType().height()) / approximate_region_size;
+				complexity[e] -= (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
 			
-			std::cout << complexity[e];
+			std::cout << complexity[e] << std::endl;
 			break;
 			
 		}
