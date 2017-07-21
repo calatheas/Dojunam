@@ -19,7 +19,7 @@ namespace MyBot
 		void setCommand();
 		void setCommandForScout();
 		void clearScanPosition();
-		void setNextEnableFrame();
+		void setNextEnableFrame(size_t delay_frame);
 
 		BWAPI::Position getScanPositionForScout();
 

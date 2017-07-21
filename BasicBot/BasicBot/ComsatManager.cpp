@@ -18,8 +18,8 @@ void ComsatManager::clearScanPosition(){
 	_scan_position = BWAPI::Positions::None;
 }
 
-void ComsatManager::setNextEnableFrame(){
-	_next_enable_frame = BWAPI::Broodwar->getFrameCount() + 24; //1초 지연
+void ComsatManager::setNextEnableFrame(size_t delay_frame){
+	_next_enable_frame = BWAPI::Broodwar->getFrameCount() + delay_frame; //한번쓰고 딜레이 준다.
 }
 
 void ComsatManager::setScanPosition(){
@@ -108,7 +108,8 @@ void ComsatManager::setCommand(){
 
 	if (maxId > 0){
 		BWAPI::Broodwar->getUnit(maxId)->useTech(BWAPI::TechTypes::Scanner_Sweep, _scan_position);
-		setNextEnableFrame(); //1초간 스캔 안씀
+		setNextEnableFrame(24); //1초간 스캔 안씀
+		std::cout << "scan " << _scan_position << std::endl;
 	}
 }
 
@@ -151,7 +152,10 @@ BWAPI::Position ComsatManager::getScanPositionForScout(){
 		*/
 
 		GridCell &enemy_base = MapGrid::Instance().getCell(InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().enemyPlayer)->getRegion()->getCenter());
-		rst = enemy_base.center;
+		
+		//현재 스캔할 지역에 가있는 경우는 제외한다.
+		if (enemy_base.timeLastVisited < BWAPI::Broodwar->getFrameCount() - 10) 
+			rst = enemy_base.center;
 	}
 	catch (const std::exception & exception){
 		std::cout << "getScanPositionForScout error" << std::endl;
@@ -172,7 +176,11 @@ void ComsatManager::setCommandForScout(){
 	if (us.size() > 0){
 		for (auto &u : us){
 			BWAPI::Position tmpPosition = getScanPositionForScout();
-			if (tmpPosition != BWAPI::Positions::None) u->useTech(BWAPI::TechTypes::Scanner_Sweep, _scan_position);
+			if (tmpPosition != BWAPI::Positions::None){
+				u->useTech(BWAPI::TechTypes::Scanner_Sweep, tmpPosition);
+				std::cout << "scan for scout " << tmpPosition << std::endl;
+			}
+
 			break;
 		}
 	}
