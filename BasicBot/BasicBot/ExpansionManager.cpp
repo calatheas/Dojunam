@@ -151,24 +151,25 @@ bool ExpansionManager::shouldExpandNow()
 	return false;
 }
 
-void ExpansionManager::changeComplexity(BWAPI::Unit &unit){
+void ExpansionManager::changeComplexity(BWAPI::Unit &command_center, bool isAdd){
 	for (auto &e : expansions){
-		if (unit->getRegion()->getCenter() == e->getRegion()->getCenter()){
+		if (command_center->getRegion()->getCenter() == e->getRegion()->getCenter()){
 			if (complexity.find(e) == complexity.end()){
 				complexity[e] = 0.0;
 			}
-			
-			complexity[e] += (unit->getType().width() * unit->getType().height()) /
-				((e->getRegion()->getBoundsRight() - e->getRegion()->getBoundsLeft())*(e->getRegion()->getBoundsBottom() - e->getRegion()->getBoundsTop()));
 
-				/*
-				std::cout << "my base-" << r->getID() << ":(" << r->getBoundsLeft() << "," << r->getBoundsTop() << "," << r->getBoundsRight() << "," << r->getBoundsBottom() << ")/"
-				<< r->getCenter() << std::endl;
-				break;
-				}
-				for (auto &u : BWAPI::Broodwar->self()->getUnits()){
-				std::cout << u->getType() << ":" << u->getType().width() << "," << u->getType().height() << std::endl;
-				*/
+			std::cout << "changed " << command_center->getID() << " compexity : " << complexity[e] << " -> ";
+
+			int approximate_region_size = ((e->getRegion()->getBoundsRight() - e->getRegion()->getBoundsLeft())*(e->getRegion()->getBoundsBottom() - e->getRegion()->getBoundsTop()));
+			
+			if (isAdd)	
+				complexity[e] += (command_center->getType().width() * command_center->getType().height()) / approximate_region_size;
+			else
+				complexity[e] -= (command_center->getType().width() * command_center->getType().height()) / approximate_region_size;
+			
+			std::cout << complexity[e];
+			break;
+			
 		}
 	}
 }
