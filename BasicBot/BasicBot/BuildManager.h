@@ -28,6 +28,7 @@ namespace MyBot
 
 		int                 getAvailableMinerals();
 		int                 getAvailableGas();
+		std::pair<int, int> getQueueResource();
 		bool                hasEnoughResources(MetaType type);
 		bool                hasNumCompletedUnitType(BWAPI::UnitType type, int num);
 
@@ -35,7 +36,6 @@ namespace MyBot
 
 		BWAPI::TilePosition getDesiredPosition(BWAPI::UnitType unitType, BWAPI::TilePosition seedPosition, BuildOrderItem::SeedPositionStrategy seedPositionStrategy);
 
-		void				checkBuildOrderQueueDeadlockAndAndFixIt();
 		void				checkBuildOrderQueueDeadlockAndRemove();
 
 		//addon 관련 : 예외처리판단함수

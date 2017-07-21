@@ -47,8 +47,9 @@ void BuildManager::update()
 	consumeBuildQueue(); //빌드오더 소비
 
 	//큐가 비어 있으면 새로운 빌드오더 생성
-	if (buildQueue.isEmpty()) {
-		if ((buildQueue.size() == 0) && (BWAPI::Broodwar->getFrameCount() > 10))
+	auto queueResource = getQueueResource();
+	if (BWAPI::Broodwar->getFrameCount() > 10){
+		if (buildQueue.isEmpty() || (getAvailableMinerals() > queueResource.first && getAvailableGas() > queueResource.second))
 		{
 			BWAPI::Broodwar->drawTextScreen(150, 10, "Nothing left to build, new search!");
 
@@ -501,6 +502,20 @@ int BuildManager::getAvailableGas()
 	return BWAPI::Broodwar->self()->gas() - ConstructionManager::Instance().getReservedGas();
 }
 
+// 큐 전체 미네랄, 가스 
+std::pair<int, int> BuildManager::getQueueResource()
+{
+	std::pair<int, int> rst(0,0);
+
+	for (int i = 0; i <buildQueue.size(); i++){
+		rst.first += buildQueue[i].metaType.mineralPrice();
+		rst.second += buildQueue[i].metaType.gasPrice();
+	}
+
+	return rst;
+}
+
+
 // return whether or not we meet resources, including building reserves
 bool BuildManager::hasEnoughResources(MetaType type) 
 {
@@ -625,270 +640,6 @@ bool BuildManager::isProducerWillExist(BWAPI::UnitType producerType)
 	return isProducerWillExist;
 }
 
-void BuildManager::checkBuildOrderQueueDeadlockAndAndFixIt()
-{
-	// BuildQueue 의 HighestPriority 에 있는 BuildQueueItem 이 skip 불가능한 것인데, 선행조건이 충족될 수 없거나, 실행이 앞으로도 계속 불가능한 경우, dead lock 이 발생한다
-	// 선행 건물을 BuildQueue에 추가해넣을지, 해당 BuildQueueItem 을 삭제할지 전략적으로 판단해야 한다
-	BuildOrderQueue * buildQueue = BuildManager::Instance().getBuildQueue();
-	if (!buildQueue->isEmpty())
-	{
-		BuildOrderItem currentItem = buildQueue->getHighestPriorityItem();
-
-		// TODO : 수정. canSkipCurrentItem 문제있는가?
-		//if (buildQueue->canSkipCurrentItem() == false)
-		if (currentItem.blocking == true)
-		{
-			bool isDeadlockCase = false;
-
-			// producerType을 먼저 알아낸다
-			BWAPI::UnitType producerType = currentItem.metaType.whatBuilds();
-
-			// 건물이나 유닛의 경우
-			if (currentItem.metaType.isUnit())
-			{
-				BWAPI::UnitType unitType = currentItem.metaType.getUnitType();
-				BWAPI::TechType requiredTechType = unitType.requiredTech();
-				const std::map< BWAPI::UnitType, int >& requiredUnits = unitType.requiredUnits();
-				int requiredSupply = unitType.supplyRequired();
-
-				// 건물을 생산하는 유닛이나, 유닛을 생산하는 건물이 존재하지 않고, 건설 예정이지도 않으면 dead lock
-				if (isProducerWillExist(producerType) == false) {
-					isDeadlockCase = true;
-				}
-
-				// Refinery 건물의 경우, Refinery 가 건설되지 않은 Geyser가 있는 경우에만 가능
-				if (!isDeadlockCase && unitType == InformationManager::Instance().getRefineryBuildingType())
-				{
-					bool hasAvailableGeyser = true;
-
-					// Refinery가 지어질 수 있는 장소를 찾아본다
-					BWAPI::TilePosition testLocation = getDesiredPosition(unitType, currentItem.seedLocation, currentItem.seedLocationStrategy);
-					
-					// Refinery 를 지으려는 장소를 찾을 수 없으면 dead lock
-					if (testLocation == BWAPI::TilePositions::None || testLocation == BWAPI::TilePositions::Invalid || testLocation.isValid() == false) {
-						std::cout << "Build Order Dead lock case -> Cann't find place to construct " << unitType.getName() << std::endl;
-						hasAvailableGeyser = false;
-					}
-					else {
-						// Refinery 를 지으려는 장소에 Refinery 가 이미 건설되어 있다면 dead lock 
-						BWAPI::Unitset uot = BWAPI::Broodwar->getUnitsOnTile(testLocation);
-						for (auto & u : uot) {
-							if (u->getType().isRefinery() && u->exists()) {
-								hasAvailableGeyser = false;
-								break;
-							}
-						}
-					}
-
-					if (hasAvailableGeyser == false) {
-						isDeadlockCase = true;
-					}
-				}
-				
-				// 선행 기술 리서치가 되어있지 않고, 리서치 중이지도 않으면 dead lock
-				if (!isDeadlockCase && requiredTechType != BWAPI::TechTypes::None)
-				{
-					if (BWAPI::Broodwar->self()->hasResearched(requiredTechType) == false) {
-						if (BWAPI::Broodwar->self()->isResearching(requiredTechType) == false) {
-							isDeadlockCase = true;
-						}
-					}
-				}
-
-				// 선행 건물/유닛이 있는데 
-				if (!isDeadlockCase && requiredUnits.size() > 0)
-				{
-					for (auto & u : requiredUnits)
-					{
-						BWAPI::UnitType requiredUnitType = u.first;
-
-						if (requiredUnitType != BWAPI::UnitTypes::None) {
-
-							/*
-							std::cout << "pre requiredUnitType " << requiredUnitType.getName()
-							<< " completedUnitCount " << BWAPI::Broodwar->self()->completedUnitCount(requiredUnitType)
-							<< " incompleteUnitCount " << BWAPI::Broodwar->self()->incompleteUnitCount(requiredUnitType)
-							<< std::endl;
-							*/
-
-							// 선행 건물 / 유닛이 존재하지 않고, 생산 중이지도 않고
-							if (BWAPI::Broodwar->self()->completedUnitCount(requiredUnitType) == 0
-								&& BWAPI::Broodwar->self()->incompleteUnitCount(requiredUnitType) == 0)
-							{
-								// 선행 건물이 건설 예정이지도 않으면 dead lock
-								if (requiredUnitType.isBuilding())
-								{
-									if (ConstructionManager::Instance().getConstructionQueueItemCount(requiredUnitType) == 0) {
-										isDeadlockCase = true;
-									}
-								}
-								// 선행 유닛이 Larva 인 Zerg 유닛의 경우, Larva, Hatchery, Lair, Hive 가 하나도 존재하지 않고, 건설 예정이지 않은 경우에 dead lock
-								else if (requiredUnitType == BWAPI::UnitTypes::Zerg_Larva)
-								{
-									if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) == 0
-										&& BWAPI::Broodwar->self()->incompleteUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) == 0
-										&& BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0
-										&& BWAPI::Broodwar->self()->incompleteUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0
-										&& BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Zerg_Hive) == 0
-										&& BWAPI::Broodwar->self()->incompleteUnitCount(BWAPI::UnitTypes::Zerg_Hive) == 0)
-									{
-										if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Zerg_Hatchery) == 0
-											&& ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Zerg_Lair) == 0
-											&& ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Zerg_Hive) == 0)
-										{
-											isDeadlockCase = true;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-
-				// 건물이 아닌 지상/공중 유닛인 경우, 서플라이가 400 꽉 찼으면 dead lock
-				if (!isDeadlockCase && !unitType.isBuilding()
-					&& BWAPI::Broodwar->self()->supplyTotal() == 400 && BWAPI::Broodwar->self()->supplyUsed() + unitType.supplyRequired() > 400)
-				{
-					isDeadlockCase = true;
-				}
-
-				// 건물이 아닌 지상/공중 유닛인 경우, 서플라이가 부족하면 dead lock 이지만, 서플라이 부족하다고 지상/공중유닛 빌드를 취소하기보다는 빨리 서플라이를 짓도록 하기 위해, 
-				// 이것은 StrategyManager 등에서 따로 처리하도록 한다 
-
-				//@도주남 
-				/*
-				if (!isDeadlockCase && unitType == BWAPI::UnitTypes::Terran_Barracks){
-					int _max_barracks = 4;
-					if ((int(UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks)) + ConstructionManager::Instance().getConstructionQueueItemCount(unitType)) >= _max_barracks){
-						isDeadlockCase = true;
-					}
-				}
-				*/
-
-			}
-			// 테크의 경우, 해당 리서치를 이미 했거나, 이미 하고있거나, 리서치를 하는 건물 및 선행건물이 존재하지않고 건설예정이지도 않으면 dead lock
-			else if (currentItem.metaType.isTech())
-			{
-				BWAPI::TechType techType = currentItem.metaType.getTechType();
-				BWAPI::UnitType requiredUnitType = techType.requiredUnit();
-
-				if (BWAPI::Broodwar->self()->hasResearched(techType) || BWAPI::Broodwar->self()->isResearching(techType)) {
-					isDeadlockCase = true;
-				}
-				else if (BWAPI::Broodwar->self()->completedUnitCount(producerType) == 0
-					&& BWAPI::Broodwar->self()->incompleteUnitCount(producerType) == 0)
-				{
-					if (ConstructionManager::Instance().getConstructionQueueItemCount(producerType) == 0) {
-
-						// 테크 리서치의 producerType이 Addon 건물인 경우, Addon 건물 건설이 명령 내려졌지만 시작되기 직전에는 getUnits, completedUnitCount, incompleteUnitCount 에서 확인할 수 없다
-						// producerType의 producerType 건물에 의해 Addon 건물 건설의 명령이 들어갔는지까지 확인해야 한다
-						if (producerType.isAddon()) {
-
-							bool isAddonConstructing = false;
-
-							BWAPI::UnitType producerTypeOfProducerType = producerType.whatBuilds().first;
-
-							if (producerTypeOfProducerType != BWAPI::UnitTypes::None) {
-
-								for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-								{
-									if (unit == nullptr) continue;
-									if (unit->getType() != producerTypeOfProducerType)	{ continue; }
-
-									// 모건물이 완성되어있고, 모건물이 해당 Addon 건물을 건설중인지 확인한다
-									if (unit->isCompleted() && unit->isConstructing() && unit->getBuildType() == producerType) {
-										isAddonConstructing = true;
-										break;
-									}
-								}
-							}
-
-							if (isAddonConstructing == false) {
-								isDeadlockCase = true;
-							}
-						}
-						else {
-							isDeadlockCase = true;
-						}
-					}
-				}
-				else if (requiredUnitType != BWAPI::UnitTypes::None) {
-					if (BWAPI::Broodwar->self()->completedUnitCount(requiredUnitType) == 0
-						&& BWAPI::Broodwar->self()->incompleteUnitCount(requiredUnitType) == 0) {
-						if (ConstructionManager::Instance().getConstructionQueueItemCount(requiredUnitType) == 0) {
-							isDeadlockCase = true;
-						}
-					}
-				}
-			}
-			// 업그레이드의 경우, 해당 업그레이드를 이미 했거나, 이미 하고있거나, 업그레이드를 하는 건물 및 선행건물이 존재하지도 않고 건설예정이지도 않으면 dead lock
-			else if (currentItem.metaType.isUpgrade())
-			{
-				BWAPI::UpgradeType upgradeType = currentItem.metaType.getUpgradeType();
-				int maxLevel = BWAPI::Broodwar->self()->getMaxUpgradeLevel(upgradeType);
-				int currentLevel = BWAPI::Broodwar->self()->getUpgradeLevel(upgradeType);
-				BWAPI::UnitType requiredUnitType = upgradeType.whatsRequired();
-
-				if (currentLevel >= maxLevel || BWAPI::Broodwar->self()->isUpgrading(upgradeType)) {
-					isDeadlockCase = true;
-				}
-				else if (BWAPI::Broodwar->self()->completedUnitCount(producerType) == 0
-					&& BWAPI::Broodwar->self()->incompleteUnitCount(producerType) == 0) {
-					if (ConstructionManager::Instance().getConstructionQueueItemCount(producerType) == 0) {
-
-						// 업그레이드의 producerType이 Addon 건물인 경우, Addon 건물 건설이 시작되기 직전에는 getUnits, completedUnitCount, incompleteUnitCount 에서 확인할 수 없다
-						// producerType의 producerType 건물에 의해 Addon 건물 건설이 시작되었는지까지 확인해야 한다						
-						if (producerType.isAddon()) {
-
-							bool isAddonConstructing = false;
-
-							BWAPI::UnitType producerTypeOfProducerType = producerType.whatBuilds().first;
-
-							if (producerTypeOfProducerType != BWAPI::UnitTypes::None) {
-
-								for (auto & unit : BWAPI::Broodwar->self()->getUnits())
-								{
-									if (unit == nullptr) continue;
-									if (unit->getType() != producerTypeOfProducerType)	{ continue; }
-									// 모건물이 완성되어있고, 모건물이 해당 Addon 건물을 건설중인지 확인한다
-									if (unit->isCompleted() && unit->isConstructing() && unit->getBuildType() == producerType) {
-										isAddonConstructing = true;
-										break;
-									}
-								}
-							}
-
-							if (isAddonConstructing == false) {
-								isDeadlockCase = true;
-							}
-						}
-						else {
-							isDeadlockCase = true;
-						}
-					}
-				}
-				else if (requiredUnitType != BWAPI::UnitTypes::None) {
-					if (BWAPI::Broodwar->self()->completedUnitCount(requiredUnitType) == 0
-						&& BWAPI::Broodwar->self()->incompleteUnitCount(requiredUnitType) == 0) {
-						if (ConstructionManager::Instance().getConstructionQueueItemCount(requiredUnitType) == 0) {
-							isDeadlockCase = true;
-						}
-					}
-				}
-			}
-
-			if (isDeadlockCase) {
-				std::cout << std::endl << "Build Order Dead lock case -> remove BuildOrderItem " << currentItem.metaType.getName() << std::endl;
-
-				buildQueue->removeCurrentItem();
-			}
-
-		}
-	}
-
-}
-
-
 void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 {
 	/*
@@ -982,7 +733,7 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 			BWAPI::UpgradeType upgradeType = currentItem.metaType.getUpgradeType();
 			int maxLevel = BWAPI::Broodwar->self()->getMaxUpgradeLevel(upgradeType);
 			int currentLevel = BWAPI::Broodwar->self()->getUpgradeLevel(upgradeType);
-			BWAPI::UnitType requiredUnitType = upgradeType.whatsRequired(currentLevel);
+			BWAPI::UnitType requiredUnitType = upgradeType.whatsRequired(currentLevel+1);
 
 			if (currentLevel >= maxLevel || BWAPI::Broodwar->self()->isUpgrading(upgradeType)) {
 				isDeadlockCase = true;
