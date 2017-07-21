@@ -6,6 +6,8 @@ namespace MyBot
 {
 	class ExpansionManager{
 		std::vector<BWAPI::Unit> expansions;
+		std::map<BWAPI::Unit, double> complexity;
+		void changeComplexity(BWAPI::Unit &unit, bool isAdd=true);
 
 	public:
 		static ExpansionManager & Instance();

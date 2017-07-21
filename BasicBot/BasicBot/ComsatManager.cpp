@@ -15,29 +15,28 @@ ComsatManager & ComsatManager::Instance()
 }
 
 void ComsatManager::clearScanPosition(){
-	_scan_position.x = -1;
-	_scan_position.y = -1;
+	_scan_position = BWAPI::Positions::None;
 }
 
-void ComsatManager::setNextEnableFrame(){
-	_next_enable_frame = BWAPI::Broodwar->getFrameCount() + 24; //1ÃÊ Áö¿¬
+void ComsatManager::setNextEnableFrame(size_t delay_frame){
+	_next_enable_frame = BWAPI::Broodwar->getFrameCount() + delay_frame; //í•œë²ˆì“°ê³  ë”œë ˆì´ ì¤€ë‹¤.
 }
 
 void ComsatManager::setScanPosition(){
-	//1. ½ºÄµ ´ë»óÀ» ±¸ÇÔ
+	//1. ìŠ¤ìº” ëŒ€ìƒì„ êµ¬í•¨
 	BWAPI::Unitset cloakUnits;
 	UnitUtil::getAllCloakUnits(cloakUnits);
 
-	//2. ´ë»ó ÁÖÀ§¿¡ ¿ì¸® À¯´ÖÀÌ ¾ó¸¶³ª ÀÖ´ÂÁö Ã¼Å©
-	//µğÅØÇØ¾ßµÇ´Â Àû ÁÖÀ§¿¡ À¯´ÖÀÌ ³Ê¹« ÀûÀ¸¸é(¸¶¸° 3°³ ¹Ì¸¸) ½ºÄµ¾ÈÇÔ
-	//Å¸°ÙÀ» °ø°İÇÒ¼ö ÀÖ¾î¾ß ÇÔ(¹«±âÅ¸ÀÔ, ¹«±â¹üÀ§)
+	//2. ëŒ€ìƒ ì£¼ìœ„ì— ìš°ë¦¬ ìœ ë‹›ì´ ì–¼ë§ˆë‚˜ ìˆëŠ”ì§€ ì²´í¬
+	//ë””í…í•´ì•¼ë˜ëŠ” ì  ì£¼ìœ„ì— ìœ ë‹›ì´ ë„ˆë¬´ ì ìœ¼ë©´(ë§ˆë¦° 3ê°œ ë¯¸ë§Œ) ìŠ¤ìº”ì•ˆí•¨
+	//íƒ€ê²Ÿì„ ê³µê²©í• ìˆ˜ ìˆì–´ì•¼ í•¨(ë¬´ê¸°íƒ€ì…, ë¬´ê¸°ë²”ìœ„)
 	std::vector<std::pair<BWAPI::Position, double>> cloakUnitInfo;
 	for (auto &cu : cloakUnits){
 		double tmpDps = 0.0;
 
 		for (auto &u : cu->getUnitsInRadius(_scan_radius_offset)){	
-			BWAPI::WeaponType tmpWeapon = UnitUtil::GetWeapon(u, cu); //°ø°İ°¡´É ¿©ºÎ ÆÇ´Ü 
-			int tmpDistance = u->getDistance(cu); //°Å¸® ÆÇ´Ü
+			BWAPI::WeaponType tmpWeapon = UnitUtil::GetWeapon(u, cu); //ê³µê²©ê°€ëŠ¥ ì—¬ë¶€ íŒë‹¨ 
+			int tmpDistance = u->getDistance(cu); //ê±°ë¦¬ íŒë‹¨
 			if (tmpWeapon != BWAPI::WeaponTypes::None && tmpWeapon != BWAPI::WeaponTypes::Unknown &&
 				tmpDistance <= tmpWeapon.maxRange())
 			{
@@ -50,11 +49,11 @@ void ComsatManager::setScanPosition(){
 		}
 	}
 
-	//Å¸°ÙÀÌ ¾øÀ¸¸é ¸®ÅÏ
+	//íƒ€ê²Ÿì´ ì—†ìœ¼ë©´ ë¦¬í„´
 	if (cloakUnitInfo.empty()) return;
 
-	//3. Áßº¹ ½ºÄµÁö¿ª Á¤¸®
-	//ÇÑ È­¸é ¾È¿¡ °¡Àå À¯´ÖÀÌ ¸¹Àº Áö¿ªÀ» ¼±Á¤ (ÇÑ È­¸é 20Å¸ÀÏ(32*32))
+	//3. ì¤‘ë³µ ìŠ¤ìº”ì§€ì—­ ì •ë¦¬
+	//í•œ í™”ë©´ ì•ˆì— ê°€ì¥ ìœ ë‹›ì´ ë§ì€ ì§€ì—­ì„ ì„ ì • (í•œ í™”ë©´ 20íƒ€ì¼(32*32))
 	int tmpOffset = 20 * 32;
 	std::vector<int> tmpInd;
 	std::size_t maxCnt = 0;
@@ -72,7 +71,7 @@ void ComsatManager::setScanPosition(){
 		if (tmpInd.size() > maxCnt){
 			maxCnt = tmpInd.size();
 
-			//Á¦ÀÏ ¸¹ÀÌ °ãÄ¡´Â Æ÷ÀÎÆ®µéÀÇ Æò±Õ
+			//ì œì¼ ë§ì´ ê²¹ì¹˜ëŠ” í¬ì¸íŠ¸ë“¤ì˜ í‰ê· 
 			int tmpX = 0;
 			int tmpY = 0;
 			for (std::size_t k = 0; k < tmpInd.size(); k++){
@@ -84,15 +83,13 @@ void ComsatManager::setScanPosition(){
 		}
 	}
 
-	//4. °¡Àå ¸¹Àº Áö¿ªÀÇ Æò±ÕÁÂÇ¥¸¦ Å¸°ÙÀ¸·Î ¼³Á¤
+	//4. ê°€ì¥ ë§ì€ ì§€ì—­ì˜ í‰ê· ì¢Œí‘œë¥¼ íƒ€ê²Ÿìœ¼ë¡œ ì„¤ì •
 	_scan_position.x = maxAreaPosition.x;
 	_scan_position.y = maxAreaPosition.y;
 
 }
 
 void ComsatManager::setCommand(){
-	if (_scan_position.x < 0 || _scan_position.y < 0) return;
-
 	BWAPI::Unitset us;
 	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
 		if (u->getType() == BWAPI::UnitTypes::Terran_Comsat_Station){
@@ -111,20 +108,80 @@ void ComsatManager::setCommand(){
 
 	if (maxId > 0){
 		BWAPI::Broodwar->getUnit(maxId)->useTech(BWAPI::TechTypes::Scanner_Sweep, _scan_position);
-		setNextEnableFrame(); //1ÃÊ°£ ½ºÄµ ¾È¾¸
+		setNextEnableFrame(24); //1ì´ˆê°„ ìŠ¤ìº” ì•ˆì”€
+		std::cout << "scan " << _scan_position << std::endl;
 	}
 }
 
 void ComsatManager::update(){
-	// 1ÃÊ(24ÇÁ·¹ÀÓ)¿¡ 4¹ø Á¤µµ¸¸ ½ÇÇàÇØµµ ÃæºĞÇÏ´Ù
+	// 1ì´ˆ(24í”„ë ˆì„)ì— 4ë²ˆ ì •ë„ë§Œ ì‹¤í–‰í•´ë„ ì¶©ë¶„í•˜ë‹¤
 	if (BWAPI::Broodwar->getFrameCount() % 6 != 0) return;
 
-	//½ºÄµ ÇÑ¹ø ¾²¸é 1ÃÊ µô·¹ÀÌ
+	//ì ì´ ë°œê²¬ëœ ì§€ì—­ ìŠ¤ì¼„
+	//ë˜ëŠ” 200ë˜ë©´ í•œë²ˆì”©
 	if (BWAPI::Broodwar->getFrameCount() > _next_enable_frame){
 		clearScanPosition();
 		setScanPosition();
-		setCommand();
+
+		if (_scan_position == BWAPI::Positions::None){
+			setCommandForScout();
+		}
+		else{
+			setCommand(); //ìŠ¤ìº” í•œë²ˆ ì“°ë©´ 1ì´ˆ ë”œë ˆì´
+		}
+		
 	}
 
 	//meleeUnit->useTech(BWAPI::TechTypes::Stim_Packs);
+}
+
+BWAPI::Position ComsatManager::getScanPositionForScout(){
+	BWAPI::Position rst = BWAPI::Positions::None;
+
+	try{	
+		/* ì¼ë‹¨ì€ ë³¸ì§„ë§Œ ë¿Œë¦¬ê¸°ë¡œ
+		GridCell &enemy_base = MapGrid::Instance().getCell(InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().enemyPlayer)->getRegion()->getCenter());
+		GridCell &enemy_2nd_chock = MapGrid::Instance().getCell(InformationManager::Instance().getSecondChokePoint(InformationManager::Instance().enemyPlayer)->getCenter());
+
+		if (enemy_base.timeLastOpponentSeen > enemy_2nd_chock.timeLastOpponentSeen){
+			rst = enemy_2nd_chock.center;
+		}
+		else{
+			rst = enemy_base.center;
+		}
+		*/
+
+		GridCell &enemy_base = MapGrid::Instance().getCell(InformationManager::Instance().getMainBaseLocation(InformationManager::Instance().enemyPlayer)->getRegion()->getCenter());
+		
+		//í˜„ì¬ ìŠ¤ìº”í•  ì§€ì—­ì— ê°€ìˆëŠ” ê²½ìš°ëŠ” ì œì™¸í•œë‹¤.
+		if (enemy_base.timeLastVisited < BWAPI::Broodwar->getFrameCount() - 10) 
+			rst = enemy_base.center;
+	}
+	catch (const std::exception & exception){
+		std::cout << "getScanPositionForScout error" << std::endl;
+	}
+
+	return rst;
+}
+
+
+void ComsatManager::setCommandForScout(){
+	BWAPI::Unitset us;
+	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
+		if (u->getType() == BWAPI::UnitTypes::Terran_Comsat_Station && u->getEnergy() == 200){
+			us.insert(u);
+		}
+	}
+
+	if (us.size() > 0){
+		for (auto &u : us){
+			BWAPI::Position tmpPosition = getScanPositionForScout();
+			if (tmpPosition != BWAPI::Positions::None){
+				u->useTech(BWAPI::TechTypes::Scanner_Sweep, tmpPosition);
+				std::cout << "scan for scout " << tmpPosition << std::endl;
+			}
+
+			break;
+		}
+	}
 }

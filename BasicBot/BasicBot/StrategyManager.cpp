@@ -359,7 +359,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	if (ExpansionManager::Instance().shouldExpandNow())
 	{
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numUnits["CC"] + 1));
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numUnits["Workers"] + 1));
+		//goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numUnits["Workers"] + 1));
 	}
 
 	return goal;

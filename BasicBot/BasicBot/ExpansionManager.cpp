@@ -1,4 +1,4 @@
-﻿#include "ExpansionManager.h"
+#include "ExpansionManager.h"
 
 using namespace MyBot;
 
@@ -8,27 +8,7 @@ ExpansionManager & ExpansionManager::Instance()
 	return instance;
 }
 void ExpansionManager::onSendText(std::string text){
-	if (text.find("speed ") == 0){
-		try{
-			int tmpSpeed = std::stoi(text.substr(text.find(" ") + 1));
-			BWAPI::Broodwar->setLocalSpeed(tmpSpeed);
-			std::cout << "setLocalSpeed=" << tmpSpeed << std::endl;
-		}
-		catch (std::exception &e){
-			std::cout << e.what() << std::endl;
-		}
-	}
-	//잘안먹음
-	else if (text.find("setFrameSkip ") == 0){
-		try{
-			int tmpSkip = std::stoi(text.substr(text.find(" ") + 1));
-			BWAPI::Broodwar->setFrameSkip(tmpSkip);
-			std::cout << "setFrameSkip=" << tmpSkip << std::endl;
-		}
-		catch (std::exception &e){
-			std::cout << e.what() << std::endl;
-		}
-	}
+
 }
 
 const std::vector<BWAPI::Unit> & ExpansionManager::getExpansions(){
@@ -38,29 +18,48 @@ const std::vector<BWAPI::Unit> & ExpansionManager::getExpansions(){
 // 유닛이 파괴/사망한 경우, 해당 유닛 정보를 삭제한다
 void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == BWAPI::Broodwar->self() &&
-		unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-		for (int i = 0; i < expansions.size(); i++){
-			if (unit->getID() == expansions[i]->getID()){
-				expansions.erase(expansions.begin() + i);
-				WorkerManager::Instance().getWorkerData().removeDepot(unit);
-				std::cout << "onUnitDestroy numExpansion:" << expansions.size() << std::endl;
-				break;
+	if (unit->getPlayer() == BWAPI::Broodwar->self()){
+
+		//본진 및 멀티 커맨드센터 관리
+		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+			for (int i = 0; i < expansions.size(); i++){
+				if (unit->getID() == expansions[i]->getID()){
+					expansions.erase(expansions.begin() + i);
+					WorkerManager::Instance().getWorkerData().removeDepot(unit);
+					std::cout << "onUnitDestroy numExpansion:" << expansions.size() << std::endl;
+					break;
+				}
+			}
+		}
+
+		//아군 건물은 혼잡도 계산을 한다. (단, 커맨드센터 파괴시에는 혼잡도 자체가 삭제되므로 뺀다.)
+		if (unit->getType().isBuilding()){
+			if (unit->getType() != BWAPI::UnitTypes::Terran_Command_Center){
+				changeComplexity(unit, false); //decrease complexity;
+			}
+			else{
+				complexity.erase(unit);
 			}
 		}
 	}
 }
 
 void ExpansionManager::onUnitComplete(BWAPI::Unit unit){
-	if (unit->getPlayer() == BWAPI::Broodwar->self() &&
-		unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-		//numExpansion는 본진 포함개수
-		for (auto &unit_in_region : unit->getUnitsInRadius(400)){
-			if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
-				expansions.push_back(unit);
-				std::cout << "onUnitComplete numExpansion:" << expansions.size() << std::endl;
-				break;
+	if (unit->getPlayer() == BWAPI::Broodwar->self()){
+		if(unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+			//numExpansion는 본진 포함개수
+			for (auto &unit_in_region : unit->getUnitsInRadius(400)){
+				if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
+					expansions.push_back(unit);
+					std::cout << "onUnitComplete numExpansion:" << expansions.size() << std::endl;
+					break;
+				}
 			}
+		}
+		
+		//아군 건물은 혼잡도 계산을 한다.
+		if(unit->getType().isBuilding()){
+			changeComplexity(unit); //increase complexity;
 		}
 	}
 }
@@ -165,4 +164,27 @@ bool ExpansionManager::shouldExpandNow()
 	}
 
 	return false;
+}
+
+void ExpansionManager::changeComplexity(BWAPI::Unit &unit, bool isAdd){
+	for (auto &e : expansions){
+		BWTA::Region *expansion_r = BWTA::getRegion(e->getPosition());
+
+		if (expansion_r->getPolygon().isInside(unit->getPosition())){
+			if (complexity.find(e) == complexity.end()){
+				complexity[e] = 0.0;
+			}
+
+			std::cout << "expansion " << e->getID() << " compexity : " << complexity[e] << " -> ";
+			
+			if (isAdd)	
+				complexity[e] += (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
+			else
+				complexity[e] -= (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
+			
+			std::cout << complexity[e] << std::endl;
+			break;
+			
+		}
+	}
 }

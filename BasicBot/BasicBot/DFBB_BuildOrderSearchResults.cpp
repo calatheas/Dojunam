@@ -14,6 +14,8 @@ DFBB_BuildOrderSearchResults::DFBB_BuildOrderSearchResults()
 
 void DFBB_BuildOrderSearchResults::printResults(bool pbo) const
 {
+	return; //보스도주남
+
     printf("%12d%14llu%12.2lf       ",upperBound,nodesExpanded,timeElapsed);
 
     if (pbo)
