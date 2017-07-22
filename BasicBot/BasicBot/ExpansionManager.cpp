@@ -1,4 +1,4 @@
-#include "ExpansionManager.h"
+﻿#include "ExpansionManager.h"
 
 using namespace MyBot;
 

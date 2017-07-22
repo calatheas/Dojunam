@@ -1,4 +1,4 @@
-#include "ComsatManager.h"
+﻿#include "ComsatManager.h"
 
 using namespace MyBot;
 
