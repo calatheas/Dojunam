@@ -29,6 +29,9 @@ void GameCommander::onStart()
 	//맵정보에 따른 resourcedepot 당 일꾼 최대수 결정
 	BuildManager::Instance().onStart();
 
+	//맵정보 초기세팅(리젼별 경계세팅)
+	MapGrid::Instance().onStart();
+
 	//리젼 정보 확인용
 	//BWAPI의 region과 BWTA의 region은 완전 다름
 	/*

@@ -23,7 +23,8 @@ namespace MyBot
 			FirstExpansionLocation,		///< 아군 첫번째 앞마당
 			SecondChokePoint,			///< 아군 두번째 길목
 			SecondExpansionLocation,	///< 아군 두번째 앞마당
-			SeedPositionSpecified		///< 별도 지정 위치
+			SeedPositionSpecified,		///< 별도 지정 위치
+			MainBaseOppositeChock
 		};
 		SeedPositionStrategy		seedLocationStrategy;	///< 건설위치 초안 결정 정책
 

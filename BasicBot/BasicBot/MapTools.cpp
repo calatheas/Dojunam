@@ -125,9 +125,26 @@ void MapGrid::clearGrid() {
 	}
 }
 
+void MapGrid::onStart(){
+	for (BWTA::BaseLocation *i : BWTA::getBaseLocations()){
+		_arr_regionVertices.push_back(RegionVertices(i));
+	}
+}
+
+
 // populate the grid with units
 void MapGrid::update()
 {
+	//vertics 표시
+	for (auto i : _arr_regionVertices){
+		std::vector<BWAPI::Position> _enemyRegionVertices = i.getRegionVertices();
+		for (size_t i(0); i < _enemyRegionVertices.size(); ++i)
+		{
+			BWAPI::Broodwar->drawCircleMap(_enemyRegionVertices[i], 4, BWAPI::Colors::Green, false);
+			BWAPI::Broodwar->drawTextMap(_enemyRegionVertices[i], "%d", i);
+		}
+	}
+
 	// clear the grid
 	clearGrid();
 
@@ -220,6 +237,16 @@ int MapGrid::getRows()
 int MapGrid::getCols()
 {
 	return cols;
+}
+
+RegionVertices & MapGrid::getRegionVertices(BWTA::BaseLocation *p_baseLocation){
+	for (auto &i : _arr_regionVertices){
+		if (i.getBaseLocation()->getPosition() == p_baseLocation->getPosition()){
+			return i;
+		}
+	}
+
+	return RegionVertices();
 }
 
 MapTools & MapTools::Instance()
@@ -630,4 +657,189 @@ BWAPI::TilePosition MapTools::_selectNextExpansion(std::vector<BWAPI::TilePositi
 	else{
 		return BWAPI::TilePositions::None;
 	}
+}
+
+RegionVertices::RegionVertices() :
+	_thisBaseLocation(NULL), 
+	_oppositeChock(BWAPI::Positions::None)
+{
+}
+
+
+RegionVertices::RegionVertices(BWTA::BaseLocation *baseLocation)
+{
+	_thisBaseLocation = baseLocation;
+
+	BWTA::Region * baseRegion = baseLocation->getRegion();
+	//UAB_ASSERT_WARNING(baseRegion, "We should have an enemy region if we are fleeing");
+
+	if (!baseRegion)
+	{
+		std::cout << "return!!!" << std::endl;
+		return;
+	}
+
+	const BWAPI::Position basePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
+	const std::vector<BWAPI::TilePosition> & closestTobase = MapTools::Instance().getClosestTilesTo(basePosition);
+
+	std::set<BWAPI::Position> unsortedVertices;
+
+	// check each tile position
+	for (size_t i(0); i < closestTobase.size(); ++i)
+	{
+		const BWAPI::TilePosition & tp = closestTobase[i];
+
+		if (BWTA::getRegion(tp) != baseRegion)
+		{
+			continue;
+		}
+
+		// a tile is 'surrounded' if
+		// 1) in all 4 directions there's a tile position in the current region
+		// 2) in all 4 directions there's a buildable tile
+		bool surrounded = true;
+		if (BWTA::getRegion(BWAPI::TilePosition(tp.x + 1, tp.y)) != baseRegion || !BWAPI::Broodwar->isBuildable(BWAPI::TilePosition(tp.x + 1, tp.y))
+			|| BWTA::getRegion(BWAPI::TilePosition(tp.x, tp.y + 1)) != baseRegion || !BWAPI::Broodwar->isBuildable(BWAPI::TilePosition(tp.x, tp.y + 1))
+			|| BWTA::getRegion(BWAPI::TilePosition(tp.x - 1, tp.y)) != baseRegion || !BWAPI::Broodwar->isBuildable(BWAPI::TilePosition(tp.x - 1, tp.y))
+			|| BWTA::getRegion(BWAPI::TilePosition(tp.x, tp.y - 1)) != baseRegion || !BWAPI::Broodwar->isBuildable(BWAPI::TilePosition(tp.x, tp.y - 1)))
+		{
+			surrounded = false;
+		}
+
+		// push the tiles that aren't surrounded
+		if (!surrounded && BWAPI::Broodwar->isBuildable(tp))
+		{
+			if (Config::Debug::DrawScoutInfo)
+			{
+				int x1 = tp.x * 32 + 2;
+				int y1 = tp.y * 32 + 2;
+				int x2 = (tp.x + 1) * 32 - 2;
+				int y2 = (tp.y + 1) * 32 - 2;
+
+				//BWAPI::Broodwar->drawTextMap(x1 + 3, y1 + 2, "%d", MapTools::Instance().getGroundDistance(BWAPI::Position(tp), basePosition));
+				//BWAPI::Broodwar->drawBoxMap(x1, y1, x2, y2, BWAPI::Colors::Green, false);
+			}
+
+			unsortedVertices.insert(BWAPI::Position(tp) + BWAPI::Position(16, 16));
+		}
+	}
+
+
+	std::vector<BWAPI::Position> sortedVertices;
+	BWAPI::Position current = *unsortedVertices.begin();
+
+	_regionVertices.push_back(current);
+	unsortedVertices.erase(current);
+
+	// while we still have unsorted vertices left, find the closest one remaining to current
+	while (!unsortedVertices.empty())
+	{
+		double bestDist = 1000000;
+		BWAPI::Position bestPos;
+
+		for (const BWAPI::Position & pos : unsortedVertices)
+		{
+			double dist = pos.getDistance(current);
+
+			if (dist < bestDist)
+			{
+				bestDist = dist;
+				bestPos = pos;
+			}
+		}
+
+		current = bestPos;
+		sortedVertices.push_back(bestPos);
+		unsortedVertices.erase(bestPos);
+	}
+
+	// let's close loops on a threshold, eliminating death grooves
+	int distanceThreshold = 100;
+
+	while (true)
+	{
+		// find the largest index difference whose distance is less than the threshold
+		int maxFarthest = 0;
+		int maxFarthestStart = 0;
+		int maxFarthestEnd = 0;
+
+		// for each starting vertex
+		for (int i(0); i < (int)sortedVertices.size(); ++i)
+		{
+			int farthest = 0;
+			int farthestIndex = 0;
+
+			// only test half way around because we'll find the other one on the way back
+			for (size_t j(1); j < sortedVertices.size() / 2; ++j)
+			{
+				int jindex = (i + j) % sortedVertices.size();
+
+				if (sortedVertices[i].getDistance(sortedVertices[jindex]) < distanceThreshold)
+				{
+					farthest = j;
+					farthestIndex = jindex;
+				}
+			}
+
+			if (farthest > maxFarthest)
+			{
+				maxFarthest = farthest;
+				maxFarthestStart = i;
+				maxFarthestEnd = farthestIndex;
+			}
+		}
+
+		// stop when we have no long chains within the threshold
+		if (maxFarthest < 4)
+		{
+			break;
+		}
+
+		double dist = sortedVertices[maxFarthestStart].getDistance(sortedVertices[maxFarthestEnd]);
+
+		std::vector<BWAPI::Position> temp;
+
+		for (size_t s(maxFarthestEnd); s != maxFarthestStart; s = (s + 1) % sortedVertices.size())
+		{
+			temp.push_back(sortedVertices[s]);
+		}
+
+		sortedVertices = temp;
+	}
+
+	_regionVertices = sortedVertices;
+
+	int tmpMaxDist = 0;
+	for (auto i : _regionVertices){
+		int distToBase = i.getDistance(_thisBaseLocation->getPosition());
+
+		int distToChock = 0;
+		if (BWTA::getNearestChokepoint(i) != NULL){
+			distToChock = i.getDistance(BWTA::getNearestChokepoint(i)->getCenter());
+		}
+		
+		if (tmpMaxDist < distToBase + distToChock){
+			_oppositeChock = i;
+		}
+	}
+
+
+	std::cout << "$ finished to calculate vertices - center:" << _thisBaseLocation->getPosition() << ", size:" << _regionVertices.size() << std::endl;
+}
+
+void RegionVertices::getRegionVertices(std::vector<BWAPI::Position> &rv){
+	rv = _regionVertices;
+	return;
+}
+
+std::vector<BWAPI::Position> & RegionVertices::getRegionVertices(){
+	return _regionVertices;
+}
+
+BWTA::BaseLocation * RegionVertices::getBaseLocation(){
+	return _thisBaseLocation;
+}
+
+BWAPI::Position RegionVertices::getOppositeChock(){
+	return _oppositeChock;
 }

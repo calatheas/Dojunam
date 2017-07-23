@@ -148,10 +148,25 @@ namespace MyBot
 		}
 	};
 
+	//리젼 바운더리 벡터
+	class RegionVertices{
+		std::vector<BWAPI::Position> _regionVertices;
+		BWTA::BaseLocation *_thisBaseLocation;
+		BWAPI::Position _oppositeChock;
+
+	public:
+		RegionVertices();
+		RegionVertices(BWTA::BaseLocation *baseLocation);
+		BWTA::BaseLocation * getBaseLocation();
+		std::vector<BWAPI::Position> & getRegionVertices();
+		void getRegionVertices(std::vector<BWAPI::Position> &rv);
+		BWAPI::Position getOppositeChock();
+	};
+
 	/// 지도를 바둑판처럼 Cell 들로 나누고, 매 frame 마다 각 Cell 의 timeLastVisited 시간정보, timeLastOpponentSeen 시간정보, ourUnits 와 oppUnits 목록을 업데이트 합니다
 	class MapGrid
 	{
-	
+		std::vector<RegionVertices> _arr_regionVertices;
 
 	public:
 		MapGrid();
@@ -175,6 +190,8 @@ namespace MyBot
 		/// 각 Cell 의 timeLastVisited 시간정보, timeLastOpponentSeen 시간정보, ourUnits 와 oppUnits 목록 등을 업데이트 합니다
 		void				update();
 
+		void onStart();
+
 		/// 해당 position 근처에 있는 아군 혹은 적군 유닛들의 목록을 UnitSet 에 저장합니다
 		/// BWAPI::Broodwar->self()->getUnitsOnTile, getUnitsInRectangle, getUnitsInRadius, getClosestUnit 함수와 유사하지만 쓰임새가 다릅니다
 		void				getUnitsNear(BWAPI::Unitset & units, BWAPI::Position center, int radius, bool ourUnits, bool oppUnits);
@@ -190,6 +207,8 @@ namespace MyBot
 		int					getMapHeight();
 		int					getRows();
 		int					getCols();
+
+		RegionVertices & getRegionVertices(BWTA::BaseLocation *p_baseLocation);
 	};
 
 
@@ -205,6 +224,7 @@ namespace MyBot
 		std::vector<int>            _fringe;						///< the fringe vector which is used as a sort of 'open list'
 		int                         _rows;
 		int                         _cols;
+
 
 		MapTools();
 

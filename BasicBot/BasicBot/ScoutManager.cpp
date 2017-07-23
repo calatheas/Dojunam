@@ -1,4 +1,4 @@
-#include "ScoutManager.h"
+﻿#include "ScoutManager.h"
 #include "BuildManager.h"
 
 using namespace MyBot;
@@ -42,10 +42,18 @@ void ScoutManager::update()
 	// calculate enemy region vertices if we haven't yet
 	if (_enemyRegionVertices.empty())
 	{
-		calculateEnemyRegionVertices();
+		//calculateEnemyRegionVertices();
+
+		BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+
+		if (enemyBaseLocation != nullptr)
+		{
+			RegionVertices & tmpObj = MapGrid::Instance().getRegionVertices(enemyBaseLocation);
+			tmpObj.getRegionVertices(_enemyRegionVertices);
+		}
 	}
 	moveScouts();
-	drawScoutInformation(200, 320);
+	//drawScoutInformation(200, 320);
 }
 
 void ScoutManager::setWorkerScout(BWAPI::Unit unit)

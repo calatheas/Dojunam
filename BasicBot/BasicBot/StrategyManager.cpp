@@ -416,11 +416,12 @@ const bool StrategyManager::shouldExpandNow() const
 
 //각 건물에 대한 설치전략
 BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrategy(MetaType type){
-	//서플라이 5개까지만 본진커맨드 주변, 이후 본진 외곽
+	//TODO : 큐 단위 이므로 큐에 있는것까지 고려는 잘 안됨.
+	//서플라이 2개까지만 본진커맨드 주변, 이후 본진과 쵸크포인트 둘다 먼곳
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
-		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 5){
-			std::cout << "build supply depot on MainBaseBackYard" << std::endl;
-			return BuildOrderItem::SeedPositionStrategy::MainBaseBackYard;
+		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 1){
+			std::cout << "build supply depot on MainBaseOppositeChock" << std::endl;
+			return BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
 		}
 	}
 

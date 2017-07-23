@@ -166,6 +166,18 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationWithSeedPositionAnd
 				}
 			}
 			break;
+		case BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock:
+			RegionVertices &tmpObj = MapGrid::Instance().getRegionVertices(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self()));
+			BWAPI::Position seedPosition = tmpObj.getOppositeChock();
+
+			if (seedPosition == BWAPI::Positions::None){
+				desiredPosition = getBuildLocationNear(buildingType, InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition());
+			}
+			else{
+				
+				desiredPosition = getBuildLocationNear(buildingType, BWAPI::TilePosition(seedPosition.x / 32, seedPosition.y/32));
+			}
+			break;
 
 		}
 	}

@@ -496,6 +496,9 @@ BWAPI::TilePosition BuildManager::getDesiredPosition(BWAPI::UnitType unitType, B
 			break;
 		case BuildOrderItem::SeedPositionStrategy::SecondExpansionLocation:
 		case BuildOrderItem::SeedPositionStrategy::SeedPositionSpecified:
+		case BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock:
+			seedPositionStrategy = BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
+			break;
 		default:
 			findAnotherPlace = false;
 			break;
