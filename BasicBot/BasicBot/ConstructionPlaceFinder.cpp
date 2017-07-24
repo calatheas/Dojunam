@@ -167,18 +167,35 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationWithSeedPositionAnd
 			}
 			break;
 		case BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock:
-			RegionVertices &tmpObj = MapGrid::Instance().getRegionVertices(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self()));
-			BWAPI::Position seedPosition = tmpObj.getOppositeChock();
+			{
+				RegionVertices &tmpObj = MapGrid::Instance().getRegionVertices(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self()));
+				BWAPI::Position seedPosition = tmpObj.getOppositeChock();
 
-			if (seedPosition == BWAPI::Positions::None){
-				desiredPosition = getBuildLocationNear(buildingType, InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition());
-			}
-			else{
-				
-				desiredPosition = getBuildLocationNear(buildingType, BWAPI::TilePosition(seedPosition.x / 32, seedPosition.y/32));
+				if (seedPosition == BWAPI::Positions::None){
+					desiredPosition = getBuildLocationNear(buildingType, InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition());
+				}
+				else{
+
+					desiredPosition = getBuildLocationNear(buildingType, BWAPI::TilePosition(seedPosition.x / 32, seedPosition.y / 32));
+				}
 			}
 			break;
 
+		case BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation:
+			{
+				double minCompexity = 100.0;
+				int minIdx = -1;
+				const std::vector<Expansion> & expansions = ExpansionManager::Instance().getExpansions();
+				for (size_t i = 0; i<expansions.size(); i++){
+					if (minCompexity > expansions[i].complexity && expansions[i].complexity > 0.0){
+						minCompexity = expansions[i].complexity;
+						minIdx = i;
+					}
+				}
+
+				desiredPosition = getBuildLocationNear(buildingType, expansions[minIdx].cc->getTilePosition());
+			}
+			break;
 		}
 	}
 

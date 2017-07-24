@@ -425,6 +425,11 @@ BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrate
 		}
 	}
 
+	if (ExpansionManager::Instance().getExpansions()[0].complexity > 20.0){
+		std::cout << "build " << type.getName() << " on LowComplexityExpansionLocation" << std::endl;
+		return BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation;
+	}
+
 	return BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
 }
 

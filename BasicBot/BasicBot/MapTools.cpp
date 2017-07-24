@@ -240,13 +240,14 @@ int MapGrid::getCols()
 }
 
 RegionVertices & MapGrid::getRegionVertices(BWTA::BaseLocation *p_baseLocation){
+	RegionVertices tmpObj = RegionVertices_null::null_object;
 	for (auto &i : _arr_regionVertices){
 		if (i.getBaseLocation()->getPosition() == p_baseLocation->getPosition()){
 			return i;
 		}
 	}
 
-	return RegionVertices();
+	return tmpObj;
 }
 
 MapTools & MapTools::Instance()
@@ -505,7 +506,7 @@ BWAPI::TilePosition MapTools::getNextExpansion()
 BWAPI::TilePosition MapTools::getNextExpansion(BWAPI::TilePosition &exceptPosition)
 {
 	std::vector<BWAPI::TilePosition> &expansions = getNextExpansions();
-	for (int i = 0; i < expansions.size(); i++){
+	for (size_t i = 0; i < expansions.size(); i++){
 		if (expansions[i] == exceptPosition){
 			expansions.erase(expansions.begin() + i);
 			break;
@@ -541,7 +542,8 @@ std::vector<BWAPI::TilePosition> MapTools::getNextExpansions()
 		}
 
 		// if the base has gas
-		if (!base->isMineralOnly())
+		//if (!base->isMineralOnly())
+		if (1)
 		{
 			// get the tile position of the base
 			BWAPI::TilePosition tile = base->getTilePosition();
@@ -629,24 +631,26 @@ BWAPI::TilePosition MapTools::_selectNextExpansion(std::vector<BWAPI::TilePositi
 	*/
 
 	if (!positions.empty()){
-		BWAPI::TilePosition rst(-1, -1);
+		BWAPI::TilePosition rst = BWAPI::TilePositions::None;
 
-		//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다
-		int tmpSize = ExpansionManager::Instance().getExpansions().size();
-		if (tmpSize > 1 && (tmpSize % 2 == 0)){
-			for (auto &expansion_position : positions){
-				if (isStartLocation(expansion_position)){
-					rst = expansion_position;
-					break;
-				}
-				else{
-					continue;
+		//@도주남 김유진 두번째 멀티할때는 스타트포인트에서 찾는다. 헌터만 적용
+		if (InformationManager::Instance().getMapName() == 'H'){
+			int tmpSize = ExpansionManager::Instance().getExpansions().size();
+			if (tmpSize > 1 && (tmpSize % 2 == 0)){
+				for (auto &expansion_position : positions){
+					if (isStartLocation(expansion_position)){
+						rst = expansion_position;
+						break;
+					}
+					else{
+						continue;
+					}
 				}
 			}
 		}
 
 		//일반적인 경우는 제일 가까운 멀티선정
-		if (rst.x == -1){
+		if (rst == BWAPI::TilePositions::None){
 			return positions.front();
 		}
 		else{

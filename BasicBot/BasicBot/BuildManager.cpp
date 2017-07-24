@@ -541,7 +541,7 @@ std::pair<int, int> BuildManager::getQueueResource()
 {
 	std::pair<int, int> rst(0,0);
 
-	for (int i = 0; i <buildQueue.size(); i++){
+	for (size_t i = 0; i <buildQueue.size(); i++){
 		rst.first += buildQueue[i].metaType.mineralPrice();
 		rst.second += buildQueue[i].metaType.gasPrice();
 	}
@@ -682,7 +682,7 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 		이 때는 필요한 건물이 현재 건설중인 건물이 있지 않으면 삭제처리한다.
 	*/
 	//큐를 lowest부터 돌면서 non block 빌드만 남았는지 체크 -> 모두다 non block이면 뭔가 문제들이 있었던 빌드이므로 아래 로직 체크해서 하나씩 지운다.
-	for (int i = 0; i <buildQueue.size(); i++){
+	for (size_t i = 0; i <buildQueue.size(); i++){
 		if (buildQueue[i].blocking) return;
 	}
 
@@ -894,17 +894,17 @@ void BuildManager::executeWorkerTraining(){
 	
 	//InformationManager::Instance().selfExpansions 사용안함
 	//WorkerManager::Instance().getWorkerData().getDepots() 사용 %%%% 두개가 비슷한것으로 판단되나.. 각자 연관된 모듈이 다르므로 합치지 않고 간다.
-	for (BWAPI::Unit u : ExpansionManager::Instance().getExpansions()){
-		if (!u->isIdle()) continue;
-		if (u->isUnderAttack()) continue;
-		if (!verifyBuildAddonCommand(u)) continue; //빌드애드온 시작하자마자 다른 오더를 바로 내리면 안됨
+	for (Expansion e : ExpansionManager::Instance().getExpansions()){
+		if (!e.cc->isIdle()) continue;
+		if (e.cc->isUnderAttack()) continue;
+		if (!verifyBuildAddonCommand(e.cc)) continue; //빌드애드온 시작하자마자 다른 오더를 바로 내리면 안됨
 		
-		int tmpWorkerCnt = WorkerManager::Instance().getWorkerData().getDepotWorkerCount(u);
+		int tmpWorkerCnt = WorkerManager::Instance().getWorkerData().getDepotWorkerCount(e.cc);
 
 		//최대생산량 = 현재남은 미네랄덩어리수 * 1.5 * 초기가중치(1.3)
 		if (tmpWorkerCnt > -1 && 
-			tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(u)*1.5*StrategyManager::Instance().weightByFrame(1.3)) ){
-			u->train(BWAPI::UnitTypes::Terran_SCV);
+			tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(e.cc)*1.5*StrategyManager::Instance().weightByFrame(1.3)) ){
+			e.cc->train(BWAPI::UnitTypes::Terran_SCV);
 			return;
 		}
 	}

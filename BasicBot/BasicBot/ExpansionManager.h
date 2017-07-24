@@ -4,19 +4,31 @@
 
 namespace MyBot
 {
+	class Expansion{
+	public:
+		BWAPI::Unit cc;
+		double complexity;
+		Expansion();
+		Expansion(BWAPI::Unit & u);
+	};
+
+	namespace Expansion_null{
+		const Expansion null_object;
+	}
+
 	class ExpansionManager{
-		std::vector<BWAPI::Unit> expansions;
-		std::map<BWAPI::Unit, double> complexity;
-		void changeComplexity(BWAPI::Unit &unit, bool isAdd=true);
+		std::vector<Expansion> expansions;
+		void changeComplexity(BWAPI::Unit unit, bool isAdd=true);
 
 	public:
 		static ExpansionManager & Instance();
 		void onSendText(std::string text);
 		void update();
 
-		const std::vector<BWAPI::Unit> & getExpansions();
-		void ExpansionManager::onUnitDestroy(BWAPI::Unit unit);
-		void ExpansionManager::onUnitComplete(BWAPI::Unit unit);
+		const std::vector<Expansion> & getExpansions();
+		const Expansion & getExpansion(BWAPI::Unit & u);
+		void ExpansionManager::onUnitDestroy(BWAPI::Unit & unit);
+		void ExpansionManager::onUnitComplete(BWAPI::Unit & unit);
 		bool shouldExpandNow();
 	};
 }
