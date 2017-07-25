@@ -156,17 +156,13 @@ namespace MyBot
 
 	public:
 		RegionVertices();
-		RegionVertices(BWTA::BaseLocation *baseLocation);
+		void init(BWTA::BaseLocation *baseLocation);
 		BWTA::BaseLocation * getBaseLocation();
 		std::vector<BWAPI::Position> & getRegionVertices();
 		void getRegionVertices(std::vector<BWAPI::Position> &rv);
 		BWAPI::Position getOppositeChock();
 
 	};
-
-	namespace RegionVertices_null{
-		const RegionVertices null_object;
-	}
 
 	/// 지도를 바둑판처럼 Cell 들로 나누고, 매 frame 마다 각 Cell 의 timeLastVisited 시간정보, timeLastOpponentSeen 시간정보, ourUnits 와 oppUnits 목록을 업데이트 합니다
 	class MapGrid
@@ -213,7 +209,7 @@ namespace MyBot
 		int					getRows();
 		int					getCols();
 
-		RegionVertices & getRegionVertices(BWTA::BaseLocation *p_baseLocation);
+		RegionVertices * getRegionVertices(BWTA::BaseLocation *p_baseLocation);
 	};
 
 

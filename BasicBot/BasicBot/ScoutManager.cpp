@@ -48,8 +48,8 @@ void ScoutManager::update()
 
 		if (enemyBaseLocation != nullptr)
 		{
-			RegionVertices & tmpObj = MapGrid::Instance().getRegionVertices(enemyBaseLocation);
-			tmpObj.getRegionVertices(_enemyRegionVertices);
+			RegionVertices * tmpObj = MapGrid::Instance().getRegionVertices(enemyBaseLocation);
+			if (tmpObj!=NULL) tmpObj->getRegionVertices(_enemyRegionVertices);
 		}
 	}
 	moveScouts();

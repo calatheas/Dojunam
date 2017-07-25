@@ -34,13 +34,17 @@ void CombatCommander::initializeSquads()
     BWAPI::Position ourBasePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
 
     // the scout defense squad will handle chasing the enemy worker scout
-    SquadOrder enemyScoutDefense(SquadOrderTypes::Defend, ourBasePosition, 900, "Get the scout");
+	SquadOrder enemyScoutDefense(SquadOrderTypes::Defend, ourBasePosition, ourBasePosition.getDistance(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter()), "Kill the scout");
     _squadData.addSquad("ScoutDefense", Squad("ScoutDefense", enemyScoutDefense, ScoutDefensePriority));
+	
+	////BaseDefensePriority
+	//SquadOrder baseDefense(SquadOrderTypes::Defend, ourBasePosition, ourBasePosition.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()), "Handle In Base Enemy");
+	//_squadData.addSquad("BaseDefense", Squad("BaseDefense", baseDefense, BaseDefensePriority));
 
     // add a drop squad if we are using a drop strategy
     if (Config::Strategy::StrategyName == "Protoss_Drop")
     {
-        SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 900, "Wait for transport");
+		SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 900, "Wait for transport");
         _squadData.addSquad("Drop", Squad("Drop", zealotDrop, DropPriority));
     }
 
@@ -82,6 +86,7 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 
 void CombatCommander::updateIdleSquad()
 {
+	int radi = 300;
     Squad & idleSquad = _squadData.getSquad("Idle");	
 	//if (_combatUnits.size() % 10 == 1)
 	{
@@ -90,26 +95,64 @@ void CombatCommander::updateIdleSquad()
 		if (abs(diff_x) > abs(diff_y))
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(_combatUnits.size(), 32), 100, "Move Out");
+				+ BWAPI::Position(_combatUnits.size(), 32), radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 		else{
 			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(32, _combatUnits.size()), 100, "Move Out");
+				+ BWAPI::Position(32, _combatUnits.size()), radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
+
+		BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+		for (auto & unit : _combatUnits)
+		{
+			// if it hasn't been assigned to a squad yet, put it in the low priority idle squad
+			//BWAPI::UnitCommand currentCommand(unit->getLastCommand());
+			if (_squadData.canAssignUnitToSquad(unit, idleSquad))
+			{
+				//idleSquad.addUnit(unit);
+				_squadData.assignUnitToSquad(unit, idleSquad);
+				if (mineralPosition == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition())
+					for (auto &unit_in_region : unit->getUnitsInRadius(600)){
+						if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
+							mineralPosition = unit_in_region->getPosition();
+							break;
+						}
+					}
+			}
+		}
+
+
+		if (idleSquad.getUnits().size() < 13)
+		{
+			int tmp_radi = 190;
+			SquadOrder idleOrder(SquadOrderTypes::Attack, mineralPosition
+				, tmp_radi, "Move Out");
+			idleSquad.setSquadOrder(idleOrder);
+		}
+		//else if (idleSquad.getUnits().size() < 15)
+		//{
+		//	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition()
+		//		, 100, "Move Out");
+		//	idleSquad.setSquadOrder(idleOrder);
+		//}
+		else if (idleSquad.getUnits().size() < 17)
+		{
+			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+				, radi, "Move Out");
+			idleSquad.setSquadOrder(idleOrder);
+		}
+		else{
+			SquadOrder idleOrder(SquadOrderTypes::Attack,
+				InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter() - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition()
+				+ InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+				, radi, "Move Out");
+			idleSquad.setSquadOrder(idleOrder);
+		}
+
 	}
-    for (auto & unit : _combatUnits)
-    {
-        // if it hasn't been assigned to a squad yet, put it in the low priority idle squad
-		//BWAPI::UnitCommand currentCommand(unit->getLastCommand());
-		if (_squadData.canAssignUnitToSquad(unit, idleSquad))
-        {
-            //idleSquad.addUnit(unit);
-			_squadData.assignUnitToSquad(unit, idleSquad);			
-			Micro::SmartAttackMove(unit, idleSquad.getSquadOrder().getPosition());
-        }		
-    }
+    
 }
 
 void CombatCommander::updateAttackSquads()
@@ -117,7 +160,17 @@ void CombatCommander::updateAttackSquads()
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
 
-	if (candiAttackerSquad.getUnits().size() > 40 || (mainAttackSquad.getUnits().size() > 7) )
+	if ((mainAttackSquad.getUnits().size() > 7) && candiAttackerSquad.getUnits().size() > 10)
+	{
+		for (auto & unit : _combatUnits)
+		{
+			if (_squadData.canAssignUnitToSquad(unit, mainAttackSquad))
+			{
+				_squadData.assignUnitToSquad(unit, mainAttackSquad);
+			}
+		}
+	}
+	else if (candiAttackerSquad.getUnits().size() > 20)
 	{
 		for (auto & unit : _combatUnits)
 		{
@@ -321,7 +374,7 @@ void CombatCommander::updateDefenseSquads()
         int numEnemyGroundInRegion = std::count_if(enemyUnitsInRegion.begin(), enemyUnitsInRegion.end(), [](BWAPI::Unit u) { return !u->isFlying(); });
 
         std::stringstream squadName;
-        squadName << "Base Defense " << regionCenter.x << " " << regionCenter.y; 
+		squadName << "Base Defense " << regionCenter.x << " " << regionCenter.y;
         
         // if there's nothing in this region to worry about
         if (enemyUnitsInRegion.empty())
@@ -354,7 +407,7 @@ void CombatCommander::updateDefenseSquads()
             // figure out how many units we need on defense
 	        int flyingDefendersNeeded = numDefendersPerEnemyUnit * numEnemyFlyingInRegion;
 	        int groundDefensersNeeded = numDefendersPerEnemyUnit * numEnemyGroundInRegion;
-
+			
             updateDefenseSquadUnits(defenseSquad, flyingDefendersNeeded, groundDefensersNeeded);
         }
         else
@@ -399,7 +452,7 @@ void CombatCommander::updateDefenseSquadUnits(Squad & defenseSquad, const size_t
 	const BWAPI::Unitset & squadUnits = _squadData.getSquad("Idle").getUnits();
     size_t flyingDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackAir);
     size_t groundDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackGround);
-
+	//std::cout << "flyingDefendersInSquad " << flyingDefendersInSquad << " groundDefendersInSquad " << groundDefendersInSquad << std::endl;
     // if there's nothing left to defend, clear the squad
     if (flyingDefendersNeeded == 0 && groundDefendersNeeded == 0)
     {

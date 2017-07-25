@@ -12,7 +12,7 @@ void BuildManager::onStart(){
 	if (InformationManager::Instance().getMapName() == 'H'){
 		maxDepotWorkers = 10; //미네랄10덩어리
 	}
-	else if (InformationManager::Instance().getMapName() == 'H'){
+	else if (InformationManager::Instance().getMapName() == 'F'){
 		maxDepotWorkers = 9; //미네랄9덩어리
 	}
 	else{
@@ -903,7 +903,7 @@ void BuildManager::executeWorkerTraining(){
 
 		//최대생산량 = 현재남은 미네랄덩어리수 * 1.5 * 초기가중치(1.3)
 		if (tmpWorkerCnt > -1 && 
-			tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(e.cc)*1.5*StrategyManager::Instance().weightByFrame(1.3)) ){
+			tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(e.cc)*2*StrategyManager::Instance().weightByFrame(1.3)) ){
 			e.cc->train(BWAPI::UnitTypes::Terran_SCV);
 			return;
 		}
@@ -914,7 +914,7 @@ bool BuildManager::verifyBuildAddonCommand(BWAPI::Unit u){
 	if (u->getLastCommand().getType() == BWAPI::UnitCommandTypes::Build_Addon
 		&& (BWAPI::Broodwar->getFrameCount() - u->getLastCommandFrame() < 10))
 	{
-		return false;
+		return false; 
 	}
 	else{
 		return true;

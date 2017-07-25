@@ -37,6 +37,7 @@ namespace Config
 		bool DrawSquadInfo = false;
 		bool DrawBOSSStateInfo = false;
 		bool PrintModuleTimeout = false;
+		bool createTrackingLog = false;
 
 		std::string ErrorLogFilename = "UAB_ErrorLog.txt";
 		bool LogAssertToErrorFile = false;
@@ -106,7 +107,7 @@ namespace Config
 
 	namespace BWAPIOptions
 	{
-		int SetLocalSpeed = 40;
+		int SetLocalSpeed = 0;
 		int SetFrameSkip = 0;
 		bool EnableUserInput = true;
 		bool EnableCompleteMapInformation = false;

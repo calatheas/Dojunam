@@ -94,6 +94,23 @@ namespace MyBot
 
 		/// 게임을 저장할 때 발생하는 이벤트를 처리합니다
 		void onSaveGame(std::string gameName);
+
+		//에러위치 찾는 용도
+		std::ofstream log_file;
+		std::string log_file_path;
+
+		template<typename T>
+		void log_write(T s, bool end=false){
+			if (!Config::Debug::createTrackingLog) return;
+
+			log_file.open(log_file_path, std::ofstream::out | std::ofstream::app);
+
+			if (log_file.is_open()){
+				log_file << s;
+				if (end) log_file << std::endl;
+			}
+			log_file.close();
+		}
 	};
 
 }

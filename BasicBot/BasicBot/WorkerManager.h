@@ -19,6 +19,7 @@ namespace MyBot
 	public:
 		/// 각 Worker 에 대한 WorkerJob 상황을 저장하는 자료구조 객체
 		WorkerData  workerData;
+		bool initial_attack;
 
 
 		/// 일꾼 중 한명을 Repair Worker 로 정해서, 전체 수리 대상을 하나씩 순서대로 수리합니다

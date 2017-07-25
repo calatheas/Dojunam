@@ -1,11 +1,23 @@
 ﻿#include "GameCommander.h"
+#include <direct.h>
 
 using namespace MyBot;
 
 GameCommander::GameCommander(){
-	isToFindError = false;
+	isToFindError = true;
 	//@도주남 김지훈
 	_initialScoutSet = false;
+
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	//tstruct = *localtime(&now);
+	localtime_s(&tstruct, &now);
+	strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", &tstruct);
+
+	log_file_path = Config::Strategy::WriteDir + std::string(buf) + ".log";
+	std::cout << "log_file_path:" << log_file_path << std::endl;
+	
 }
 GameCommander::~GameCommander(){
 }
@@ -60,53 +72,61 @@ void GameCommander::onFrame()
 		|| BWAPI::Broodwar->enemy() == nullptr || BWAPI::Broodwar->enemy()->isDefeated() || BWAPI::Broodwar->enemy()->leftGame()) {
 		return;
 	}
-
-	if (isToFindError) std::cout << "(a";
+	log_write(BWAPI::Broodwar->getFrameCount());
 
 	// 아군 베이스 위치. 적군 베이스 위치. 각 유닛들의 상태정보 등을 Map 자료구조에 저장/업데이트
 	InformationManager::Instance().update();
 
-	if (isToFindError) std::cout << "b";
+	log_write(":InformationManager, ");
 
 	// 각 유닛의 위치를 자체 MapGrid 자료구조에 저장
 	MapGrid::Instance().update();
 		
-	if (isToFindError) std::cout << "c";
+	log_write("MapGrid, ");
 
 	BOSSManager::Instance().update(49.0); //순서가 중요?
+
+	log_write("BOSSManager, ");
+
 	// economy and base managers
 	// 일꾼 유닛에 대한 명령 (자원 채취, 이동 정도) 지시 및 정리
 	WorkerManager::Instance().update();
 
-	if (isToFindError) std::cout << "d";
+	log_write("WorkerManager, ");
 
 	// 빌드오더큐를 관리하며, 빌드오더에 따라 실제 실행(유닛 훈련, 테크 업그레이드 등)을 지시한다.
 	BuildManager::Instance().update();
 
-	if (isToFindError) std::cout << "e";
+	log_write("BuildManager, ");
 
 	// 빌드오더 중 건물 빌드에 대해서는, 일꾼유닛 선정, 위치선정, 건설 실시, 중단된 건물 빌드 재개를 지시한다
 	ConstructionManager::Instance().update();
 
-	if (isToFindError) std::cout << "f";
+	log_write("ConstructionManager, ");
 
 	// 게임 초기 정찰 유닛 지정 및 정찰 유닛 컨트롤을 실행한다
 	ScoutManager::Instance().update();
 
-	if (isToFindError) std::cout << "g";
+	log_write("ScoutManager, ");
 
 	// 전략적 판단 및 유닛 컨트롤
 	StrategyManager::Instance().update();
 
-	if (isToFindError) std::cout << "h)";
-	//@도주남 김지훈 전투유닛 셋팅
+	log_write("StrategyManager, ");
 
+	//@도주남 김지훈 전투유닛 셋팅
 	handleUnitAssignments();
 	CombatCommander::Instance().update(_combatUnits);
 
+	log_write("CombatCommander, ");
+
 	ComsatManager::Instance().update();
 
+	log_write("ComsatManager, ");
+
 	ExpansionManager::Instance().update(); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
+
+	log_write("ExpansionManager");
 }
 
 // BasicBot 1.1 Patch Start ////////////////////////////////////////////////

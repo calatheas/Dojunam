@@ -35,6 +35,8 @@ void ComsatManager::setScanPosition(){
 		double tmpDps = 0.0;
 
 		for (auto &u : cu->getUnitsInRadius(_scan_radius_offset)){	
+			if (u->getPlayer() != InformationManager::Instance().selfPlayer) continue;
+
 			BWAPI::WeaponType tmpWeapon = UnitUtil::GetWeapon(u, cu); //공격가능 여부 판단 
 			int tmpDistance = u->getDistance(cu); //거리 판단
 			if (tmpWeapon != BWAPI::WeaponTypes::None && tmpWeapon != BWAPI::WeaponTypes::Unknown &&

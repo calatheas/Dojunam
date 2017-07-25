@@ -111,7 +111,7 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				}
 				else
 				// if we're not near the order position
-				if (rangedUnit->getDistance(order.getPosition()) > 100)
+				//if (rangedUnit->getDistance(order.getPosition()) > 20)
 				{
 					// move to it
 					Micro::SmartAttackMove(rangedUnit, order.getPosition());

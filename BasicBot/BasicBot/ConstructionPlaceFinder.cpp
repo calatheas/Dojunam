@@ -168,8 +168,12 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationWithSeedPositionAnd
 			break;
 		case BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock:
 			{
-				RegionVertices &tmpObj = MapGrid::Instance().getRegionVertices(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self()));
-				BWAPI::Position seedPosition = tmpObj.getOppositeChock();
+				RegionVertices *tmpObj = MapGrid::Instance().getRegionVertices(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self()));
+				
+				BWAPI::Position seedPosition = BWAPI::Positions::None;
+				if (tmpObj != NULL){
+					seedPosition = tmpObj->getOppositeChock();
+				}
 
 				if (seedPosition == BWAPI::Positions::None){
 					desiredPosition = getBuildLocationNear(buildingType, InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition());

@@ -5,18 +5,50 @@ using namespace MyBot;
 
 VultureManager::VultureManager()
 {
+	miningOn = false;
+}
+
+void VultureManager::miningPositionSetting()
+{
+	BWTA::Chokepoint * mysecChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
+	BWTA::Chokepoint * enemySecChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
+	
+	if (enemySecChokePoint == nullptr || getUnits().size() == 0 || miningOn)
+		return;
+
+	if (!BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Spider_Mines))
+		return;
+
+	std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(mysecChokePoint->getCenter()), BWAPI::TilePosition(enemySecChokePoint->getCenter()));
+	pathTileCount = tileList.size();
+
+	for (auto & t : tileList) {
+		BWAPI::Position tp(t.x*32, t.y*32);
+		if (!tp.isValid())
+			continue;
+		if (tp.getDistance(enemySecChokePoint->getCenter()) < 100)
+			continue;
+		if (tp.getDistance(mysecChokePoint->getCenter()) < 100)
+			continue;
+		
+		chokePointForVulture.push_back(tp);
+	}
+
 	for (BWTA::Chokepoint * chokepoint : BWTA::getChokepoints())
 	{
-		if (chokepoint == InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self()))
-			continue ;
+		if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
+			continue;
+		if (chokepoint == mysecChokePoint)
+			continue;
 		if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy()))
 			continue;
-		chokePointMineCounter[secondChokePointCount] = 0;
-		chokePointForVulture[secondChokePointCount] = chokepoint->getCenter();
-		secondChokePointCount++;
-		//if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy()))
-		//	continue ;
+		if (chokepoint == enemySecChokePoint)
+			continue;
+		chokePointForVulture.push_back(chokepoint->getCenter());	
 	}
+	miningOn = true;
+	return;
+
 }
 
 void VultureManager::executeMicro(const BWAPI::Unitset & targets)
@@ -46,17 +78,17 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		{
 			if (vultureUnitTargets.empty())
 			{				
-				if (vultureUnit->getSpiderMineCount() > 0)
+				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0)
 				{
 					int minV = 999999;
 					int index = -1;
 					BWAPI::Position mineSetPosition = vultureUnit->getPosition();
 					//std::cout << "getSpiderMineCount>0  52 done " << std::endl;
-					mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % secondChokePointCount];
+					mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % chokePointForVulture.size()];
 					//std::cout << " vulture No.  " << vultureUnit->getID() << " set Mine pos ( " << mineSetPosition.x << ", " << mineSetPosition.y << ")" << std::endl;
 					BWAPI::Broodwar->drawTextMap(mineSetPosition, "%s", "Mine Set Here");
 					//int mineCount = vultureUnit->getSpiderMineCount();
-					while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition))
+					while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition) || BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)).size() > 1)
 					{						
 						if (vultureUnit->getID() % 4 == 0)
 							mineSetPosition += BWAPI::Position(1, 1);
@@ -72,6 +104,16 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 							break;
 						}
 					}
+					//while (BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)).size() > 1 || !mineSetPosition.isValid()){
+					//	if (vultureUnit->getID() % 4 == 0)
+					//		mineSetPosition += BWAPI::Position(1, 1);
+					//	else if (vultureUnit->getID() % 4 == 1)
+					//		mineSetPosition += BWAPI::Position(1, -1);
+					//	else if (vultureUnit->getID() % 4 == 2)
+					//		mineSetPosition += BWAPI::Position(-1, 1);
+					//	else if (vultureUnit->getID() % 4 == 3)
+					//		mineSetPosition += BWAPI::Position(-1, -1);
+					//}
 					Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition);
 					//BWAPI::UnitCommand currentCommand(vultureUnit->getLastCommand());
 					//if (mineCount == vultureUnit->getSpiderMineCount() && currentCommand.getTargetPosition() == vultureUnit->getPosition() )
@@ -84,7 +126,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					//		//chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % secondChokePointCount] -= BWAPI::Position(0, 1);
 					//	}
 					//}
-					//std::cout << "getSpiderMineCount>0  69 done " << std::endl;
+					//std::cout << "getSpiderMineCount>0  127 done " << std::endl;
 					continue;
 				}
 			}
@@ -112,12 +154,17 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
-				if (vultureUnit->getDistance(order.getPosition()) > 100 && order.getFarUnit()->getDistance(vultureUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 && order.getType() == SquadOrderTypes::Attack && order.getFarUnit()->getID() != vultureUnit->getID())
-				{
-					//std::cout << "Marin  " << vultureUnit->getID() << std::endl;
-					Micro::SmartMove(vultureUnit, order.getFarUnit()->getPosition() - vultureUnit->getPosition() + vultureUnit->getPosition());
-				}
-				else
+				//if (vultureUnit->getDistance(order.getPosition()) > 100 
+				//	&& order.getFarUnit()->getDistance(vultureUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 
+				//	&& order.getType() == SquadOrderTypes::Attack 
+				//
+				//	&& order.getFarUnit() != nullptr
+				//	&& order.getFarUnit()->getID() != vultureUnit->getID())
+				//{
+				//	//std::cout << "Marin  " << vultureUnit->getID() << std::endl;
+				//	Micro::SmartAttackMove(vultureUnit, (order.getFarUnit()->getPosition() + vultureUnit->getPosition())/2);
+				//}
+				//else
 					// if we're not near the order position
 					if (vultureUnit->getDistance(order.getPosition()) > 100)
 					{

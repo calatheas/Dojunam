@@ -9,12 +9,9 @@ namespace MyBot
 		BWAPI::Unit cc;
 		double complexity;
 		Expansion();
-		Expansion(BWAPI::Unit & u);
+		Expansion(BWAPI::Unit u);
+		bool isValid();
 	};
-
-	namespace Expansion_null{
-		const Expansion null_object;
-	}
 
 	class ExpansionManager{
 		std::vector<Expansion> expansions;
@@ -26,9 +23,9 @@ namespace MyBot
 		void update();
 
 		const std::vector<Expansion> & getExpansions();
-		const Expansion & getExpansion(BWAPI::Unit & u);
-		void ExpansionManager::onUnitDestroy(BWAPI::Unit & unit);
-		void ExpansionManager::onUnitComplete(BWAPI::Unit & unit);
+		Expansion * getExpansion(BWAPI::Unit u);
+		void ExpansionManager::onUnitDestroy(BWAPI::Unit unit);
+		void ExpansionManager::onUnitComplete(BWAPI::Unit unit);
 		bool shouldExpandNow();
 	};
 }

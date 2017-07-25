@@ -16,7 +16,7 @@ const std::vector<Expansion> & ExpansionManager::getExpansions(){
 }
 
 // 유닛이 파괴/사망한 경우, 해당 유닛 정보를 삭제한다
-void ExpansionManager::onUnitDestroy(BWAPI::Unit & unit)
+void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == BWAPI::Broodwar->self()){
 
@@ -39,7 +39,7 @@ void ExpansionManager::onUnitDestroy(BWAPI::Unit & unit)
 	}
 }
 
-void ExpansionManager::onUnitComplete(BWAPI::Unit & unit){
+void ExpansionManager::onUnitComplete(BWAPI::Unit unit){
 	if (unit->getPlayer() == BWAPI::Broodwar->self()){
 		if(unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
 			//numExpansion는 본진 포함개수
@@ -135,8 +135,19 @@ bool ExpansionManager::shouldExpandNow()
 	int frame = BWAPI::Broodwar->getFrameCount();
 	int minute = frame / (24 * 60);
 
+	//적 종족 확인후 멀티개수 확인한다. 우리 1개인데 적 2개이면 우리도 멀티깜
+	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran || InformationManager::Instance().enemyRace == BWAPI::Races::Zerg || InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
+		BWAPI::UnitType ut = InformationManager::Instance().getBasicResourceDepotBuildingType(InformationManager::Instance().enemyRace);
+		int enemy_expansions = InformationManager::Instance().getUnitData(InformationManager::Instance().enemyPlayer).getNumUnits(ut);
+		if (ExpansionManager::Instance().getExpansions().size() == 1 && enemy_expansions == 2){
+			return true;
+		}
+	}
+
+
 	// if we have a ton of idle workers then we need a new expansion
-	if (WorkerManager::Instance().getNumIdleWorkers() > 7)
+	
+	if (WorkerManager::Instance().getNumIdleWorkers() / (float)(WorkerManager::Instance().getNumMineralWorkers() + WorkerManager::Instance().getNumGasWorkers()) > 0.5)
 	{
 		return true;
 	}
@@ -162,30 +173,34 @@ bool ExpansionManager::shouldExpandNow()
 }
 
 void ExpansionManager::changeComplexity(BWAPI::Unit unit, bool isAdd){
-	Expansion e = getExpansion(unit);
-	BWTA::Region *expansion_r = BWTA::getRegion(e.cc->getPosition());
+	Expansion *e = getExpansion(unit);
+	if (e != NULL){
+		BWTA::Region *expansion_r = BWTA::getRegion(e->cc->getPosition());
 
-	std::cout << "expansion " << e.cc->getID() << " compexity : " << e.complexity << " -> ";
-		
+		std::cout << "expansion " << e->cc->getID() << " compexity : " << e->complexity << " -> ";
 
-	if (isAdd)
-		e.complexity += (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
-	else
-		e.complexity -= (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
 
-	std::cout << e.complexity << std::endl;
+		if (isAdd)
+			e->complexity += (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
+		else
+			e->complexity -= (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
+
+		std::cout << e->complexity << std::endl;
+	}
 }
 
-const Expansion & ExpansionManager::getExpansion(BWAPI::Unit &u){
-	for (auto &e : expansions){
-		BWTA::Region *expansion_r = BWTA::getRegion(e.cc->getPosition());
+Expansion * ExpansionManager::getExpansion(BWAPI::Unit u){
+	Expansion *tmpRst = NULL;
+
+	for (int i = 0; i < expansions.size(); i++){
+		BWTA::Region *expansion_r = BWTA::getRegion(expansions[i].cc->getPosition());
 
 		if (expansion_r->getPolygon().isInside(u->getPosition())){
-			return e;
+			tmpRst = &expansions[i];
 		}
 	}
 
-	return Expansion_null::null_object;
+	return tmpRst;
 }
 
 Expansion::Expansion(){
@@ -193,7 +208,15 @@ Expansion::Expansion(){
 	complexity = 0.0;
 }
 
-Expansion::Expansion(BWAPI::Unit &u){
+Expansion::Expansion(BWAPI::Unit u){
 	cc = u;
 	complexity = 0.0;
+}
+
+bool Expansion::isValid(){
+	if (cc != nullptr){
+		return true;
+	}
+
+	return false;
 }

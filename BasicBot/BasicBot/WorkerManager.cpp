@@ -60,6 +60,7 @@ void WorkerManager::onUnitComplete(BWAPI::Unit unit){
 WorkerManager::WorkerManager() 
 {
 	currentRepairWorker = nullptr;
+	initial_attack = false;
 }
 
 WorkerManager & WorkerManager::Instance() 
@@ -249,8 +250,7 @@ void WorkerManager::handleCombatWorkers()
 	{
 		numworker++;
 	}
-	if (numworker > 13)
-		return;
+	if (numworker < 20){
 		BWTA::BaseLocation * selfBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self());
 		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 15, BWAPI::Colors::Yellow, true);
 		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 5, BWAPI::Colors::Yellow, true);
@@ -264,7 +264,8 @@ void WorkerManager::handleCombatWorkers()
 			{
 				if (_enemyworkerUnits.contains(unit))
 					continue;
-				int enemyworkerdistance = MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
+				int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
+				std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
 				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
 
 				if (scoutInRangeOfenemy)
@@ -288,34 +289,50 @@ void WorkerManager::handleCombatWorkers()
 		}
 
 
+		initial_attack = false;
 		//질럿저글링 처리
 		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 		{
 			
 			if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling || unit->getType() == BWAPI::UnitTypes::Protoss_Zealot)
 			{
-			
-				int enemyworkerdistance = MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
-				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
+
+				//int enemyworkerdistance = MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
+				int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
+					//MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
+				bool scoutInRangeOfenemy = enemyworkerdistance <= 200;
 
 				if (scoutInRangeOfenemy)
 				{
 					for (auto & worker : workerData.getWorkers())
 					{
-						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == 0 && worker->isCompleted() == true)
+						if (BWAPI::Broodwar->getFrameCount() % 12 == 0)
 						{
-							workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
-							if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
+							if ((WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals
+								|| WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Combat
+								|| WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Gas)
+								&& worker->isCompleted() == true)
 							{
-								CommandUtil::attackMove(worker, unit->getPosition());
-							}
+								initial_attack = true;
+								if (worker->getHitPoints() > 35)
+								{
+									workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
+									if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
+									{
 
+										Micro::SmartAttackMove(worker, unit->getPosition());
+										//CommandUtil::attackUnit(worker, unit);
+										//CommandUtil::attackMove(worker, unit->getPosition());
+									 }
+								}
+							}
 						}
 					}
 
 				}
 			}
 		}
+	}
 	/*
 	for (auto & worker : workerData.getWorkers())
 	{

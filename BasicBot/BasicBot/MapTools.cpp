@@ -127,7 +127,8 @@ void MapGrid::clearGrid() {
 
 void MapGrid::onStart(){
 	for (BWTA::BaseLocation *i : BWTA::getBaseLocations()){
-		_arr_regionVertices.push_back(RegionVertices(i));
+		_arr_regionVertices.push_back(RegionVertices());
+		_arr_regionVertices.back().init(i);
 	}
 }
 
@@ -239,15 +240,14 @@ int MapGrid::getCols()
 	return cols;
 }
 
-RegionVertices & MapGrid::getRegionVertices(BWTA::BaseLocation *p_baseLocation){
-	RegionVertices tmpObj = RegionVertices_null::null_object;
-	for (auto &i : _arr_regionVertices){
-		if (i.getBaseLocation()->getPosition() == p_baseLocation->getPosition()){
-			return i;
+RegionVertices * MapGrid::getRegionVertices(BWTA::BaseLocation *p_baseLocation){
+	RegionVertices *rst = NULL;
+	for (int i = 0; i < _arr_regionVertices.size(); i++){
+		if (_arr_regionVertices[i].getBaseLocation()->getPosition() == p_baseLocation->getPosition()){
+			rst = &_arr_regionVertices[i];
 		}
 	}
-
-	return tmpObj;
+	return rst;
 }
 
 MapTools & MapTools::Instance()
@@ -670,12 +670,11 @@ RegionVertices::RegionVertices() :
 }
 
 
-RegionVertices::RegionVertices(BWTA::BaseLocation *baseLocation)
+void RegionVertices::init(BWTA::BaseLocation *baseLocation)
 {
 	_thisBaseLocation = baseLocation;
 
 	BWTA::Region * baseRegion = baseLocation->getRegion();
-	//UAB_ASSERT_WARNING(baseRegion, "We should have an enemy region if we are fleeing");
 
 	if (!baseRegion)
 	{
@@ -730,7 +729,11 @@ RegionVertices::RegionVertices(BWTA::BaseLocation *baseLocation)
 
 
 	std::vector<BWAPI::Position> sortedVertices;
-	BWAPI::Position current = *unsortedVertices.begin();
+	BWAPI::Position current;
+	for (auto i : unsortedVertices){
+		current = i;
+		break;
+	}
 
 	_regionVertices.push_back(current);
 	unsortedVertices.erase(current);
@@ -813,11 +816,11 @@ RegionVertices::RegionVertices(BWTA::BaseLocation *baseLocation)
 
 	_regionVertices = sortedVertices;
 
-	int tmpMaxDist = 0;
+	double tmpMaxDist = 0.0;
 	for (auto i : _regionVertices){
-		int distToBase = i.getDistance(_thisBaseLocation->getPosition());
+		double distToBase = i.getDistance(_thisBaseLocation->getPosition());
 
-		int distToChock = 0;
+		double distToChock = 0.0;
 		if (BWTA::getNearestChokepoint(i) != NULL){
 			distToChock = i.getDistance(BWTA::getNearestChokepoint(i)->getCenter());
 		}

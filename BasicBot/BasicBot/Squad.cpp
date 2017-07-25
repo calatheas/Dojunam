@@ -34,7 +34,7 @@ void Squad::update()
 	
 	// determine whether or not we should regroup
 	bool needToRegroup = needsToRegroup();
-
+	needToRegroup = false;
 	// draw some debug info
 	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
 	{
@@ -92,6 +92,10 @@ void Squad::setPriority(const size_t & priority)
 void Squad::updateUnits()
 {
 	setAllUnits();
+	if (_vultureManager.miningOn == false)
+	{
+		_vultureManager.miningPositionSetting();
+	}
 	setNearEnemyUnits();
 	addUnitsToMicroManagers();
 }

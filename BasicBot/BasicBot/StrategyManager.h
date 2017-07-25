@@ -28,7 +28,8 @@ namespace MyBot
 			One_Fac_Multi,
 			Two_Fac,
 			Mechanic_Goliath,
-			Mechanic_Vessel
+			Mechanic_Vessel,
+			Defence
 		};
 
 		main_strategies next_strategy;

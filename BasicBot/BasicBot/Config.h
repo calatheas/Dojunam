@@ -41,6 +41,7 @@ namespace Config
 		extern bool DrawSquadInfo;
 		extern bool DrawBOSSStateInfo;
 		extern bool PrintModuleTimeout;
+		extern bool createTrackingLog;
 
 		extern std::string ErrorLogFilename;
 		extern bool LogAssertToErrorFile;
