@@ -328,3 +328,24 @@ void UnitUtil::getAllCloakUnits(BWAPI::Unitset &units){
 		}
 	}
 }
+
+// player : 주변에서 측정하고 싶은 LTD 유닛의 플레이어(주변 적정보를 얻고 싶다면 enemy)
+// centerUnit : 측정에서 기준이 되는 유닛
+// radius : 측정범위
+// 데미지/쿨다운 : 마린(0.4), 시즈(0.81, 0.93)
+double UnitUtil::getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int radius){
+	double totalLTD = 0.0;
+	int distanceMargin = centerUnit->getType().width();
+	for (auto &attacker : centerUnit->getUnitsInRadius(radius)){
+		if (attacker->getPlayer() == player) {
+			BWAPI::WeaponType weapon = UnitUtil::GetWeapon(attacker, centerUnit); //공격가능 여부 판단 
+			int tmpDistance = attacker->getDistance(centerUnit); //거리 판단
+			if (weapon != BWAPI::WeaponTypes::None && weapon != BWAPI::WeaponTypes::Unknown &&
+				tmpDistance <= (weapon.maxRange() + distanceMargin))
+			{
+				totalLTD += (weapon.damageAmount() / (double)weapon.damageCooldown());
+			}
+		}
+	}
+	return totalLTD;
+}
