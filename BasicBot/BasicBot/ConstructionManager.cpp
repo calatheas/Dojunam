@@ -476,6 +476,8 @@ void ConstructionManager::checkForCompletedBuildings()
 void ConstructionManager::checkForDeadlockConstruction()
 {
 	std::vector<ConstructionTask> toCancel;
+	std::vector<ConstructionTask> toRemove;
+	
 	for (auto & b : constructionQueue)
 	{
 		if (b.status != ConstructionStatus::UnderConstruction)
@@ -580,12 +582,30 @@ void ConstructionManager::checkForDeadlockConstruction()
 				toCancel.push_back(b);
 			}
 		}
+		
+		//건설 시작했는데 무슨 이유인지는 몰라도 시작한지 너무 오랫동안 방치되면 삭제처리함. 다시 지을수 있도록
+		else if (b.status == ConstructionStatus::UnderConstruction){
+			if (b.lastBuildCommandGivenFrame == 0) continue;
+
+			if (b.lastBuildCommandGivenFrame + b.type.buildTime()*2 < BWAPI::Broodwar->getFrameCount()){
+				b.buildingUnit->cancelConstruction();
+
+				std::cout << "[Deadlock Timeout] Construction cancel -> remove ConstructionTask -> " << b.type.getName() << std::endl;
+
+				toRemove.push_back(b);
+				if (b.constructionWorker) {
+					WorkerManager::Instance().setIdleWorker(b.constructionWorker);
+				}
+			}
+		}
 	}
 
 	for (auto & i : toCancel)
 	{
 		cancelConstructionTask(i.type, i.desiredPosition);
 	}
+	
+	removeCompletedConstructionTasks(toRemove);
 }
 
 // COMPLETED
