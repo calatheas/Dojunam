@@ -445,6 +445,10 @@ void ConstructionManager::checkForDeadTerranBuilders()
 						b.lastConstructionWorkerID = b.constructionWorker->getID();
 					}
 				}
+				else //ssh djn
+				{
+					CommandUtil::rightClick(b.constructionWorker, b.buildingUnit);
+				}
 			}
 		}
 	}
