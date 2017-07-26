@@ -409,7 +409,7 @@ void ConstructionManager::checkForDeadTerranBuilders()
 
 				if (b.constructionWorker == nullptr || b.constructionWorker->exists() == false || b.constructionWorker->getHitPoints() <= 0 ) {
 
-					//std::cout << "checkForDeadTerranBuilders - chooseConstuctionWorkerClosest for " << b.type.getName().c_str() << " to worker near " << b.finalPosition.x << "," << b.finalPosition.y << std::endl;
+					std::cout << "checkForDeadTerranBuilders - chooseConstuctionWorkerClosest for " << b.type.getName() << " to worker near " << b.finalPosition.x << "," << b.finalPosition.y;
 
 					// grab a worker unit from WorkerManager which is closest to this final position
 					BWAPI::Unit workerToAssign = WorkerManager::Instance().chooseConstuctionWorkerClosestTo(b.type, b.finalPosition, true, b.lastConstructionWorkerID);
@@ -430,6 +430,10 @@ void ConstructionManager::checkForDeadTerranBuilders()
 						b.lastBuildCommandGivenFrame = BWAPI::Broodwar->getFrameCount();
 
 						b.lastConstructionWorkerID = b.constructionWorker->getID();
+						std::cout << " / [I]found the worker to assign(ID:" << b.lastConstructionWorkerID  << ")" << std::endl;
+					}
+					else{
+						std::cout << " / [E]cannot found the worker to assign " << std::endl;
 					}
 				}
 			}
