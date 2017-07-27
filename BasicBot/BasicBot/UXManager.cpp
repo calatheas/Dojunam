@@ -19,32 +19,32 @@ void UXManager::onStart()
 
 void UXManager::update()
 {
-	//std::cout << 1;
+	//if(0) std::cout << 1;
 
 	drawGameInformationOnScreen(5, 5);
 
-	//std::cout << 2;
+	//if(0) std::cout << 2;
 
 	if (Config::Debug::DrawEnemyUnitInfo)
 	{
 		drawUnitStatisticsOnScreen(400, 20);
 	}
 
-	//std::cout << 3;
+	//if(0) std::cout << 3;
 
 	if (Config::Debug::DrawBWTAInfo)
 	{
 		drawBWTAResultOnMap();
 	}
 
-	//std::cout << 4;
+	//if(0) std::cout << 4;
 
 	if (Config::Debug::DrawMapGrid)
 	{
 		drawMapGrid();
 	}
 
-	//std::cout << 5;
+	//if(0) std::cout << 5;
 
 	// 빌드오더큐 : 빌드 실행 전
 	if (Config::Debug::DrawProductionInfo)
@@ -52,7 +52,7 @@ void UXManager::update()
 		drawBuildOrderQueueOnScreen(80, 60);
 	}
 
-	//std::cout << 6;
+	//if(0) std::cout << 6;
 
 	// 빌드 실행 상황 : 건물 건설, 유닛 생산, 업그레이드, 리서치
 	if (Config::Debug::DrawProductionInfo)
@@ -60,7 +60,7 @@ void UXManager::update()
 		drawBuildStatusOnScreen(200, 60);
 	}
 
-	//std::cout << 7;
+	//if(0) std::cout << 7;
 
 	// 건물 건설 큐. 건물 건설 상황
 	if (Config::Debug::DrawBuildingInfo)
@@ -68,7 +68,7 @@ void UXManager::update()
 		drawConstructionQueueOnScreenAndMap(200, 150);
 	}
 
-	//std::cout << 8;
+	//if(0) std::cout << 8;
 
 	// 건물이 건설될 위치
 	if (Config::Debug::DrawReservedBuildingTiles)
@@ -79,7 +79,7 @@ void UXManager::update()
 		drawTilesToAvoidOnMap();
 	}
 
-	//std::cout << 9;
+	//if(0) std::cout << 9;
 
 	if (Config::Debug::DrawUnitHealthBars)
 	{
@@ -87,18 +87,18 @@ void UXManager::update()
 		drawUnitIdOnMap();
 	}
 
-	//std::cout << 10;
+	//if(0) std::cout << 10;
 
 	if (Config::Debug::DrawWorkerInfo)
 	{
 		// 각 일꾼들의 임무 상황
-		drawWorkerStateOnScreen(5, 180);
+		drawWorkerStateOnScreen(5, 60);
 
 		// 베이스캠프당 일꾼 수
 		drawWorkerCountOnMap();
 	}
 
-	//std::cout << 11;
+	//if(0) std::cout << 11;
 
 	// 일꾼 자원채취 임무 상황
 	if (Config::Debug::DrawResourceInfo)
@@ -106,15 +106,15 @@ void UXManager::update()
 		drawWorkerMiningStatusOnMap();
 	}
 
-	//std::cout << 12;
+	//if(0) std::cout << 12;
 
 	// 정찰
 	if (Config::Debug::DrawScoutInfo)
 	{
-		drawScoutInformation(220,330);
+		drawScoutInformation(220, 330);
 	}
 
-	//std::cout << 13;
+	//if(0) std::cout << 13;
 
 	// 공격
 	if (Config::Debug::DrawUnitTargetInfo)
@@ -124,15 +124,15 @@ void UXManager::update()
 		// 미사일, 럴커의 보이지않는 공격등을 표시
 		drawBulletsOnMap();
 	}
-	
-	//std::cout << 14;
 
-	// draw position of mouse cursor
+	//if(0) std::cout << 14;
+
+	// draw tile position of mouse cursor
 	if (Config::Debug::DrawMouseCursorInfo)
 	{
 		int mouseX = BWAPI::Broodwar->getMousePosition().x + BWAPI::Broodwar->getScreenPosition().x;
 		int mouseY = BWAPI::Broodwar->getMousePosition().y + BWAPI::Broodwar->getScreenPosition().y;
-		BWAPI::Broodwar->drawTextMap(mouseX + 20, mouseY, "(%d, %d)", mouseX, mouseY);
+		BWAPI::Broodwar->drawTextMap(mouseX + 20, mouseY, "(%d, %d)", (int)(mouseX / TILE_SIZE), (int)(mouseY / TILE_SIZE));
 	}
 }
 
@@ -348,7 +348,7 @@ void UXManager::drawUnitStatisticsOnScreen(int x, int y)
 
 	// 아군이 입은 피해 누적값
 	BWAPI::Broodwar->drawTextScreen(x, currentY, "\x03 Self Loss:\x04 Minerals: \x1f%d \x04Gas: \x07%d",
-		InformationManager::Instance().getUnitData(BWAPI::Broodwar->self()).getMineralsLost(), 
+		InformationManager::Instance().getUnitData(BWAPI::Broodwar->self()).getMineralsLost(),
 		InformationManager::Instance().getUnitData(BWAPI::Broodwar->self()).getGasLost());
 	currentY += 10;
 
@@ -383,7 +383,7 @@ void UXManager::drawUnitStatisticsOnScreen(int x, int y)
 		InformationManager::Instance().getUnitData(BWAPI::Broodwar->enemy()).getGasLost());
 
 	// 적군의 UnitType 별 파악된 Unit 숫자를 표시
-	BWAPI::Broodwar->drawTextScreen(x,		 currentY + 20, "\x04 UNIT NAME");
+	BWAPI::Broodwar->drawTextScreen(x, currentY + 20, "\x04 UNIT NAME");
 	BWAPI::Broodwar->drawTextScreen(x + 110, currentY + 20, "\x04 Created");
 	BWAPI::Broodwar->drawTextScreen(x + 150, currentY + 20, "\x04 Dead");
 	BWAPI::Broodwar->drawTextScreen(x + 190, currentY + 20, "\x04 Alive");
@@ -397,7 +397,25 @@ void UXManager::drawUnitStatisticsOnScreen(int x, int y)
 
 		if (numUnits > 0)
 		{
-			BWAPI::Broodwar->drawTextScreen(x,		 currentY + 30 + ((yspace)* 10), "%s", t.getName().c_str());
+			BWAPI::Broodwar->drawTextScreen(x, currentY + 30 + ((yspace)* 10), "%s", t.getName().c_str());
+			BWAPI::Broodwar->drawTextScreen(x + 120, currentY + 30 + ((yspace)* 10), "%d", numCreatedUnits);
+			BWAPI::Broodwar->drawTextScreen(x + 160, currentY + 30 + ((yspace)* 10), "%d", numDeadUnits);
+			BWAPI::Broodwar->drawTextScreen(x + 200, currentY + 30 + ((yspace)* 10), "%d", numUnits);
+			yspace++;
+		}
+	}
+	yspace++;
+
+	// 아군의 UnitType 별 파악된 Unit 숫자를 표시
+	for (BWAPI::UnitType t : BWAPI::UnitTypes::allUnitTypes())
+	{
+		int numCreatedUnits = InformationManager::Instance().getUnitData(BWAPI::Broodwar->self()).getNumCreatedUnits(t);
+		int numDeadUnits = InformationManager::Instance().getUnitData(BWAPI::Broodwar->self()).getNumDeadUnits(t);
+		int numUnits = InformationManager::Instance().getUnitData(BWAPI::Broodwar->self()).getNumUnits(t);
+
+		if (numUnits > 0)
+		{
+			BWAPI::Broodwar->drawTextScreen(x, currentY + 30 + ((yspace)* 10), "%s", t.getName().c_str());
 			BWAPI::Broodwar->drawTextScreen(x + 120, currentY + 30 + ((yspace)* 10), "%d", numCreatedUnits);
 			BWAPI::Broodwar->drawTextScreen(x + 160, currentY + 30 + ((yspace)* 10), "%d", numDeadUnits);
 			BWAPI::Broodwar->drawTextScreen(x + 200, currentY + 30 + ((yspace)* 10), "%d", numUnits);
@@ -505,9 +523,9 @@ void UXManager::drawMapGrid()
 		BWAPI::Broodwar->drawLineMap(0, j*cellSize, mapWidth, j*cellSize, BWAPI::Colors::Blue);
 	}
 
-	for (int r = 0; r < rows; r+=2)
+	for (int r = 0; r < rows; r += 2)
 	{
-		for (int c = 0; c < cols; c+=2)
+		for (int c = 0; c < cols; c += 2)
 		{
 			GridCell & cell = MapGrid::Instance().getCellByIndex(r, c);
 
@@ -527,8 +545,8 @@ void UXManager::drawBuildOrderQueueOnScreen(int x, int y)
 	std::deque< BuildOrderItem >* queue = BuildManager::Instance().buildQueue.getQueue();
 	size_t reps = queue->size() < 24 ? queue->size() : 24;
 	for (size_t i(0); i<reps; i++) {
-		const MetaType & type = (*queue)[queue->size() - 1 - i].metaType;
-		BWAPI::Broodwar->drawTextScreen(x, y + 10 + (i * 10), " %s", type.getName().c_str());
+	const MetaType & type = (*queue)[queue->size() - 1 - i].metaType;
+	BWAPI::Broodwar->drawTextScreen(x, y + 10 + (i * 10), " %s", type.getName().c_str());
 	}
 	*/
 
@@ -638,7 +656,7 @@ void UXManager::drawConstructionQueueOnScreenAndMap(int x, int y)
 		{
 			if (b.constructionWorker == nullptr) {
 				BWAPI::Broodwar->drawTextScreen(x, y + 10 + ((yspace)* 10), "\x03 %s - Assigned Worker Null", b.type.getName().c_str());
-			}			
+			}
 			else {
 				BWAPI::Broodwar->drawTextScreen(x, y + 10 + ((yspace)* 10), "\x03 %s - Assigned Worker %d, Position (%d,%d)", b.type.getName().c_str(), b.constructionWorker->getID(), b.finalPosition.x, b.finalPosition.y);
 			}
@@ -663,6 +681,10 @@ void UXManager::drawConstructionQueueOnScreenAndMap(int x, int y)
 
 void UXManager::drawUnitIdOnMap() {
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+	{
+		BWAPI::Broodwar->drawTextMap(unit->getPosition().x, unit->getPosition().y + 5, "\x07%d", unit->getID());
+	}
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
 		BWAPI::Broodwar->drawTextMap(unit->getPosition().x, unit->getPosition().y + 5, "\x07%d", unit->getID());
 	}
@@ -725,14 +747,14 @@ void UXManager::drawWorkerMiningStatusOnMap()
 		BWAPI::Position pos = worker->getTargetPosition();
 
 		BWAPI::Broodwar->drawTextMap(worker->getPosition().x, worker->getPosition().y - 5, "\x07%c", workerData.getJobCode(worker));
-		
+
 		BWAPI::Broodwar->drawLineMap(worker->getPosition().x, worker->getPosition().y, pos.x, pos.y, BWAPI::Colors::Cyan);
 
 		/*
 		// ResourceDepot ~ Worker 사이에 직선 표시
 		BWAPI::Unit depot = workerData.getWorkerDepot(worker);
 		if (depot) {
-			BWAPI::Broodwar->drawLineMap(worker->getPosition().x, worker->getPosition().y, depot->getPosition().x, depot->getPosition().y, BWAPI::Colors::Orange);
+		BWAPI::Broodwar->drawLineMap(worker->getPosition().x, worker->getPosition().y, depot->getPosition().x, depot->getPosition().y, BWAPI::Colors::Orange);
 		}
 		*/
 	}
@@ -740,8 +762,6 @@ void UXManager::drawWorkerMiningStatusOnMap()
 
 void UXManager::drawScoutInformation(int x, int y)
 {
-		//djn ssh
-	/*
 	int currentScoutStatus = ScoutManager::Instance().getScoutStatus();
 	std::string scoutStatusString;
 
@@ -797,25 +817,25 @@ void UXManager::drawScoutInformation(int x, int y)
 						currentScoutTargetDistance);
 
 				}
-				
-				//else if (currentScoutStatus == ScoutStatus::MoveAroundEnemyBaseLocation) {
+				/*
+				else if (currentScoutStatus == ScoutStatus::MoveAroundEnemyBaseLocation) {
 
-//				std::vector<BWAPI::Position> vertices = ScoutManager::Instance().getEnemyRegionVertices();
-	//			for (size_t i(0); i < vertices.size(); ++i)
-		//		{
-			//	BWAPI::Broodwar->drawCircleMap(vertices[i], 4, BWAPI::Colors::Green, false);
-				//BWAPI::Broodwar->drawTextMap(vertices[i], "%d", i);
-				//}
+				std::vector<BWAPI::Position> vertices = ScoutManager::Instance().getEnemyRegionVertices();
+				for (size_t i(0); i < vertices.size(); ++i)
+				{
+				BWAPI::Broodwar->drawCircleMap(vertices[i], 4, BWAPI::Colors::Green, false);
+				BWAPI::Broodwar->drawTextMap(vertices[i], "%d", i);
+				}
 
-				//BWAPI::Broodwar->drawCircleMap(scoutMoveTo, 5, BWAPI::Colors::Red, true);
-				//}
-				
+				BWAPI::Broodwar->drawCircleMap(scoutMoveTo, 5, BWAPI::Colors::Red, true);
+				}
+				*/
 			}
 		}
-	}*/
+	}
 }
 
-void UXManager::drawUnitTargetOnMap() 
+void UXManager::drawUnitTargetOnMap()
 {
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
 	{
@@ -852,4 +872,5 @@ void UXManager::drawBulletsOnMap()
 		BWAPI::Broodwar->drawTextMap(p, "%c%s", b->getPlayer() == BWAPI::Broodwar->self() ? BWAPI::Text::Green : BWAPI::Text::Red, b->getType().c_str());
 	}
 }
+
 

@@ -42,7 +42,7 @@ MyBotModule::~MyBotModule(){
 }
 
 void MyBotModule::onStart(){
-	
+
 	if (BWAPI::Broodwar->isReplay()) {
 		return;
 	}
@@ -72,7 +72,7 @@ void MyBotModule::onStart(){
 	BWAPI::Broodwar->setLocalSpeed(Config::BWAPIOptions::SetLocalSpeed);
 	// frameskip을 늘리면 화면 표시도 업데이트 안하므로 훨씬 빠릅니다
 	BWAPI::Broodwar->setFrameSkip(Config::BWAPIOptions::SetFrameSkip);
-	
+
 	std::cout << "Map analyzing started" << std::endl;
 	BWTA::readMap();
 	BWTA::analyze();
@@ -345,7 +345,7 @@ void MyBotModule::onSendText(std::string text){
 	ParseTextCommand(text);
 
 	gameCommander.onSendText(text);
-		
+
 	BWAPI::Broodwar->sendText("%s", text.c_str());
 }
 
@@ -588,3 +588,4 @@ void MyBotModule::checkTimeOutConditionAndLeaveGame()
 }
 
 // BasicBot 1.1 Patch End //////////////////////////////////////////////////
+

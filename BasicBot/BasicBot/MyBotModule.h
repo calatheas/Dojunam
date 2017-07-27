@@ -100,8 +100,8 @@ namespace MyBot
 		/// 다른 플레이어로부터 텍스트를 전달받았을 때 발생하는 이벤트를 처리합니다
 		void onReceiveText(BWAPI::Player player, std::string text);
 
-	// BasicBot 1.1 Patch Start ////////////////////////////////////////////////
-	// 타임아웃 패배, 자동 패배 체크 관련 변수 및 메소드 선언
+		// BasicBot 1.1 Patch Start ////////////////////////////////////////////////
+		// 타임아웃 패배, 자동 패배 체크 관련 변수 및 메소드 선언
 
 	private:
 		void initializeLostConditionVariables();
@@ -132,7 +132,7 @@ namespace MyBot
 		void doTimeOutDelay();					///< 타임 아웃 체크 테스트 실행 
 
 
-	// BasicBot 1.1 Patch End //////////////////////////////////////////////////
+		// BasicBot 1.1 Patch End //////////////////////////////////////////////////
 
 	};
 

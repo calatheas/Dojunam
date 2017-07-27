@@ -4,7 +4,7 @@
 #include "ActionType.h"
 #include "DFBB_BuildOrderSearchResults.h"
 #include "DFBB_BuildOrderSearchParameters.h"
-#include "Timer.hpp"
+#include "Timer.h"
 #include "Tools.h"
 #include "BuildOrder.h"
 

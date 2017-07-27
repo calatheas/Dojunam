@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "Constants.h"
-#include "Array.hpp"
+#include "Array.h"
 #include "ActionType.h"
 
 namespace BOSS

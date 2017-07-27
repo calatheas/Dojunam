@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "Common.h"
-#include "Timer.hpp"
+#include "Timer.h"
 
 namespace MyBot
 {

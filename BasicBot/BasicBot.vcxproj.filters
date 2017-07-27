@@ -260,9 +260,6 @@
     <ClInclude Include="BasicBot\ActionSet.h">
       <Filter>boss</Filter>
     </ClInclude>
-    <ClInclude Include="BasicBot\Array.hpp">
-      <Filter>boss</Filter>
-    </ClInclude>
     <ClInclude Include="BasicBot\PrerequisiteSet.h">
       <Filter>boss</Filter>
     </ClInclude>
@@ -282,9 +279,6 @@
       <Filter>boss</Filter>
     </ClInclude>
     <ClInclude Include="BasicBot\BuildOrderSearchGoal.h">
-      <Filter>boss</Filter>
-    </ClInclude>
-    <ClInclude Include="BasicBot\Timer.hpp">
       <Filter>boss</Filter>
     </ClInclude>
     <ClInclude Include="BasicBot\BuildingData.h">
@@ -356,9 +350,6 @@
     <ClInclude Include="BasicBot\Logger.h">
       <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="BasicBot\DistanceMap.hpp">
-      <Filter>util\map</Filter>
-    </ClInclude>
     <ClInclude Include="BasicBot\ConstructionPlaceFinder.h">
       <Filter>BotSource</Filter>
     </ClInclude>
@@ -370,6 +361,15 @@
     </ClInclude>
     <ClInclude Include="BasicBot\ExpansionManager.h">
       <Filter>BotSource</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicBot\DistanceMap.h">
+      <Filter>util\map</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicBot\Array.h">
+      <Filter>boss</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicBot\Timer.h">
+      <Filter>boss</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

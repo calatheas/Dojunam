@@ -44,6 +44,7 @@ class CombatCommander
     bool            beingBuildingRushed();
 
 public:
+	BWAPI::Position mineralPosition;
 	static CombatCommander &	Instance();
 	CombatCommander();
 

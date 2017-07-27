@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "Array.hpp"
+#include "Array.h"
 #include "PrerequisiteSet.h"
 #include <set>
 

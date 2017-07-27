@@ -265,7 +265,7 @@ void WorkerManager::handleCombatWorkers()
 				if (_enemyworkerUnits.contains(unit))
 					continue;
 				int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
-				std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
+				//std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
 				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
 
 				if (scoutInRangeOfenemy)

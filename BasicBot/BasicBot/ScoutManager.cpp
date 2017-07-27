@@ -13,6 +13,12 @@ ScoutManager::ScoutManager()
 	, _gasStealFinished(false)
 	, _currentRegionVertexIndex(-1)
 	, _previousScoutHP(0)
+	, currentScoutUnit(nullptr)
+	, currentScoutStatus(ScoutStatus::NoScout)
+	, currentScoutTargetBaseLocation(nullptr)
+	, currentScoutTargetPosition(BWAPI::Positions::None)
+	, currentScoutFreeToVertexIndex(-1)
+
 {
 }
 
@@ -21,13 +27,25 @@ ScoutManager & ScoutManager::Instance()
 	static ScoutManager instance;
 	return instance;
 }
+
+
+int ScoutManager::getScoutStatus()
+{
+	return currentScoutStatus;
+}
+
+BWAPI::Unit ScoutManager::getScoutUnit()
+{
+	return currentScoutUnit;
+}
+
 //djn ssh
 void ScoutManager::onUnitDestroy(BWAPI::Unit unit)
 {
 	/*
 	if (unit->getType().isNeutral())
 	{
-		return;
+	return;
 	}
 	_scoutUnits.
 	_unitData[unit->getPlayer()].removeUnit(unit);
@@ -49,7 +67,7 @@ void ScoutManager::update()
 		if (enemyBaseLocation != nullptr)
 		{
 			RegionVertices * tmpObj = MapGrid::Instance().getRegionVertices(enemyBaseLocation);
-			if (tmpObj!=NULL) tmpObj->getRegionVertices(_enemyRegionVertices);
+			if (tmpObj != NULL) tmpObj->getRegionVertices(_enemyRegionVertices);
 		}
 	}
 	moveScouts();
@@ -102,19 +120,19 @@ void ScoutManager::moveScouts()
 
 	/*if (_workerScout->isCarryingGas())
 	{
-		BWAPI::Broodwar->drawCircleMap(_workerScout->getPosition(), 10, BWAPI::Colors::Purple, true);
+	BWAPI::Broodwar->drawCircleMap(_workerScout->getPosition(), 10, BWAPI::Colors::Purple, true);
 	}
 
-	// if we initiated a gas steal and the worker isn't idle, 
+	// if we initiated a gas steal and the worker isn't idle,
 	bool finishedConstructingGasSteal = _workerScout->isIdle() || _workerScout->isCarryingGas();
 	if (!_gasStealFinished && _didGasSteal && !finishedConstructingGasSteal)
 	{
-		return;
+	return;
 	}
 	// check to see if the gas steal is completed
 	else if (_didGasSteal && finishedConstructingGasSteal)
 	{
-		_gasStealFinished = true;
+	_gasStealFinished = true;
 	}*/
 
 	// if we know where the enemy region is and where our scout is
@@ -200,12 +218,12 @@ void ScoutManager::moveScouts()
 					max_dist = dist;
 					targetLocation = startLocation;
 
-				}				
+				}
 				// assign a zergling to go scout it
 			}
 		}
 		if (targetLocation)
-		  Micro::SmartMove(_workerScout, BWAPI::Position(targetLocation->getTilePosition()));
+			Micro::SmartMove(_workerScout, BWAPI::Position(targetLocation->getTilePosition()));
 		return;
 	}
 

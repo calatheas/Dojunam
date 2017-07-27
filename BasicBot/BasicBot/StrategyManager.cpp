@@ -165,7 +165,7 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 	if (_strategies[_main_strategy].next_strategy != Strategy::main_strategies::None){
 		bool _changeStrategy = true;
 		for (auto &i : _strategies[_main_strategy].num_unit_limit){
-			if (numUnits[i.first] < i.second){
+			if (i.second != -1 && numUnits[i.first] < i.second){
 				_changeStrategy = false;
 				break;
 			}

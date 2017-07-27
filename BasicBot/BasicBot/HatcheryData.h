@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "PrerequisiteSet.h"
-#include "Array.hpp"
+#include "Array.h"
 #include "ActionType.h"
 
 namespace BOSS

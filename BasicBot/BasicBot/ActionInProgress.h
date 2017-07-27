@@ -8,7 +8,7 @@
 
 #include "PrerequisiteSet.h"
 #include <math.h>
-#include "Array.hpp"
+#include "Array.h"
 #include "ActionType.h"
 
 

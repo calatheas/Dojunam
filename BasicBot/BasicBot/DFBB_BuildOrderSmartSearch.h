@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "GameState.h"
 #include "DFBB_BuildOrderStackSearch.h"
-#include "Timer.hpp"
+#include "Timer.h"
 
 namespace BOSS
 {

@@ -3,6 +3,12 @@
 #include "BWAPI.h"
 #include <cassert>
 
+struct Rect
+{
+	int x, y;
+	int height, width;
+};
+
 /// 봇 프로그램 설정
 namespace Config
 {

@@ -84,7 +84,7 @@ int main(int argc, const char* argv[])
 			case EventType::UnitHide:
 				myBotModule->onUnitHide(e.getUnit());
 				break;
-			case EventType::UnitComplete :
+			case EventType::UnitComplete:
 				myBotModule->onUnitComplete(e.getUnit());
 				break;
 			case EventType::UnitDiscover:
@@ -116,3 +116,4 @@ int main(int argc, const char* argv[])
 	delete myBotModule;
 	return 0;
 }
+

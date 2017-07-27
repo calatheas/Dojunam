@@ -19,7 +19,18 @@ CombatCommander & CombatCommander::Instance()
 CombatCommander::CombatCommander() 
     : _initialized(false)
 {
-
+	mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+	BWAPI::Unit closestDepot = nullptr;
+	double closestDistance = 600;
+	for (auto & munit : BWAPI::Broodwar->getAllUnits())
+	{
+		if ((munit->getType() == BWAPI::UnitTypes::Resource_Mineral_Field) && munit->getDistance(mineralPosition) < closestDistance)
+		{
+			closestDistance = munit->getDistance(mineralPosition);
+			closestDepot = munit;
+		}
+	}
+	mineralPosition = (mineralPosition + closestDepot->getPosition()) / 2;
 }
 
 void CombatCommander::initializeSquads()
@@ -104,7 +115,7 @@ void CombatCommander::updateIdleSquad()
 			idleSquad.setSquadOrder(idleOrder);
 		}
 
-		BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+		//BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 		for (auto & unit : _combatUnits)
 		{
 			// if it hasn't been assigned to a squad yet, put it in the low priority idle squad
@@ -113,13 +124,13 @@ void CombatCommander::updateIdleSquad()
 			{
 				//idleSquad.addUnit(unit);
 				_squadData.assignUnitToSquad(unit, idleSquad);
-				if (mineralPosition == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition())
-					for (auto &unit_in_region : unit->getUnitsInRadius(600)){
-						if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
-							mineralPosition = unit_in_region->getPosition();
-							break;
-						}
-					}
+				//if (mineralPosition == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition())
+				//	for (auto &unit_in_region : unit->getUnitsInRadius(600)){
+				//		if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
+				//			mineralPosition = unit_in_region->getPosition();
+				//			break;
+				//		}
+				//	}
 			}
 		}
 
@@ -504,8 +515,8 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
 	BWAPI::Unit closestDefender = nullptr;
 	double minDistance = std::numeric_limits<double>::max();
 
-    int zerglingsInOurBase = numZerglingsInOurBase();
-    bool zerglingRush = zerglingsInOurBase > 0 && BWAPI::Broodwar->getFrameCount() < 5000;
+    //int zerglingsInOurBase = numZerglingsInOurBase();
+    //bool zerglingRush = zerglingsInOurBase > 0 && BWAPI::Broodwar->getFrameCount() < 5000;
 
 	for (auto & unit : _combatUnits) 
 	{
@@ -520,10 +531,10 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
         }
 
         // add workers to the defense squad if we are being rushed very quickly
-        if (!Config::Micro::WorkersDefendRush || (unit->getType().isWorker() && !zerglingRush && !beingBuildingRushed()))
-        {
-            continue;
-        }
+        //if (!Config::Micro::WorkersDefendRush || (unit->getType().isWorker() && !zerglingRush && !beingBuildingRushed()))
+        //{
+        //    continue;
+        //}
 
         double dist = unit->getDistance(pos);
         if (!closestDefender || (dist < minDistance))

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Timer.hpp
+// Timer.h
 // =======
 // High Resolution Timer.
 // This timer is able to measure the elapsed time with 1 micro-second accuracy

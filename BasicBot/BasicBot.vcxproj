@@ -158,7 +158,7 @@
     <ClInclude Include="BasicBot\ActionSet.h" />
     <ClInclude Include="BasicBot\ActionType.h" />
     <ClInclude Include="BasicBot\ActionTypeData.h" />
-    <ClInclude Include="BasicBot\Array.hpp" />
+    <ClInclude Include="BasicBot\Array.h" />
     <ClInclude Include="BasicBot\BaseTypes.h" />
     <ClInclude Include="BasicBot\BOSS.h" />
     <ClInclude Include="BasicBot\BOSSManager.h" />
@@ -181,7 +181,7 @@
     <ClInclude Include="BasicBot\DFBB_BuildOrderSearchResults.h" />
     <ClInclude Include="BasicBot\DFBB_BuildOrderSmartSearch.h" />
     <ClInclude Include="BasicBot\DFBB_BuildOrderStackSearch.h" />
-    <ClInclude Include="BasicBot\DistanceMap.hpp" />
+    <ClInclude Include="BasicBot\DistanceMap.h" />
     <ClInclude Include="BasicBot\ExpansionManager.h" />
     <ClInclude Include="BasicBot\GameCommander.h" />
     <ClInclude Include="BasicBot\GameState.h" />
@@ -207,7 +207,7 @@
     <ClInclude Include="BasicBot\SquadOrder.h" />
     <ClInclude Include="BasicBot\StrategyManager.h" />
     <ClInclude Include="BasicBot\TankManager.h" />
-    <ClInclude Include="BasicBot\Timer.hpp" />
+    <ClInclude Include="BasicBot\Timer.h" />
     <ClInclude Include="BasicBot\TimerManager.h" />
     <ClInclude Include="BasicBot\Tools.h" />
     <ClInclude Include="BasicBot\TransportManager.h" />

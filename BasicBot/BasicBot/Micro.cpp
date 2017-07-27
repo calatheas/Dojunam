@@ -170,27 +170,28 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 		return;
 	}
 
-	if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
-	{
-		return;
-	}
-
 	BWAPI::UnitCommand currentCommand(unit->getLastCommand());
 
 	// if we've already told this unit to move to this position, ignore this command
-	if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos) && unit->isMoving())
+	if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos))// && unit->isMoving())
 	{
 		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I'm Going for mining");
 		return;
 	}
 
-	//std::cout << "SmartLaySpiderMine 201 done " << std::endl;
-	if (unit->getPosition() == pos && !unit->isMoving())
+	if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
 	{
-		//std::cout << "SmartLaySpiderMine 190 done " << std::endl;
-		unit->useTech(BWAPI::TechTypes::Spider_Mines, pos + BWAPI::Position(0, 1));
+		return;
 	}
-	else
+
+
+	//std::cout << "SmartLaySpiderMine 201 done " << std::endl;
+	//if (unit->getPosition() == pos && !unit->isMoving())
+	//{
+	//	//std::cout << "SmartLaySpiderMine 190 done " << std::endl;
+	//	unit->useTech(BWAPI::TechTypes::Spider_Mines, pos + BWAPI::Position(0, 1));
+	//}
+	//else
 	{
 		//std::cout << "SmartLaySpiderMine 195 done " << std::endl;
 		unit->useTech(BWAPI::TechTypes::Spider_Mines, pos);
@@ -330,12 +331,16 @@ void Micro::MutaDanceTarget(BWAPI::Unit muta, BWAPI::Unit target)
 		// Move towards and attack the target
 		muta->attack(target);
 	}
-	else // Otherwise we cannot attack and should temporarily back off
+	else if (muta->getSpiderMineCount() > 0 && muta->canUseTech(BWAPI::TechTypes::Spider_Mines, muta->getPosition()))// Otherwise we cannot attack and should temporarily back off
+	{
+		Micro::SmartLaySpiderMine(muta, muta->getPosition());
+	}
+	else
 	{
 		// Determine direction to flee
-		// Determine point to flee to
+		// Determine point to flee to		
 		if (moveToPosition.isValid()) 
-		{
+		{			
 			muta->rightClick(moveToPosition);
 		}
 	}
