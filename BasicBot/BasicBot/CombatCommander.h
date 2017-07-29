@@ -25,10 +25,14 @@ class CombatCommander
 	BWAPI::Unit     findClosestDefender(const Squad & defenseSquad, BWAPI::Position pos, bool flyingDefender);
     BWAPI::Unit     findClosestWorkerToTarget(BWAPI::Unitset & unitsToAssign, BWAPI::Unit target);
 
+	BWAPI::Position getIdleSquadLastOrderLocation();
 	BWAPI::Position getDefendLocation();
     BWAPI::Position getMainAttackLocation();
 	//@µµ¡÷≥≤ ±Ë¡ˆ»∆
 	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
+	bool			initMainAttackPath;
+	std::vector<BWAPI::Position> mainAttackPath;
+	int				curIndex;
 
     void            initializeSquads();
     void            verifySquadUniqueMembership();

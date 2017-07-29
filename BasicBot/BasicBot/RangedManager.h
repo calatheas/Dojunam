@@ -8,6 +8,11 @@ namespace MyBot
 class RangedManager : public MicroManager
 {
 public:
+	int bunkerNum, marinInBunkerNum;
+	void checkBunkerNum();
+	BWAPI::Unit bunkerUnit = nullptr;
+
+	static RangedManager &	Instance();
 
 	RangedManager();
 	void executeMicro(const BWAPI::Unitset & targets);

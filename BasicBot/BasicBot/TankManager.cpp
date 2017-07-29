@@ -41,7 +41,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
         }
 
 		// if the order is to attack or defend
-		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend) 
+		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
         {
 			// if there are targets
 			if (!tankTargets.empty())

@@ -5,13 +5,31 @@ using namespace MyBot;
 
 RangedManager::RangedManager() 
 { 
+	bunkerNum = 0; marinInBunkerNum = 0;	
+}
+
+RangedManager & RangedManager::Instance()
+{
+	static RangedManager instance;
+	return instance;
 }
 
 void RangedManager::executeMicro(const BWAPI::Unitset & targets) 
 {
+	checkBunkerNum();
 	assignTargetsOld(targets);
 }
 
+void RangedManager::checkBunkerNum()
+{
+	bunkerNum = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);	
+	if (bunkerNum > 0)
+	{
+		bunkerUnit = UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));	
+		if (bunkerUnit->getLoadedUnits().size() >= 3)
+			bunkerNum = 0;
+	}
+}
 
 void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 {
@@ -23,6 +41,15 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	
     for (auto & rangedUnit : rangedUnits)
 	{
+		if (order.getType() == SquadOrderTypes::Idle && rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
+			&& rangedUnit->getHitPoints() == rangedUnit->getType().maxHitPoints())
+		{
+			if (bunkerNum > 0)
+			{				
+				rangedUnit->load(bunkerUnit);
+				continue;
+			}			
+		}
 		// train sub units such as scarabs or interceptors
 		//trainSubUnits(rangedUnit);
 		bool nearChokepoint = false;
@@ -40,7 +67,7 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		}
 
 		// if the order is to attack or defend
-		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend) 
+		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
         {
 			// if there are targets
 			if (!rangedUnitTargets.empty())

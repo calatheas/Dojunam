@@ -117,6 +117,9 @@ void Squad::setAllUnits()
 			unit->getPosition().isValid() &&
 			unit->getType() != BWAPI::UnitTypes::Unknown)
 		{
+			if (unit->isLoaded())
+				continue;
+
 			goodUnits.insert(unit);
 			if ((maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0) && unit->getType() != BWAPI::UnitTypes::Terran_Vulture)
 			{

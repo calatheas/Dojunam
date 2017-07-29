@@ -170,33 +170,43 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 		return;
 	}
 
+
+	if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
+	{
+		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I can't mining");
+		return;
+	}
+
+	if (BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame() < 50)
+	{
+		return;
+	}
+
 	BWAPI::UnitCommand currentCommand(unit->getLastCommand());
 
 	// if we've already told this unit to move to this position, ignore this command
 	if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos))// && unit->isMoving())
 	{
 		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I'm Going for mining");
+		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 60), "%d", BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame());
+		if ((pos.getDistance(unit->getPosition()) < 60 && BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame() > 100) || !unit->isMoving())
+		{
+			pos = pos + BWAPI::Position(7, -1);
+			while (!pos.isValid())
+			{
+				pos = pos + BWAPI::Position(-1, 0);
+			}	
+			unit->useTech(BWAPI::TechTypes::Spider_Mines, pos);
+		}
+		
 		return;
 	}
 
-	if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
-	{
-		return;
-	}
 
-
-	//std::cout << "SmartLaySpiderMine 201 done " << std::endl;
-	//if (unit->getPosition() == pos && !unit->isMoving())
-	//{
-	//	//std::cout << "SmartLaySpiderMine 190 done " << std::endl;
-	//	unit->useTech(BWAPI::TechTypes::Spider_Mines, pos + BWAPI::Position(0, 1));
-	//}
-	//else
-	{
-		//std::cout << "SmartLaySpiderMine 195 done " << std::endl;
+	{	
 		unit->useTech(BWAPI::TechTypes::Spider_Mines, pos);
 	}
-	//std::cout << "SmartLaySpiderMine 203 done " << std::endl;
+	
 }
 
 void Micro::SmartRepair(BWAPI::Unit unit, BWAPI::Unit target)

@@ -73,7 +73,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		}
 		//else
 		// if the order is to attack or defend
-		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend)
+		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
 		{
 			if (vultureUnitTargets.empty())
 			{				
@@ -89,16 +89,16 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					else
 						mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % chokePointForVulture.size()];
 					//std::cout << " vulture No.  " << vultureUnit->getID() << " set Mine pos ( " << mineSetPosition.x << ", " << mineSetPosition.y << ")" << std::endl;
-					BWAPI::Broodwar->drawTextMap(mineSetPosition, "%s", "Mine Set Here");
+					
 					//int mineCount = vultureUnit->getSpiderMineCount();
 					while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition) || BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)).size() > 1)
 					{						
 						if (vultureUnit->getID() % 4 == 0)
 							mineSetPosition += BWAPI::Position(1, 1);
 						else if (vultureUnit->getID() % 4 == 1)
-							mineSetPosition += BWAPI::Position(1, -1);
+							mineSetPosition += BWAPI::Position(0, -1);
 						else if (vultureUnit->getID() % 4 == 2)
-							mineSetPosition += BWAPI::Position(-1, 1);
+							mineSetPosition += BWAPI::Position(-2, 0);
 						else if (vultureUnit->getID() % 4 == 3)
 							mineSetPosition += BWAPI::Position(-1, -1);
 						if (!mineSetPosition.isValid())
@@ -107,22 +107,13 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 							//break;
 						}
 					}
+					BWAPI::Broodwar->drawTextMap(mineSetPosition, "%s", "Mine Set Here");
 					Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition);
 					
 					continue;
 				}
 			}
-			//else 
-			//{
-			//	BWAPI::Unit target = getTarget(vultureUnit, vultureUnitTargets);
-			//	if (vultureUnit->getSpiderMineCount() > 0)
-			//	{
-			//		Micro::SmartLaySpiderMine(vultureUnit, vultureUnit->getPosition());
-			//		continue;
-			//	}
-			//}
-
-
+			
 			// if there are targets
 			if (!vultureUnitTargets.empty())
 			{
@@ -139,17 +130,6 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
-				//if (vultureUnit->getDistance(order.getPosition()) > 100 
-				//	&& order.getFarUnit()->getDistance(vultureUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 100 
-				//	&& order.getType() == SquadOrderTypes::Attack 
-				//
-				//	&& order.getFarUnit() != nullptr
-				//	&& order.getFarUnit()->getID() != vultureUnit->getID())
-				//{
-				//	//std::cout << "Marin  " << vultureUnit->getID() << std::endl;
-				//	Micro::SmartAttackMove(vultureUnit, (order.getFarUnit()->getPosition() + vultureUnit->getPosition())/2);
-				//}
-				//else
 					// if we're not near the order position
 					if (vultureUnit->getDistance(order.getPosition()) > 100)
 					{

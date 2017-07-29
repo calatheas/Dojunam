@@ -31,6 +31,9 @@ CombatCommander::CombatCommander()
 		}
 	}
 	mineralPosition = (mineralPosition + closestDepot->getPosition()) / 2;
+
+	initMainAttackPath = false;
+	curIndex = 0;
 }
 
 void CombatCommander::initializeSquads()
@@ -92,7 +95,7 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 	}
 	
 	_squadData.update();
-	
+	drawSquadInformation(220, 200);
 }
 
 void CombatCommander::updateIdleSquad()
@@ -101,19 +104,19 @@ void CombatCommander::updateIdleSquad()
     Squad & idleSquad = _squadData.getSquad("Idle");	
 	//if (_combatUnits.size() % 10 == 1)
 	{
-		int diff_x = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().x - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().x;
-		int diff_y = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().y - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().y;
-		if (abs(diff_x) > abs(diff_y))
-		{
-			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(_combatUnits.size(), 32), radi, "Move Out");
-			idleSquad.setSquadOrder(idleOrder);
-		}
-		else{
-			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-				+ BWAPI::Position(32, _combatUnits.size()), radi, "Move Out");
-			idleSquad.setSquadOrder(idleOrder);
-		}
+		//int diff_x = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().x - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().x;
+		//int diff_y = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().y - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().y;
+		//if (abs(diff_x) > abs(diff_y))
+		//{
+		//	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+		//		+ BWAPI::Position(_combatUnits.size(), 32), radi, "Move Out");
+		//	idleSquad.setSquadOrder(idleOrder);
+		//}
+		//else{
+		//	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+		//		+ BWAPI::Position(32, _combatUnits.size()), radi, "Move Out");
+		//	idleSquad.setSquadOrder(idleOrder);
+		//}
 
 		//BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 		for (auto & unit : _combatUnits)
@@ -138,7 +141,7 @@ void CombatCommander::updateIdleSquad()
 		if (idleSquad.getUnits().size() < 13)
 		{
 			int tmp_radi = 190;
-			SquadOrder idleOrder(SquadOrderTypes::Attack, mineralPosition
+			SquadOrder idleOrder(SquadOrderTypes::Idle, mineralPosition
 				, tmp_radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
@@ -150,20 +153,48 @@ void CombatCommander::updateIdleSquad()
 		//}
 		else if (idleSquad.getUnits().size() < 17)
 		{
-			SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+			SquadOrder idleOrder(SquadOrderTypes::Idle, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
 				, radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
-		else{
-			SquadOrder idleOrder(SquadOrderTypes::Attack,
-				InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter() - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition()
-				+ InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+		else{			
+			SquadOrder idleOrder(SquadOrderTypes::Idle,
+				getIdleSquadLastOrderLocation()
 				, radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 
 	}
     
+}
+
+BWAPI::Position CombatCommander::getIdleSquadLastOrderLocation()
+{
+	BWAPI::Position mCenter(BWAPI::Broodwar->mapWidth(), BWAPI::Broodwar->mapHeight());
+	BWTA::Chokepoint * mSec = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
+	int minDist = 999999;
+	for (BWTA::Chokepoint * chokepoint : BWTA::getChokepoints())
+	{
+		if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
+			continue;		
+		if (chokepoint == InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self()))
+			continue;
+		if (mSec->getCenter().getDistance(chokepoint->getCenter()) < minDist)
+		{
+			minDist = mSec->getCenter().getDistance(chokepoint->getCenter());
+			mCenter = chokepoint->getCenter();
+		}
+	}
+	mCenter = (InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter() + mCenter) / 2;
+	
+	BWAPI::Position fleeVec(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter() - InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+	double fleeAngle = atan2(fleeVec.y, fleeVec.x);
+	BWAPI::Position fleeVector = BWAPI::Position(static_cast<int>(64 * cos(fleeAngle)), static_cast<int>(64 * sin(fleeAngle)));	
+	while (!mCenter.isValid())
+	{
+		mCenter += fleeVector;
+	}
+	return mCenter;
 }
 
 void CombatCommander::updateAttackSquads()
@@ -192,7 +223,7 @@ void CombatCommander::updateAttackSquads()
 		}
 	}
 
-	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(mainAttackSquad.calcCenter()) , 800, "Attack Enemy ChokePoint");
+	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(mainAttackSquad.calcCenter()) , 900, "Attack Enemy ChokePoint");
 	mainAttackSquad.setSquadOrder(mainAttackOrder);
 }
 
@@ -564,16 +595,33 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 	
 	if (enemySecondCP)
 	{
-		BWAPI::Position enemySecondChokePosition = enemySecondCP->getCenter();
-		//std::cout << "MapTools::Instance().getGroundDistance(enemySecondChokePosition, enemyBaseLocation->getPosition()) " << MapTools::Instance().getGroundDistance(enemySecondChokePosition, enemyBaseLocation->getPosition()) << std::endl;
-		//std::cout << "MapTools::Instance().getGroundDistance(ourCenterPosition, enemyBaseLocation->getPosition())) " << MapTools::Instance().getGroundDistance(ourCenterPosition, enemyBaseLocation->getPosition()) << std::endl;
-		//std::cout << "enemySecondCP->getWidth() " << enemySecondCP->getWidth() << std::endl;
-		//std::cout << "MapTools::Instance().getGroundDistance(enemySecondChokePosition, ourCenterPosition) " << MapTools::Instance().getGroundDistance(enemySecondChokePosition, ourCenterPosition) << std::endl << std::endl;
-
-		if (MapTools::Instance().getGroundDistance(enemySecondChokePosition, ourCenterPosition) > 5 //enemySecondCP->getWidth()
-			&& MapTools::Instance().getGroundDistance(enemySecondChokePosition, enemyBaseLocation->getPosition())
-			< MapTools::Instance().getGroundDistance(ourCenterPosition, enemyBaseLocation->getPosition()))
-			return enemySecondChokePosition;
+		if (!initMainAttackPath)
+		{
+			std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()), BWAPI::TilePosition(enemySecondCP->getCenter()));
+			std::vector<std::pair<double, BWAPI::Position>> candidate_pos;
+			for (auto & t : tileList) {
+				BWAPI::Position tp(t.x * 32, t.y * 32);
+				if (!tp.isValid())
+					continue;
+				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()) < 120)
+					continue;
+				candidate_pos.push_back(std::make_pair(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().getDistance(tp), tp));
+			}
+			std::sort(candidate_pos.begin(), candidate_pos.end(),
+				[](std::pair<double, BWAPI::Position> &a, std::pair<double, BWAPI::Position> &b){ return a.first < b.first; });
+			
+			for (auto &i : candidate_pos) mainAttackPath.push_back(i.second);
+			initMainAttackPath = true;
+		}
+		else{
+			Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
+			if (curIndex < mainAttackPath.size())
+			{
+				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*7)
+					curIndex++;
+				return mainAttackPath[curIndex];
+			}
+		}
 	}
 	return getMainAttackLocation();
 
