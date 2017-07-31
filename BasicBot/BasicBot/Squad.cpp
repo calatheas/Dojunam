@@ -117,7 +117,7 @@ void Squad::setAllUnits()
 			unit->getPosition().isValid() &&
 			unit->getType() != BWAPI::UnitTypes::Unknown)
 		{
-			if (unit->isLoaded())
+			if (unit->isLoaded() && unit->getType() != BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode)
 				continue;
 
 			goodUnits.insert(unit);

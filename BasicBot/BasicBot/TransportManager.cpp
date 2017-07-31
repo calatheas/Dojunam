@@ -128,8 +128,31 @@ void TransportManager::update()
 		calculateMapEdgeVertices();
 	}
 
-	moveTroops();
-	moveTransport();
+	//for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+	//{
+	//	if (_transportShip != nullptr && _transportShip->getLoadedUnits().size() < 3)
+	//	{
+	//
+	//		if (unit->getType() == BWAPI::UnitTypes::Terran_SCV && unit->isCompleted())
+	//		{
+	//			_transportShip->load(unit, false);
+	//		}
+	//	}
+	//}
+
+	if (_transportShip != nullptr && _transportShip->getSpaceRemaining() == 0)
+	{
+		BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
+		setFrom(_transportShip->getPosition());
+		setTo(BWAPI::Position(10*32, 10*32));
+		//if (_transportShip->getSpaceRemaining() != 0)
+		{
+			moveTroops();
+			moveTransport();
+		}
+
+	}
+
 	
 	drawTransportInformation();
 }
@@ -171,9 +194,11 @@ void TransportManager::moveTroops()
 	
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 
-	if (enemyBaseLocation && (_transportShip->getDistance(enemyBaseLocation->getPosition()) < 300 || transportHP < 100)
-		&& _transportShip->canUnloadAtPosition(_transportShip->getPosition()))
+	//if (enemyBaseLocation && (_transportShip->getDistance(enemyBaseLocation->getPosition()) < 300 || transportHP < 100)
+	//	&& _transportShip->canUnloadAtPosition(_transportShip->getPosition()))
+	if (_to.getDistance(_transportShip->getPosition()) <400)
 	{
+		BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Can Drop");
 		//unload troops 
 		//and return? 
 
@@ -183,12 +208,18 @@ void TransportManager::moveTroops()
 		// if we've already told this unit to unload, wait
 		if (currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All || currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All_Position)
 		{
+			BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Odered Drop");
 			return;
 		}
 
 		//else unload
-		_transportShip->unloadAll(_transportShip->getPosition());
+		_transportShip->unloadAll(_to);
 	}
+	//else
+	//{
+	//	std::cout << "to getDistance " << _to.getDistance(_transportShip->getPosition()) << std::endl;
+	//	std::cout << "to Position " << _to.x << " " << _to.y << std::endl;
+	//}
 	
 }
 

@@ -19,12 +19,25 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
     int siegeTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 32;
 	int  tankTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange() - 32;
     bool haveSiege = BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode);
-	
+	BWAPI::Position mbase = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+	BWAPI::Position fchokePoint = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter();
+	int mbToFcP = mbase.getDistance(fchokePoint);
+	//std::cout << " mbase.getDistance(fchokePoint)  " << mbToFcP  << std::endl;
 	// for each zealot
 	for (auto & tank : tanks)
 	{
 		// train sub units such as scarabs or interceptors
 		//trainSubUnits(rangedUnit);
+		//std::cout << "order.getType()  " << order.getType() << std::endl;
+		//BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 50), "%d", order.getType());
+		if (order.getType() == SquadOrderTypes::Drop)
+		{
+			if (tank->getDistance(mbase) > mbase.getDistance(fchokePoint) && tank->canSiege())
+			{
+				tank->siege();
+			}			
+			continue;
+		}
 
         bool tankNearChokepoint = false; 
         for (auto & choke : BWTA::getChokepoints())
@@ -34,7 +47,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			if (choke->getCenter().getDistance(tank->getPosition()) < 64)
             {
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
-				BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0,50), "%d", "In Choke Point");
+				BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0,50), "%s", "In Choke Point");
                 tankNearChokepoint = true;
                 break;
             }

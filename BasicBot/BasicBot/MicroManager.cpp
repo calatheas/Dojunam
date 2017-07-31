@@ -51,7 +51,7 @@ void MicroManager::execute(const SquadOrder & inputOrder)
 		MapGrid::Instance().getUnitsNear(nearbyEnemies, order.getPosition(), order.getRadius(), false, true);
 	
 	} // otherwise we want to see everything on the way
-	else if (order.getType() == SquadOrderTypes::Attack) 
+	else if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Drop)
 	{
 		MapGrid::Instance().getUnitsNear(nearbyEnemies, order.getPosition(), order.getRadius(), false, true);
 		for (auto & unit : _units) 
@@ -64,7 +64,7 @@ void MicroManager::execute(const SquadOrder & inputOrder)
 	
 	// the following block of code attacks all units on the way to the order position
 	// we want to do this if the order is attack, defend, or harass
-	if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
+	if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle || order.getType() == SquadOrderTypes::Drop)
 	{
         // if this is a worker defense force
         if (_units.size() == 1 && (*_units.begin())->getType().isWorker())

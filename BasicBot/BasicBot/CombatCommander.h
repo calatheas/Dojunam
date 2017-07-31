@@ -12,7 +12,9 @@ class CombatCommander
 {
 	SquadData       _squadData;
     BWAPI::Unitset  _combatUnits;
+	BWAPI::Unitset  _dropUnits;
     bool            _initialized;
+	
 
     void            updateScoutDefenseSquad();
 	void            updateDefenseSquads();
@@ -28,6 +30,8 @@ class CombatCommander
 	BWAPI::Position getIdleSquadLastOrderLocation();
 	BWAPI::Position getDefendLocation();
     BWAPI::Position getMainAttackLocation();
+	BWAPI::Position getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint);
+	
 	//@µµ¡÷≥≤ ±Ë¡ˆ»∆
 	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
 	bool			initMainAttackPath;

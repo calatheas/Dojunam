@@ -1,5 +1,4 @@
 #include "CombatCommander.h"
-#include "UnitUtil.h"
 #include "MedicManager.h"
 
 using namespace MyBot;
@@ -19,6 +18,7 @@ CombatCommander & CombatCommander::Instance()
 CombatCommander::CombatCommander() 
     : _initialized(false)
 {
+
 	mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 	BWAPI::Unit closestDepot = nullptr;
 	double closestDistance = 600;
@@ -56,7 +56,7 @@ void CombatCommander::initializeSquads()
 	//_squadData.addSquad("BaseDefense", Squad("BaseDefense", baseDefense, BaseDefensePriority));
 
     // add a drop squad if we are using a drop strategy
-    if (Config::Strategy::StrategyName == "Protoss_Drop")
+    //if (Config::Strategy::StrategyName == "Protoss_Drop")
     {
 		SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 900, "Wait for transport");
         _squadData.addSquad("Drop", Squad("Drop", zealotDrop, DropPriority));
@@ -121,6 +121,8 @@ void CombatCommander::updateIdleSquad()
 		//BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 		for (auto & unit : _combatUnits)
 		{
+			//if (_dropUnits.contains(unit))
+			//	continue;
 			// if it hasn't been assigned to a squad yet, put it in the low priority idle squad
 			//BWAPI::UnitCommand currentCommand(unit->getLastCommand());
 			if (_squadData.canAssignUnitToSquad(unit, idleSquad))
@@ -138,19 +140,19 @@ void CombatCommander::updateIdleSquad()
 		}
 
 
-		if (idleSquad.getUnits().size() < 13)
+		if (idleSquad.getUnits().size() < 7)
 		{
 			int tmp_radi = 190;
 			SquadOrder idleOrder(SquadOrderTypes::Idle, mineralPosition
 				, tmp_radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
-		//else if (idleSquad.getUnits().size() < 15)
-		//{
-		//	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition()
-		//		, 100, "Move Out");
-		//	idleSquad.setSquadOrder(idleOrder);
-		//}
+		else if (idleSquad.getUnits().size() < 15)
+		{
+			SquadOrder idleOrder(SquadOrderTypes::Idle, getPositionForDefenceChokePoint(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
+				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange(), "Move Out");
+			idleSquad.setSquadOrder(idleOrder);
+		}
 		else if (idleSquad.getUnits().size() < 17)
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Idle, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
@@ -172,50 +174,36 @@ BWAPI::Position CombatCommander::getIdleSquadLastOrderLocation()
 {
 	BWAPI::Position mCenter(BWAPI::Broodwar->mapWidth(), BWAPI::Broodwar->mapHeight());
 	BWTA::Chokepoint * mSec = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
-	int minDist = 999999;
-	for (BWTA::Chokepoint * chokepoint : BWTA::getChokepoints())
-	{
-		if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
-			continue;		
-		if (chokepoint == InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self()))
-			continue;
-		if (mSec->getCenter().getDistance(chokepoint->getCenter()) < minDist)
-		{
-			minDist = mSec->getCenter().getDistance(chokepoint->getCenter());
-			mCenter = chokepoint->getCenter();
-		}
-	}
-	mCenter = (InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter() + mCenter) / 2;
-	
-	BWAPI::Position fleeVec(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter() - InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
-	double fleeAngle = atan2(fleeVec.y, fleeVec.x);
-	BWAPI::Position fleeVector = BWAPI::Position(static_cast<int>(64 * cos(fleeAngle)), static_cast<int>(64 * sin(fleeAngle)));	
-	while (!mCenter.isValid())
-	{
-		mCenter += fleeVector;
-	}
-	return mCenter;
+	if (mainAttackPath.size() > 0)
+		return mainAttackPath[2];
+	else
+		return mSec->getCenter();
+
 }
 
 void CombatCommander::updateAttackSquads()
 {
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
-
+	
 	if ((mainAttackSquad.getUnits().size() > 7) && candiAttackerSquad.getUnits().size() > 10)
 	{
 		for (auto & unit : _combatUnits)
 		{
+			//if (_dropUnits.contains(unit))
+			//	continue;
 			if (_squadData.canAssignUnitToSquad(unit, mainAttackSquad))
 			{
 				_squadData.assignUnitToSquad(unit, mainAttackSquad);
 			}
 		}
 	}
-	else if (candiAttackerSquad.getUnits().size() > 20)
+	else if (candiAttackerSquad.getUnits().size() > 30)
 	{
 		for (auto & unit : _combatUnits)
 		{
+			//if (_dropUnits.contains(unit))
+			//	continue;
 			if (_squadData.canAssignUnitToSquad(unit, mainAttackSquad))
 			{
 				_squadData.assignUnitToSquad(unit, mainAttackSquad);
@@ -229,17 +217,39 @@ void CombatCommander::updateAttackSquads()
 
 void CombatCommander::updateDropSquads()
 {
-    if (Config::Strategy::StrategyName != "Protoss_Drop")
-    {
-        return;
-    }
-
+    //if (Config::Strategy::StrategyName != "Protoss_Drop")
+	//if (dropshipCount<=0)
+    //{
+    //    return;
+    //}
+	BWAPI::Position mbase = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+	BWAPI::Position fchokePoint = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter();
     Squad & dropSquad = _squadData.getSquad("Drop");
-
+	
     // figure out how many units the drop squad needs
     bool dropSquadHasTransport = false;
     int transportSpotsRemaining = 8;
     auto & dropUnits = dropSquad.getUnits();
+	BWAPI::Unit dropShipUnit;
+	for (auto & unit : dropUnits)
+	{
+		if (unit->isFlying() && unit->getType().spaceProvided() > 0)
+		{
+			dropShipUnit = unit;
+		}
+	}
+
+	//if (_dropUnits.size() >= 2 && dropShipUnit)
+	//{
+	//	for (auto & unit : _dropUnits)
+	//	{
+	//		if (!unit->isLoaded() && unit->getDistance(mbase) < mbase.getDistance(fchokePoint)){
+	//			dropShipUnit->load(unit);
+	//		}
+	//		_squadData.assignUnitToSquad(unit, dropSquad);
+	//	}
+	//	return;
+	//}
 
     for (auto & unit : dropUnits)
     {
@@ -249,12 +259,18 @@ void CombatCommander::updateDropSquads()
         }
         else
         {
+			if (dropShipUnit)
+			{
+				if (!unit->isLoaded() && unit->getDistance(mbase) < mbase.getDistance(fchokePoint)){
+					dropShipUnit->load(unit);
+				}
+			}
             transportSpotsRemaining -= unit->getType().spaceRequired();
         }
     }
 
     // if there are still units to be added to the drop squad, do it
-    if (transportSpotsRemaining > 0 || !dropSquadHasTransport)
+	if ((transportSpotsRemaining > 0 || !dropSquadHasTransport) && dropShipUnit)
     {
         // take our first amount of combat units that fill up a transport and add them to the drop squad
         for (auto & unit : _combatUnits)
@@ -273,7 +289,10 @@ void CombatCommander::updateDropSquads()
             }
 
             // get every unit of a lower priority and put it into the attack squad
-            if (!unit->getType().isWorker() && _squadData.canAssignUnitToSquad(unit, dropSquad))
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode
+				&& _squadData.canAssignUnitToSquad(unit, dropSquad)
+				&& unit->getDistance(mbase) < mbase.getDistance(fchokePoint) && dropSquadHasTransport
+				)
             {
                 _squadData.assignUnitToSquad(unit, dropSquad);
                 transportSpotsRemaining -= unit->getType().spaceRequired();
@@ -281,7 +300,7 @@ void CombatCommander::updateDropSquads()
         }
     }
     // otherwise the drop squad is full, so execute the order
-    else
+	else if (dropShipUnit)
     {
         SquadOrder dropOrder(SquadOrderTypes::Drop, getMainAttackLocation(), 800, "Attack Enemy Base");
         dropSquad.setSquadOrder(dropOrder);
@@ -798,4 +817,22 @@ bool CombatCommander::beingBuildingRushed()
     }
 
     return false;
+}
+
+BWAPI::Position CombatCommander::getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint)
+{
+	BWAPI::Position ourBasePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
+	std::vector<BWAPI::TilePosition> tpList = BWTA::getShortestPath(BWAPI::TilePosition(ourBasePosition), BWAPI::TilePosition(chokepoint->getCenter()));
+	BWAPI::Position resultPosition = ourBasePosition;
+	for (auto & t : tpList) {
+		BWAPI::Position tp(t.x * 32, t.y * 32);
+		if (!tp.isValid())
+			continue;
+		if (tp.getDistance(chokepoint->getCenter()) <= BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() - 5
+			&& tp.getDistance(chokepoint->getCenter()) >= BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() - 20)
+		{
+			resultPosition = tp;
+		}
+	}
+	return resultPosition;
 }
