@@ -18,7 +18,6 @@ CombatCommander & CombatCommander::Instance()
 CombatCommander::CombatCommander() 
     : _initialized(false)
 {
-
 	mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 	BWAPI::Unit closestDepot = nullptr;
 	double closestDistance = 600;
@@ -30,8 +29,9 @@ CombatCommander::CombatCommander()
 			closestDepot = munit;
 		}
 	}
+	
 	mineralPosition = (mineralPosition + closestDepot->getPosition()) / 2;
-
+	
 	initMainAttackPath = false;
 	curIndex = 0;
 }
@@ -150,7 +150,7 @@ void CombatCommander::updateIdleSquad()
 		else if (idleSquad.getUnits().size() < 15)
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Idle, getPositionForDefenceChokePoint(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
-				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange(), "Move Out");
+				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + 100 , "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 		else if (idleSquad.getUnits().size() < 17)
@@ -455,7 +455,7 @@ void CombatCommander::updateDefenseSquads()
             if (!_squadData.squadExists(squadName.str()))
             {
 				std::cout << "Defend My Region!" << std::endl;
-                SquadOrder defendRegion(SquadOrderTypes::Defend, regionCenter, 32 * 25, "Defend Region!");
+                SquadOrder defendRegion(SquadOrderTypes::Defend, regionCenter, 32 * 30, "Defend Region!");
                 _squadData.addSquad(squadName.str(), Squad(squadName.str(), defendRegion, BaseDefensePriority));
             }
         }
@@ -828,7 +828,7 @@ BWAPI::Position CombatCommander::getPositionForDefenceChokePoint(BWTA::Chokepoin
 		BWAPI::Position tp(t.x * 32, t.y * 32);
 		if (!tp.isValid())
 			continue;
-		if (tp.getDistance(chokepoint->getCenter()) <= BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() - 5
+		if (tp.getDistance(chokepoint->getCenter()) <= BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + 12
 			&& tp.getDistance(chokepoint->getCenter()) >= BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() - 20)
 		{
 			resultPosition = tp;

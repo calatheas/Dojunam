@@ -123,9 +123,9 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 				}
 				else
 				{
-					if (tank->canUnsiege())
+					if (tank->canSiege())
 					{
-						tank->unsiege();
+						tank->siege();
 					}
 				}
 			}
