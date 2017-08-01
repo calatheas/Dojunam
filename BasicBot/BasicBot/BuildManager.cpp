@@ -1,4 +1,4 @@
-﻿#include "BuildManager.h"
+#include "BuildManager.h"
 
 using namespace MyBot;
 
@@ -45,18 +45,16 @@ void BuildManager::update()
 	*/
 
 	consumeBuildQueue(); //빌드오더 소비
-
 	//큐가 비어 있으면 새로운 빌드오더 생성
-	auto queueResource = getQueueResource();
-	if (BWAPI::Broodwar->getFrameCount() > 10){
-		if (buildQueue.isEmpty() || (getAvailableMinerals() > queueResource.first && getAvailableGas() > queueResource.second))
+	
+	if (buildQueue.isEmpty()) {
+		if ((buildQueue.size() == 0) && (BWAPI::Broodwar->getFrameCount() > 10))
 		{
 			BWAPI::Broodwar->drawTextScreen(150, 10, "Nothing left to build, new search!");
 
 			performBuildOrderSearch();
 		}
 	}
-
 	// 서플라이 데드락 체크
 	// detect if there's a build order deadlock once per second
 	if ((BWAPI::Broodwar->getFrameCount() % 24 == 0) && detectSupplyDeadlock())
@@ -65,7 +63,6 @@ void BuildManager::update()
 
 		buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Supply_Depot), StrategyManager::Instance().getBuildSeedPositionStrategy(MetaType(BWAPI::UnitTypes::Terran_Supply_Depot)), true);
 	}
-
 	//디텍팅 유닛을 만들어야 되는 상황
 	// if they have cloaked units get a new goal asap
 	if (!_enemyCloakedDetected && InformationManager::Instance().hasCloakedUnits)
@@ -91,9 +88,7 @@ void BuildManager::update()
 
 		_enemyCloakedDetected = true;
 	}
-
 	checkBuildOrderQueueDeadlockAndRemove();
-
 	//커맨드센터는 작업이 없으면 일꾼을 만든다.
 	executeWorkerTraining();
 }
@@ -229,6 +224,7 @@ void BuildManager::performBuildOrderSearch()
 
 	if (buildOrder.size() > 0)
 	{
+		/*
 		std::cout << "Finished BOSS - ";
 		for (size_t i(0); i < buildOrder.size(); ++i){
 			if (buildOrder[i].getName().find("Terran_")==0)
@@ -237,7 +233,7 @@ void BuildManager::performBuildOrderSearch()
 				std::cout << buildOrder[i].getName() << " ";
 		}
 		std::cout << std::endl;
-
+		*/
 		setBuildOrder(buildOrder);
 		BOSSManager::Instance().reset();
 	}
@@ -250,6 +246,7 @@ void BuildManager::performBuildOrderSearch()
 				return;
 			}
 
+			/*
 			std::cout << "Start BOSS" << std::endl;
 
 			if (!buildQueue.isEmpty()){
@@ -271,7 +268,7 @@ void BuildManager::performBuildOrderSearch()
 					std::cout << i.first.getName() << "(" << i.second << ") ";
 			}
 			std::cout << std::endl;
-
+			*/
 			BOSSManager::Instance().startNewSearch(goalUnits);
 		}
 	}
@@ -822,13 +819,16 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 			}
 		}
 
+		std::cout << "before : " << buildOrder.size() << std::endl;
+
 		if (buildOrder[i].isBuilding()){
 			buildQueue.queueAsLowestPriority(buildOrder[i], StrategyManager::Instance().getBuildSeedPositionStrategy(buildOrder[i]), true);
 		}
 		else{
 			buildQueue.queueAsLowestPriority(buildOrder[i], true);
 		}
-		
+		std::cout << "after : " << buildOrder.size() << std::endl;
+
 	}
 }
 
