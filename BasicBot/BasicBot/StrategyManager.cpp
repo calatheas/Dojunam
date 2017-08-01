@@ -1,4 +1,4 @@
-﻿#include "StrategyManager.h"
+#include "StrategyManager.h"
 #include "CommandUtil.h"
 
 using namespace MyBot;
@@ -28,15 +28,16 @@ void StrategyManager::setOpeningBookBuildOrder(){
 
 	//초기 전략 선택
 	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran){
-		_main_strategy = Strategy::main_strategies::Two_Fac;
+		_main_strategy = Strategy::main_strategies::One_Fac_Tank;
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Zerg){
-		_main_strategy = Strategy::main_strategies::BBS;
+		_main_strategy = Strategy::main_strategies::BSB;
 	}
 	else if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
 		//_main_strategy = Strategy::main_strategies::Mechanic;
 		//_main_strategy = Strategy::main_strategies::Two_Fac;
-		_main_strategy = Strategy::main_strategies::One_Fac_Tank;
+		//_main_strategy = Strategy::main_strategies::One_Fac_Tank;
+		_main_strategy = Strategy::main_strategies::One_Fac_Vulture;
 	}
 	else{
 		_main_strategy = Strategy::main_strategies::Bionic;
@@ -191,7 +192,7 @@ bool StrategyManager::changeMainStrategy(std::map<std::string, int> & numUnits){
 		}
 	}
 
-	if (_main_strategy == Strategy::main_strategies::Mechanic || _main_strategy == Strategy::main_strategies::One_Fac_Vulture || _main_strategy == Strategy::main_strategies::Two_Fac){
+	if (_main_strategy == Strategy::main_strategies::Mechanic || _main_strategy == Strategy::main_strategies::One_Fac_Vulture || _main_strategy == Strategy::main_strategies::One_Fac_Tank){
 		if (InformationManager::Instance().hasFlyingUnits){
 			_main_strategy = Strategy::main_strategies::Mechanic_Goliath;
 			return true;
@@ -278,11 +279,17 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, goal_num_marines));
 	}
-	else if (_main_strategy == Strategy::main_strategies::Two_Fac) 
+	else if (_main_strategy == Strategy::main_strategies::Two_Fac_Vulture) 
 	{
 		int goal_num_vultures = numUnits["Vultures"] + 2;
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Spider_Mines, 1));
+	}
+	else if (_main_strategy == Strategy::main_strategies::Two_Fac_Tank)
+	{
+		int goal_num_tanks = numUnits["Tanks"] + 2;
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
+		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 	}
 	else if (_main_strategy == Strategy::main_strategies::Mechanic || _main_strategy == Strategy::main_strategies::Mechanic_Goliath)
 	{
@@ -290,7 +297,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		int goal_num_vultures = numUnits["Vultures"];
 		int goal_num_goliath = numUnits["Goliath"];;
 
-		if (numUnits["Factorys"] > 2 && numUnits["Academy"] == 0)
+		if (numUnits["Factorys"] > 1 && numUnits["Academy"] == 0)
 		{
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Academy, 1));
 		}
@@ -469,13 +476,13 @@ void StrategyManager::initStrategies(){
 
 	_strategies[Strategy::main_strategies::BSB] = Strategy();
 	_strategies[Strategy::main_strategies::BSB].pre_strategy = Strategy::main_strategies::None;
-	_strategies[Strategy::main_strategies::BSB].next_strategy = Strategy::main_strategies::Two_Fac;
+	_strategies[Strategy::main_strategies::BSB].next_strategy = Strategy::main_strategies::One_Fac_Tank;
 	_strategies[Strategy::main_strategies::BSB].opening_build_order = "SCV SCV SCV SCV SCV Barracks SCV Supply_Depot Barracks";
 	_strategies[Strategy::main_strategies::BSB].num_unit_limit["Marines"] = 8; //마린18이상이면 테크진화
 
 	_strategies[Strategy::main_strategies::BBS] = Strategy();
 	_strategies[Strategy::main_strategies::BBS].pre_strategy = Strategy::main_strategies::None;
-	_strategies[Strategy::main_strategies::BBS].next_strategy = Strategy::main_strategies::Two_Fac;
+	_strategies[Strategy::main_strategies::BBS].next_strategy = Strategy::main_strategies::One_Fac_Tank;
 	_strategies[Strategy::main_strategies::BBS].opening_build_order = "SCV SCV SCV SCV SCV Barracks SCV Barracks Supply_Depot";
 	_strategies[Strategy::main_strategies::BBS].num_unit_limit["Marines"] = 8; //마린18이상이면 테크진화
 
@@ -493,25 +500,29 @@ void StrategyManager::initStrategies(){
 	_strategies[Strategy::main_strategies::Bionic_Tank].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV Barracks SCV Barracks SCV SCV SCV Marine Supply_Depot SCV Marine Refinery SCV Marine SCV Marine SCV Marine Supply_Depot SCV Academy";
 	_strategies[Strategy::main_strategies::Bionic_Tank].num_unit_limit["Tanks"] = 5;
 
-	_strategies[Strategy::main_strategies::Two_Fac] = Strategy();
-	_strategies[Strategy::main_strategies::Two_Fac].pre_strategy = Strategy::main_strategies::None;
-	_strategies[Strategy::main_strategies::Two_Fac].next_strategy = Strategy::main_strategies::Mechanic;
-	_strategies[Strategy::main_strategies::Two_Fac].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV SCV SCV Factory Marine SCV SCV SCV SCV Machine_Shop SCV Factory";
-	_strategies[Strategy::main_strategies::Two_Fac].num_unit_limit["Vultures"] = 6;
-
 	_strategies[Strategy::main_strategies::One_Fac_Vulture] = Strategy();
 	_strategies[Strategy::main_strategies::One_Fac_Vulture].pre_strategy = Strategy::main_strategies::None;
-	_strategies[Strategy::main_strategies::One_Fac_Vulture].next_strategy = Strategy::main_strategies::Mechanic;
+	_strategies[Strategy::main_strategies::One_Fac_Vulture].next_strategy = Strategy::main_strategies::Two_Fac_Vulture;
 	//_strategies[Strategy::main_strategies::One_Fac_Vulture].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV Marine SCV Marine Factory Supply_Depot";
 	_strategies[Strategy::main_strategies::One_Fac_Vulture].opening_build_order = "SCV SCV SCV SCV SCV Barracks SCV Refinery Supply_Depot SCV Marine Factory SCV Marine Supply_Depot";
-	_strategies[Strategy::main_strategies::One_Fac_Vulture].num_unit_limit["Vultures"] = 6; 
+	_strategies[Strategy::main_strategies::One_Fac_Vulture].num_unit_limit["Vultures"] = 4;
 
 	_strategies[Strategy::main_strategies::One_Fac_Tank] = Strategy();
 	_strategies[Strategy::main_strategies::One_Fac_Tank].pre_strategy = Strategy::main_strategies::None;
-	_strategies[Strategy::main_strategies::One_Fac_Tank].next_strategy = Strategy::main_strategies::Mechanic;
+	_strategies[Strategy::main_strategies::One_Fac_Tank].next_strategy = Strategy::main_strategies::Two_Fac_Tank;
 	//_strategies[Strategy::main_strategies::One_Fac_Tank].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV Marine SCV Marine Factory Supply_Depot";
 	_strategies[Strategy::main_strategies::One_Fac_Tank].opening_build_order = "SCV SCV SCV SCV SCV Barracks SCV Refinery Supply_Depot SCV Marine Factory SCV Marine Supply_Depot";
 	_strategies[Strategy::main_strategies::One_Fac_Tank].num_unit_limit["Tanks"] = 2;
+
+	_strategies[Strategy::main_strategies::Two_Fac_Vulture] = Strategy();
+	_strategies[Strategy::main_strategies::Two_Fac_Vulture].pre_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Two_Fac_Vulture].next_strategy = Strategy::main_strategies::Mechanic;
+	_strategies[Strategy::main_strategies::Two_Fac_Vulture].num_unit_limit["Vultures"] = 10;
+
+	_strategies[Strategy::main_strategies::Two_Fac_Tank] = Strategy();
+	_strategies[Strategy::main_strategies::Two_Fac_Tank].pre_strategy = Strategy::main_strategies::None;
+	_strategies[Strategy::main_strategies::Two_Fac_Tank].next_strategy = Strategy::main_strategies::Mechanic;
+	_strategies[Strategy::main_strategies::Two_Fac_Tank].num_unit_limit["Tanks"] = 4;
 
 	_strategies[Strategy::main_strategies::Mechanic] = Strategy();
 	_strategies[Strategy::main_strategies::Mechanic].pre_strategy = Strategy::main_strategies::None;
