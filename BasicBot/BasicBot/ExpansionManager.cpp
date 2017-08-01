@@ -1,4 +1,4 @@
-﻿#include "ExpansionManager.h"
+#include "ExpansionManager.h"
 
 using namespace MyBot;
 
@@ -93,10 +93,18 @@ void ExpansionManager::update(){
 			//빌드시작하여 컨스트럭트 큐에 있는지도 확인해야됨
 			if (!enemyExists){
 				if (!refineryExists){
+					
+					if (!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitType(BWAPI::UnitTypes::Terran_Refinery)) &&
+						(ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Refinery) == 0) &&
+						(StrategyManager::Instance().getMainStrategy() != Strategy::BBS && StrategyManager::Instance().getMainStrategy() != Strategy::BSB)){
+						BuildManager::Instance().addBuildOrderOneItem(MetaType(BWAPI::UnitTypes::Terran_Refinery), target->getInitialTilePosition());
+					}
+					/*
 					if (!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitType(BWAPI::UnitTypes::Terran_Refinery)) &&
 						(ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Refinery) == 0)){
 						BuildManager::Instance().addBuildOrderOneItem(MetaType(BWAPI::UnitTypes::Terran_Refinery), target->getInitialTilePosition());
 					}
+					*/
 				}
 				if (!comsatExists){
 
