@@ -57,5 +57,6 @@ namespace MyBot
 		double GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2);
 		
 		void getAllCloakUnits(BWAPI::Unitset &units);
+		double getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int radius = 300);
 	};
 }

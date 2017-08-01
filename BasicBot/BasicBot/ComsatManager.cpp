@@ -32,22 +32,10 @@ void ComsatManager::setScanPosition(){
 	//타겟을 공격할수 있어야 함(무기타입, 무기범위)
 	std::vector<std::pair<BWAPI::Position, double>> cloakUnitInfo;
 	for (auto &cu : cloakUnits){
-		double tmpDps = 0.0;
+		double tmpLdt = UnitUtil::getNearByLTD(InformationManager::Instance().selfPlayer, cu, _scan_radius_offset);
 
-		for (auto &u : cu->getUnitsInRadius(_scan_radius_offset)){	
-			if (u->getPlayer() != InformationManager::Instance().selfPlayer) continue;
-
-			BWAPI::WeaponType tmpWeapon = UnitUtil::GetWeapon(u, cu); //공격가능 여부 판단 
-			int tmpDistance = u->getDistance(cu); //거리 판단
-			if (tmpWeapon != BWAPI::WeaponTypes::None && tmpWeapon != BWAPI::WeaponTypes::Unknown &&
-				tmpDistance <= tmpWeapon.maxRange())
-			{
-				tmpDps += tmpWeapon.damageAmount() / (double)tmpWeapon.damageCooldown();
-			}
-		}
-
-		if (tmpDps > _scan_dps_offset){
-			cloakUnitInfo.push_back(std::make_pair(cu->getPosition(), tmpDps));
+		if (tmpLdt > _scan_dps_offset){
+			cloakUnitInfo.push_back(std::make_pair(cu->getPosition(), tmpLdt));
 		}
 	}
 

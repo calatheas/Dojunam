@@ -107,37 +107,24 @@ void ConstructionManager::validateWorkersAndBuildings()
 				}
 			}
 
-			//커맨드 센터 취소로직
-			else if (b.buildingUnit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
-				for (auto i : BWAPI::Broodwar->self()->getUnits()){
-					if (i->getType() == BWAPI::UnitTypes::Terran_Command_Center && i->isConstructing() && i->isUnderAttack()){
-						std::cout << "CC CC CC is under attack!!!" << std::endl;
-						int tmpDamage = 0;
-
-						for (auto &u : i->getUnitsInRadius(300)){
-							if (u->getPlayer() != InformationManager::Instance().enemyPlayer) continue;
-
-							BWAPI::WeaponType tmpWeapon = UnitUtil::GetWeapon(u, i); //공격가능 여부 판단 
-							int tmpDistance = u->getDistance(i); //거리 판단
-							if (tmpWeapon != BWAPI::WeaponTypes::None && tmpWeapon != BWAPI::WeaponTypes::Unknown &&
-								tmpDistance <= tmpWeapon.maxRange())
-							{
-								tmpDamage += tmpWeapon.damageAmount();
-							}
-						}
-
-						if (tmpDamage > i->getHitPoints()*10){
-							i->cancelConstruction();
-
-							std::cout << "Construction cancel -> remove ConstructionTask " << b.type.getName() << std::endl;
-
-							toRemove.push_back(b);
-
-							if (b.constructionWorker) {
-								WorkerManager::Instance().setIdleWorker(b.constructionWorker);
-							}
+			//건설중인데 공격받고 있는 경우
+			//커맨드 센터는 취소
+			else if (b.buildingUnit->isConstructing() && b.buildingUnit->isUnderAttack()){
+				if (b.buildingUnit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
+					
+					double value_LTD = UnitUtil::getNearByLTD(InformationManager::Instance().enemyPlayer, b.buildingUnit);//공격력 / 쿨다운
+					if (value_LTD > (b.buildingUnit->getHitPoints() / 10.0)){
+						b.buildingUnit->cancelConstruction();
+						
+						std::cout << "Construction cancel -> remove ConstructionTask " << b.type.getName() << std::endl;
+						
+						toRemove.push_back(b);
+						if (b.constructionWorker) {
+							WorkerManager::Instance().setIdleWorker(b.constructionWorker);
 						}
 					}
+
+					if (BWAPI::Broodwar->getFrameCount() % 24 == 0) std::cout << "Command center is under attack!!!(LTD:" << value_LTD << ")" << std::endl;
 				}
 			}
 		}
