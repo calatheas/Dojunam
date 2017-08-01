@@ -335,6 +335,9 @@ void Micro::MutaDanceTarget(BWAPI::Unit muta, BWAPI::Unit target)
 	BWAPI::Position fleeVector = GetKiteVector(target, muta);
 	BWAPI::Position moveToPosition(muta->getPosition() + fleeVector);
 
+	//@µµÁÖ³² ±èÁöÈÆ
+	BWAPI::Position ourBasePosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+
 	// If we can attack by the time we reach our firing range
 	if(currentCooldown <= framesToAttack)
 	{
@@ -352,6 +355,11 @@ void Micro::MutaDanceTarget(BWAPI::Unit muta, BWAPI::Unit target)
 		if (moveToPosition.isValid()) 
 		{			
 			muta->rightClick(moveToPosition);
+		}
+		else
+		{//@µµÁÖ³² ±èÁöÈÆ ¸¸¾à µÚ¿¡°¡ º®ÀÌ¸é °Á Áý ¹æÇâÀ¸·Î ¤¼¤¼
+			muta->move(ourBasePosition);
+			Micro::SmartMove(muta, ourBasePosition);
 		}
 	}
 }
