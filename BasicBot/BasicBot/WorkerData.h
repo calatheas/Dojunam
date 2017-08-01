@@ -87,6 +87,8 @@ namespace MyBot
 		int						getNumMineralWorkers() const;
 		int						getNumGasWorkers() const;
 		int						getNumIdleWorkers() const;
+		int						getNumCombatWorkers() const;
+
 		char					getJobCode(BWAPI::Unit unit);
 
 		void					getMineralWorkers(std::set<BWAPI::Unit> & mw);
