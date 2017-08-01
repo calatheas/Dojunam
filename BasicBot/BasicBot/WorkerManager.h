@@ -77,6 +77,7 @@ namespace MyBot
 		void        setMineralWorker(BWAPI::Unit unit);
 		int         getNumMineralWorkers();
 		bool        isMineralWorker(BWAPI::Unit worker);
+		BWAPI::Unit chooseMineralWorkerFromGasWorkers(BWAPI::Unit refinery);
 
 		/// target 으로부터 가장 가까운 Mineral 일꾼 유닛을 리턴합니다
 		BWAPI::Unit getClosestMineralWorkerTo(BWAPI::Position target);
