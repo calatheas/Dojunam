@@ -274,6 +274,18 @@ int WorkerData::getNumIdleWorkers() const
 	return num;
 }
 
+int WorkerData::getNumCombatWorkers() const
+{
+	size_t num = 0;
+	for (auto & unit : workers)
+	{
+		if (workerJobMap.at(unit) == WorkerData::Combat)
+		{
+			num++;
+		}
+	}
+	return num;
+}
 
 enum WorkerData::WorkerJob WorkerData::getWorkerJob(BWAPI::Unit unit)
 {
