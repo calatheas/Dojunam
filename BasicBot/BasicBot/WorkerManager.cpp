@@ -56,7 +56,8 @@ void WorkerManager::onUnitComplete(BWAPI::Unit unit){
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+///////////////////////////
 WorkerManager::WorkerManager() 
 {
 	currentRepairWorker = nullptr;
@@ -90,29 +91,6 @@ void WorkerManager::updateWorkerStatus()
 	// for each of our Workers
 	for (auto & worker : workerData.getWorkers())
 	{
-		//if (workerData.getWorkerJob(worker) == WorkerData::Build && worker->getBuildType() == BWAPI::UnitTypes::None)
-		//{
-		//	std::cout << "construction worker " << worker->getID() << "buildtype BWAPI::UnitTypes::None " << std::endl;
-		//}
-
-		/*
-		if (worker->isCarryingMinerals()) {
-			std::cout << "mineral worker isCarryingMinerals " << worker->getID() 
-				<< " isIdle: " << worker->isIdle()
-				<< " isCompleted: " << worker->isCompleted()
-				<< " isInterruptible: " << worker->isInterruptible()
-				<< " target Name: " << worker->getTarget()->getType().getName()
-				<< " job: " << workerData.getWorkerJob(worker)
-				<< " exists " << worker->exists()
-				<< " isConstructing " << worker->isConstructing()
-				<< " isMorphing " << worker->isMorphing()
-				<< " isMoving " << worker->isMoving()
-				<< " isBeingConstructed " << worker->isBeingConstructed()
-				<< " isStuck " << worker->isStuck()
-				<< std::endl;
-		}
-		*/
-
 		if (!worker->isCompleted())
 		{
 			continue;
@@ -147,6 +125,10 @@ void WorkerManager::updateWorkerStatus()
 			}
 		}
 
+		if (worker->isGatheringGas() && workerData.getWorkerJob(worker) != WorkerData::Gas) {
+			workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
+		}
+		
 		// if its job is gas
 		if (workerData.getWorkerJob(worker) == WorkerData::Gas)
 		{
@@ -174,7 +156,7 @@ void WorkerManager::updateWorkerStatus()
 }
 
 void WorkerManager::handleGasWorkers()
-{
+{ 
 	// for each unit we have
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
 	{
@@ -184,20 +166,66 @@ void WorkerManager::handleGasWorkers()
 			// get the number of workers currently assigned to it
 			int numAssigned = workerData.getNumAssignedWorkers(unit);
 
-			// if it's less than we want it to be, fill 'er up
-			// 미네랄 일꾼은 적은데 가스 일꾼은 무조건 3~4명인 경우 -> Config::Macro::WorkersPerRefinery 값을 조정해야함
-			for (int i = 0; i<(Config::Macro::WorkersPerRefinery - numAssigned); ++i)
-			{
-				BWAPI::Unit gasWorker = chooseGasWorkerFromMineralWorkers(unit);
+			int targetNumGasWorker = 0;
 
-				if (gasWorker)
+			if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Vulture && BWAPI::Broodwar->self()->gatheredGas() >= 100) {
+				targetNumGasWorker = 1;
+			}
+			else if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Tank && BWAPI::Broodwar->self()->gatheredGas() >= 100) {
+				targetNumGasWorker = 1;
+			}
+			else if (StrategyManager::Instance().getMainStrategy() == Strategy::BSB || StrategyManager::Instance().getMainStrategy() == Strategy::BBS) {
+				targetNumGasWorker = 0;
+			}
+			else {
+				if (getNumMineralWorkers() < 10) {
+					targetNumGasWorker = 0;
+				} 
+				targetNumGasWorker = Config::Macro::WorkersPerRefinery;
+			}
+			
+			if (numAssigned > targetNumGasWorker) {
+				for (int i = 0; i<(numAssigned - targetNumGasWorker); ++i)
 				{
-					//std::cout << "set gasWorker " << gasWorker->getID() << std::endl;
-					workerData.setWorkerJob(gasWorker, WorkerData::Gas, unit);
+					BWAPI::Unit mineralWorker = chooseMineralWorkerFromGasWorkers(unit);
+
+					if (mineralWorker)
+					{
+						workerData.setWorkerJob(mineralWorker, WorkerData::Idle, nullptr);
+					}
+				}
+			}
+			else if (numAssigned < targetNumGasWorker) {
+				for (int i = 0; i<(targetNumGasWorker - numAssigned); ++i)
+				{
+					BWAPI::Unit gasWorker = chooseGasWorkerFromMineralWorkers(unit);
+
+					if (gasWorker)
+					{
+						//std::cout << "set gasWorker " << gasWorker->getID() << std::endl;
+						workerData.setWorkerJob(gasWorker, WorkerData::Gas, unit);
+					}
 				}
 			}
 		}
 	}
+}
+
+BWAPI::Unit WorkerManager::chooseMineralWorkerFromGasWorkers(BWAPI::Unit refinery){
+	if (!refinery) return nullptr;
+
+	double closestDistance = 0;
+
+	for (auto & unit : workerData.getWorkers())
+	{
+		if (!unit) continue;
+
+		if (unit->isCompleted() && !unit->isCarryingGas() && workerData.getWorkerJob(unit) == WorkerData::Gas)
+		{
+			return unit;
+		}
+	}
+	return nullptr;
 }
 
 void WorkerManager::handleIdleWorkers() 
@@ -316,10 +344,9 @@ void WorkerManager::handleCombatWorkers()
 								initial_attack = true;
 								if (worker->getHitPoints() > 35)
 								{
-									workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
 									if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
 									{
-
+										workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
 										Micro::SmartAttackMove(worker, unit->getPosition());
 										//CommandUtil::attackUnit(worker, unit);
 										//CommandUtil::attackMove(worker, unit->getPosition());
@@ -329,6 +356,9 @@ void WorkerManager::handleCombatWorkers()
 						}
 					}
 
+				}
+				else {
+					stopCombat();
 				}
 			}
 		}
@@ -858,7 +888,7 @@ bool WorkerManager::isScoutWorker(BWAPI::Unit worker)
 bool WorkerManager::isConstructionWorker(BWAPI::Unit worker)
 {
 	if (!worker) return false;
-
+	
 	return (workerData.getWorkerJob(worker) == WorkerData::Build);
 }
 
