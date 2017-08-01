@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Common.h"
 
@@ -34,7 +34,8 @@ namespace MyBot
 			Idle,			///< 하는 일 없음. 대기 상태. 
 			Repair,			///< 수리. Terran_SCV 만 가능
 			Move,			///< 이동
-			Scout, 			///< 정찰. Move와 다름. Mineral / Gas / Build 등의 다른 임무로 차출되지 않게 됨. 
+			Scout, 			///< 정찰. Move와 다름. Mineral / Gas / Build 등의 다른 임무로 차출되지 않게 됨.
+			Black,
 			Default 		///< 기본. 미설정 상태. 
 		};
 
