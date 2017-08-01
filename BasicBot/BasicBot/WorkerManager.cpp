@@ -1,4 +1,4 @@
-﻿#include "WorkerManager.h"
+#include "WorkerManager.h"
 
 using namespace MyBot;
 
@@ -72,6 +72,7 @@ WorkerManager & WorkerManager::Instance()
 
 void WorkerManager::update() 
 {
+
 	// 1초에 1번만 실행한다
 	if (BWAPI::Broodwar->getFrameCount() % 24 != 0) return;
 
@@ -171,7 +172,7 @@ void WorkerManager::handleGasWorkers()
 			if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Vulture && BWAPI::Broodwar->self()->gatheredGas() >= 100) {
 				targetNumGasWorker = 1;
 			}
-			else if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Tank && BWAPI::Broodwar->self()->gatheredGas() >= 100) {
+			else if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Tank && BWAPI::Broodwar->self()->gatheredGas() >= 150) {
 				targetNumGasWorker = 1;
 			}
 			else if (StrategyManager::Instance().getMainStrategy() == Strategy::BSB || StrategyManager::Instance().getMainStrategy() == Strategy::BBS) {
@@ -311,7 +312,6 @@ void WorkerManager::handleCombatWorkers()
 
 						}
 					}
-
 				}
 			}
 		}
@@ -330,35 +330,42 @@ void WorkerManager::handleCombatWorkers()
 					//MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
 				bool scoutInRangeOfenemy = enemyworkerdistance <= 200;
 
+				int maxCombatWorker = 6;
+
 				if (scoutInRangeOfenemy)
 				{
 					for (auto & worker : workerData.getWorkers())
 					{
-						if (BWAPI::Broodwar->getFrameCount() % 12 == 0)
-						{
-							if ((WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals
-								|| WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Combat
-								|| WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Gas)
-								&& worker->isCompleted() == true)
-							{
-								initial_attack = true;
-								if (worker->getHitPoints() > 35)
-								{
-									if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
-									{
-										workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
-										Micro::SmartAttackMove(worker, unit->getPosition());
-										//CommandUtil::attackUnit(worker, unit);
-										//CommandUtil::attackMove(worker, unit->getPosition());
-									 }
-								}
+						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Combat) {
+
+							if (worker->getHitPoints() <= 35) {
+								workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
 							}
+							else {
+								maxCombatWorker--;
+								Micro::SmartAttackMove(worker, unit->getPosition());
+							}
+						}
+
+						if (maxCombatWorker == 0) {
+							return;
 						}
 					}
 
-				}
-				else {
-					stopCombat();
+					for (auto & worker : workerData.getWorkers())
+					{
+						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals){
+							if (worker->getHitPoints() > 35) {
+								workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
+								Micro::SmartAttackMove(worker, unit->getPosition());
+								maxCombatWorker--;
+							}
+						}
+
+						if (maxCombatWorker == 0) {
+							return;
+						}
+					}
 				}
 			}
 		}
@@ -537,6 +544,7 @@ BWAPI::Unit WorkerManager::getClosestMineralWorkerTo(BWAPI::Position target)
 			&& unit->getHitPoints() > 0
 			&& unit->exists()
 			&& unit->getType().isWorker()
+			&& !unit->isCarryingMinerals()
 			&& WorkerManager::Instance().isMineralWorker(unit))
 		{
 			double dist = unit->getDistance(target);
