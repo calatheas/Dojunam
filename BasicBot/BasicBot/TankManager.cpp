@@ -42,8 +42,8 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
         bool tankNearChokepoint = false; 
         for (auto & choke : BWTA::getChokepoints())
         {
-			//@µµÁÖ³² ±èÁöÈÆ 64 ¶ó´Â Àı´ëÀûÀÎ ¼öÄ¡ ±âÁØÀ¸·Î , choke point ÁøÀÔ¿©ºÎ¸¦ ÆÇ´ÜÇÏ°í ÀÖÀ½ , ´Ù¸¥ getDistance ±âÁØ 64 ¹Ì¸¸ÀÇ °æ¿ì
-			// ±ÙÁ¢ÇØÀÖ´Ù°í ÆÇ´ÜÇØµµ ¹«¹æÇÒ °ÍÀ¸·Î º¸ÀÓ
+			//@ë„ì£¼ë‚¨ ê¹€ì§€í›ˆ 64 ë¼ëŠ” ì ˆëŒ€ì ì¸ ìˆ˜ì¹˜ ê¸°ì¤€ìœ¼ë¡œ , choke point ì§„ì…ì—¬ë¶€ë¥¼ íŒë‹¨í•˜ê³  ìˆìŒ , ë‹¤ë¥¸ getDistance ê¸°ì¤€ 64 ë¯¸ë§Œì˜ ê²½ìš°
+			// ê·¼ì ‘í•´ìˆë‹¤ê³  íŒë‹¨í•´ë„ ë¬´ë°©í•  ê²ƒìœ¼ë¡œ ë³´ì„
 			if (choke->getCenter().getDistance(tank->getPosition()) < 64)
             {
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
@@ -89,7 +89,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                 // if we're not in siege mode kite the target
                 else
                 {
-					//@µµÁÖ³² ±èÁöÈÆ Ã³À½ º¸´Â ºÎºĞÀÌ¿´À½, smartKite ¶ó´Â °ÍÀÌ ¹ßµ¿µÇ¾î¾ß ¼ÒÀ§¸»ÇÏ´Â kiting ÀÌ µÇ´Â µí
+					//@ë„ì£¼ë‚¨ ê¹€ì§€í›ˆ ì²˜ìŒ ë³´ëŠ” ë¶€ë¶„ì´ì˜€ìŒ, smartKite ë¼ëŠ” ê²ƒì´ ë°œë™ë˜ì–´ì•¼ ì†Œìœ„ë§í•˜ëŠ” kiting ì´ ë˜ëŠ” ë“¯
                     Micro::SmartKiteTarget(tank, target);
                 }
 			
@@ -120,6 +120,13 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 						else
     						Micro::SmartAttackMove(tank, order.getPosition());
                     }
+				}
+				else
+				{
+					if (tank->canUnsiege())
+					{
+						tank->unsiege();
+					}
 				}
 			}
 		}
@@ -184,7 +191,7 @@ BWAPI::Unit TankManager::getTarget(BWAPI::Unit tank, const BWAPI::Unitset & targ
     return closestTarget;
 }
 
-//@µµÁÖ³² ±èÁöÈÆ ½ÃÁî¸ğµå Ç®±âÀ§ÇÑ °¡Àå °¡±î¿î À¯´ÖÃ£±â
+//@ë„ì£¼ë‚¨ ê¹€ì§€í›ˆ ì‹œì¦ˆëª¨ë“œ í’€ê¸°ìœ„í•œ ê°€ì¥ ê°€ê¹Œìš´ ìœ ë‹›ì°¾ê¸°
 
 // get the attack priority of a type in relation to a zergling
 int TankManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target) 
