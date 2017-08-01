@@ -25,11 +25,13 @@ namespace MyBot
 			Bionic,
 			Bionic_Tank,
 			Mechanic,
-			One_Fac_Multi,
+			One_Fac_Vulture,
+			One_Fac_Tank,
 			Two_Fac,
 			Mechanic_Goliath,
 			Mechanic_Vessel,
-			Defence
+			BSB,
+			BBS
 		};
 
 		main_strategies next_strategy;
@@ -88,5 +90,7 @@ namespace MyBot
 		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
 		int getUnitLimit(MetaType type);
 		double weightByFrame(double max_weight);
+
+		Strategy::main_strategies getMainStrategy();
 	};
 }
