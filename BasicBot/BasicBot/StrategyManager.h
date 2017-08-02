@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Common.h"
 
@@ -27,7 +27,8 @@ namespace MyBot
 			Mechanic,
 			One_Fac_Vulture,
 			One_Fac_Tank,
-			Two_Fac,
+			Two_Fac_Vulture,
+			Two_Fac_Tank,
 			Mechanic_Goliath,
 			Mechanic_Vessel,
 			BSB,
@@ -65,7 +66,6 @@ namespace MyBot
 
 		void initStrategies();
 		void initUnitRatioTable();
-		bool hasTech(BWAPI::TechType tech);
 		bool obtainNextUpgrade(BWAPI::UpgradeType upgType);
 
 	public:
@@ -91,6 +91,7 @@ namespace MyBot
 		int getUnitLimit(MetaType type);
 		double weightByFrame(double max_weight);
 
+		bool hasTech(BWAPI::TechType tech);
 		Strategy::main_strategies getMainStrategy();
 	};
 }
