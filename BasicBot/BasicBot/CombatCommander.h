@@ -32,7 +32,7 @@ class CombatCommander
     BWAPI::Position getMainAttackLocation();
 	BWAPI::Position getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint);
 	
-	//@µµ¡÷≥≤ ±Ë¡ˆ»∆
+	//@¬µ¬µ√Å√ñ¬≥¬≤ ¬±√®√Å√∂√à√Ü
 	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
 	bool			initMainAttackPath;
 	std::vector<BWAPI::Position> mainAttackPath;
@@ -50,12 +50,12 @@ class CombatCommander
 
     int             numZerglingsInOurBase();
     bool            beingBuildingRushed();
-
+    void             updateComBatStatusIndex();
 public:
 	BWAPI::Position mineralPosition;
 	static CombatCommander &	Instance();
 	CombatCommander();
-
+	int           comBatStatusIndex;
 	void update(const BWAPI::Unitset & combatUnits);
     
 	void drawSquadInformation(int x, int y);
