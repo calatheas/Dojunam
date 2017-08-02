@@ -1,4 +1,4 @@
-﻿#include "WorkerData.h"
+#include "WorkerData.h"
 #include "CommandUtil.h"
 
 using namespace MyBot;
@@ -568,6 +568,7 @@ char WorkerData::getJobCode(BWAPI::Unit unit)
 	if (j == WorkerData::Repair) return 'R';
 	if (j == WorkerData::Move) return 'O';
 	if (j == WorkerData::Scout) return 'S';
+	if (j == WorkerData::Black) return 'K';
 	return 'X';
 }
 
