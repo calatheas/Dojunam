@@ -1,4 +1,4 @@
-#include "VultureManager.h"
+ï»¿#include "VultureManager.h"
 #include "CommandUtil.h"
 
 using namespace MyBot;
@@ -67,7 +67,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		// train sub units such as scarabs or interceptors
 		//trainSubUnits(vultureUnit);
 		//if (order.getType() == SquadOrderTypes::MineInstallation)
-		// ¸¸µé±î ¸»±î °í¹ÎµÊ 
+		// ë§Œë“¤ê¹Œ ë§ê¹Œ ê³ ë¯¼ë¨ 
 		{
 			
 		}
@@ -83,7 +83,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					int index = -1;
 					BWAPI::Position mineSetPosition = vultureUnit->getPosition();
 					
-					//@µµÁÖ³² ±èÁöÈÆ ½ºÆÄÀÌ´õ¸¶ÀÎ ¼³Ä¡¸¦ Áö³ª°¡´Â ÆĞ½º¿¡ ¿ì¼±ÀûÀ¸·Î ¼³Ä¡ÇÑ´Ù.
+					//@ë„ì£¼ë‚¨ ê¹€ì§€í›ˆ ìŠ¤íŒŒì´ë”ë§ˆì¸ ì„¤ì¹˜ë¥¼ ì§€ë‚˜ê°€ëŠ” íŒ¨ìŠ¤ì— ìš°ì„ ì ìœ¼ë¡œ ì„¤ì¹˜í•œë‹¤.
 					if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture_Spider_Mine) <= pathTileCount)
 						mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % pathTileCount];
 					else

@@ -1,4 +1,4 @@
-#include "TankManager.h"
+﻿#include "TankManager.h"
 #include "CommandUtil.h"
 
 using namespace MyBot;
@@ -17,7 +17,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                  [](BWAPI::Unit u){ return u->isVisible() && !u->isFlying(); });
 
     int siegeTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 32;
-	int  tankTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange() - 32;
+	int  tankTankRange = BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange() / 2;
     bool haveSiege = BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode);
 	BWAPI::Position mbase = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 	BWAPI::Position fchokePoint = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter();
@@ -67,7 +67,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 		            BWAPI::Broodwar->drawLineMap(tank->getPosition(), tank->getTargetPosition(), BWAPI::Colors::Purple);
 	            }
 
-				if (tank->getDistance(target_unSiege_Unit) < tankTankRange)
+				if (tank->getDistance(target_unSiege_Unit) < tankTankRange )
 				{
 					tank->unsiege();
 				}

@@ -1,4 +1,4 @@
-#include "ExpansionManager.h"
+﻿#include "ExpansionManager.h"
 
 using namespace MyBot;
 
@@ -18,8 +18,8 @@ const std::vector<Expansion> & ExpansionManager::getExpansions(){
 // 유닛이 파괴/사망한 경우, 해당 유닛 정보를 삭제한다
 void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == BWAPI::Broodwar->self()){
-
+	if (unit->getPlayer() == BWAPI::Broodwar->self())
+	{
 		//본진 및 멀티 커맨드센터 관리
 		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
 			for (size_t i = 0; i < expansions.size(); i++){
@@ -152,7 +152,10 @@ bool ExpansionManager::shouldExpandNow()
 		}
 	}
 
-
+	if (expansions.size() == 1 && InformationManager::Instance().comBatStatusIndex < 4){
+		return false;
+	}
+	
 	// if we have a ton of idle workers then we need a new expansion
 	
 	if (WorkerManager::Instance().getNumIdleWorkers() / (float)(WorkerManager::Instance().getNumMineralWorkers() + WorkerManager::Instance().getNumGasWorkers()) > 0.5)

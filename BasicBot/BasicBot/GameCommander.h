@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "InformationManager.h"
-#include "WorkerManager.h"
+
 #include "BuildManager.h"
 #include "ConstructionManager.h"
 #include "ScoutManager.h"
@@ -11,6 +11,7 @@
 #include "kyj.h"
 #include "CombatCommander.h"
 #include "ComsatManager.h"
+#include "WorkerManager.h"
 #include "ExpansionManager.h"
 
 namespace MyBot

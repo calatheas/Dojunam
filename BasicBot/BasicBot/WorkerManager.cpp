@@ -1,4 +1,4 @@
-#include "WorkerManager.h"
+﻿#include "WorkerManager.h"
 
 using namespace MyBot;
 
@@ -70,20 +70,19 @@ WorkerManager & WorkerManager::Instance()
 	return instance;
 }
 
-void WorkerManager::update() 
+void WorkerManager::update()
 {
-
-	// 1초에 1번만 실행한다
-	if (BWAPI::Broodwar->getFrameCount() % 24 != 0) return;
-
-	updateWorkerStatus();
-	handleGasWorkers();
-	handleIdleWorkers();
-	handleMoveWorkers();
-	handleCombatWorkers();
-	handleRepairWorkers();
+	if (BWAPI::Broodwar->getFrameCount() % 24 == 0){
+		updateWorkerStatus();
+		handleGasWorkers();
+		handleIdleWorkers();
+		handleMoveWorkers();
+	}
+	if (BWAPI::Broodwar->getFrameCount() % 8 == 0) {
+		handleCombatWorkers();
+		handleRepairWorkers();
+	}
 }
-
 void WorkerManager::updateWorkerStatus() 
 {
 	// Drone 은 건설을 위해 isConstructing = true 상태로 건설장소까지 이동한 후, 
@@ -297,7 +296,7 @@ void WorkerManager::handleCombatWorkers()
 				//std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
 				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
 
-				if (scoutInRangeOfenemy)
+				if (InformationManager::Instance().comBatStatusIndex == 1)
 				{
 					for (auto & worker : workerData.getWorkers())
 					{
@@ -316,7 +315,6 @@ void WorkerManager::handleCombatWorkers()
 			}
 		}
 
-
 		initial_attack = false;
 		//질럿저글링 처리
 		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
@@ -330,7 +328,7 @@ void WorkerManager::handleCombatWorkers()
 					//MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
 				bool scoutInRangeOfenemy = enemyworkerdistance <= 200;
 
-				int maxCombatWorker = 6;
+				int maxCombatWorker = 7;
 
 				if (scoutInRangeOfenemy)
 				{

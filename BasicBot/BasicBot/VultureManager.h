@@ -1,4 +1,4 @@
-#pragma once;
+ï»¿#pragma once;
 
 #include "Common.h"
 #include "MicroManager.h"
@@ -8,7 +8,7 @@ namespace MyBot
 	class VultureManager : public MicroManager
 	{
 	public:
-		//@µµÁÖ³² ±èÁöÈÆ
+		//@ë„ì£¼ë‚¨ ê¹€ì§€í›ˆ
 		int pathTileCount = 0;		
 		std::vector<BWAPI::Position> chokePointForVulture;
 		void VultureManager::miningPositionSetting();

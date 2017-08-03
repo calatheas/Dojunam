@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Common.h"
 //#include "Squad.h"
@@ -32,7 +32,7 @@ class CombatCommander
     BWAPI::Position getMainAttackLocation();
 	BWAPI::Position getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint);
 	
-	//@µµÁÖ³² ±èÁöÈÆ
+	//@도주남 김지훈
 	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
 	bool			initMainAttackPath;
 	std::vector<BWAPI::Position> mainAttackPath;
@@ -50,14 +50,15 @@ class CombatCommander
 
     int             numZerglingsInOurBase();
     bool            beingBuildingRushed();
-    void             updateComBatStatusIndex();
 public:
+	void             updateComBatStatusIndex();
 	BWAPI::Position mineralPosition;
 	static CombatCommander &	Instance();
 	CombatCommander();
-	int           comBatStatusIndex;
+
 	void update(const BWAPI::Unitset & combatUnits);
     
 	void drawSquadInformation(int x, int y);
+	int           _comBatStatusIndex;
 };
 }

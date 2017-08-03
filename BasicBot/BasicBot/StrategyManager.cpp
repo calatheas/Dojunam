@@ -1,4 +1,4 @@
-#include "StrategyManager.h"
+﻿#include "StrategyManager.h"
 #include "CommandUtil.h"
 
 using namespace MyBot;
@@ -17,7 +17,8 @@ StrategyManager::StrategyManager()
 
 void StrategyManager::onStart()
 {
-	if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran){
+	if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran)
+	{
 		setOpeningBookBuildOrder();
 	}
 }
@@ -37,7 +38,7 @@ void StrategyManager::setOpeningBookBuildOrder(){
 		//_main_strategy = Strategy::main_strategies::Mechanic;
 		//_main_strategy = Strategy::main_strategies::Two_Fac;
 		//_main_strategy = Strategy::main_strategies::One_Fac_Tank;
-		_main_strategy = Strategy::main_strategies::One_Fac_Vulture;
+		_main_strategy = Strategy::main_strategies::One_Fac_Tank;
 	}
 	else{
 		_main_strategy = Strategy::main_strategies::Bionic;
@@ -218,7 +219,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	std::vector<MetaPair> goal;
 
 	std::map<std::string, int> numUnits;
-	
+
 	numUnits["Workers"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV);
 	numUnits["CC"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
 	numUnits["Marines"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Marine);
@@ -279,7 +280,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, goal_num_marines));
 	}
-	else if (_main_strategy == Strategy::main_strategies::Two_Fac_Vulture) 
+	else if (_main_strategy == Strategy::main_strategies::Two_Fac_Vulture)
 	{
 		int goal_num_vultures = numUnits["Vultures"] + 2;
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
@@ -334,7 +335,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 			}
 		}
 
-		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1)); 
+		goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
 		if (hasTech(BWAPI::TechTypes::Tank_Siege_Mode)) {
 			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Spider_Mines, 1));
 		}
@@ -351,7 +352,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Goliath, goal_num_goliath));
-		
+
 	}
 	else
 	{

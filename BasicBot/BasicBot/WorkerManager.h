@@ -1,11 +1,13 @@
 ﻿#pragma once
 
+
 #include "Common.h"
 #include "WorkerData.h"
 #include "ConstructionTask.h"
 #include "ConstructionManager.h"
 #include "InformationManager.h"
 #include "UABAssert.h"
+
 
 namespace MyBot
 {
