@@ -20,16 +20,6 @@ void WorkerManager::onUnitComplete(BWAPI::Unit unit){
 		
 		if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center && unit->getPlayer()->isNeutral() == false && unit->getPlayer() == BWAPI::Broodwar->self())
 		{
-
-			int com_num = 0;
-
-			for (auto & unit_c : BWAPI::Broodwar->self()->getUnits())
-			{
-				if (unit_c->isCompleted() && unit_c->getType() == BWAPI::UnitTypes::Terran_Command_Center)
-				{
-					com_num++;
-				}
-			}
 			printf("onUnitComplete : %d\n", WorkerManager::Instance().workerData.getWorkers().size());
 
 			//std::size_t iter_count = workerData.getWorkers().size() / 3;
@@ -42,9 +32,9 @@ void WorkerManager::onUnitComplete(BWAPI::Unit unit){
 
 				if (unit__->isCompleted() && workerData.getWorkerJob(unit__) == WorkerData::Minerals)
 				{
-					if ((checkscv++ % com_num) == 0) {
+					if ((checkscv++ % ExpansionManager::Instance().getExpansions().size()) == 0) {
 						
-						workerData.setWorkerJob(unit__, WorkerData::Move, WorkerMoveData(0, 0, unit->getPosition()));
+						workerData.setWorkerJob(unit__, WorkerData::Minerals, unit);
 						printf("onUnitComplete : %d, target: %d\n", unit__->getID(), unit->getID());
 					}
 					//	CommandUtil::move(unit__, unit->getPosition());
