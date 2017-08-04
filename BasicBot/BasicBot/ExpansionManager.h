@@ -14,8 +14,13 @@ namespace MyBot
 	};
 
 	class ExpansionManager{
+		ExpansionManager();
 		std::vector<Expansion> expansions;
 		void changeComplexity(BWAPI::Unit unit, bool isAdd=true);
+		bool startPositionDestroyed;
+
+		std::set<BWTA::Region *> enemyResourceRegions;
+
 
 	public:
 		static ExpansionManager & Instance();

@@ -24,6 +24,7 @@ InformationManager::InformationManager()
 	_mainBaseLocations[enemyPlayer] = nullptr;
 	_mainBaseLocationChanged[enemyPlayer] = false;
 	_occupiedBaseLocations[enemyPlayer] = std::list<BWTA::BaseLocation *>();
+	enemyResourceDepotType = enemyRace == BWAPI::Races::Unknown ? BWAPI::UnitTypes::None : getBasicResourceDepotBuildingType(enemyRace);
 
 	_firstChokePoint[selfPlayer] = nullptr;
 	_firstChokePoint[enemyPlayer] = nullptr;
@@ -104,6 +105,7 @@ void InformationManager::updateUnitInfo(BWAPI::Unit unit)
 
 	if (enemyRace == BWAPI::Races::Unknown && unit->getPlayer() == enemyPlayer) {
 		enemyRace = unit->getType().getRace();
+		enemyResourceDepotType = getBasicResourceDepotBuildingType(enemyRace);
 	}
 
     _unitData[unit->getPlayer()].updateUnitInfo(unit);

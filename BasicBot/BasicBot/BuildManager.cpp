@@ -3,7 +3,8 @@
 using namespace MyBot;
 
 BuildManager::BuildManager() 
-	: _enemyCloakedDetected (false)
+	: _enemyCloakedDetected (false),
+	marginResource(std::make_pair(200, 0))
 {
 	setBuildOrder(StrategyManager::Instance().getOpeningBookBuildOrder());
 }
@@ -68,24 +69,10 @@ void BuildManager::update()
 	if (!_enemyCloakedDetected && InformationManager::Instance().hasCloakedUnits)
 	{
 		std::cout << "_enemyCloakedDetected" << std::endl;
-		if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret) < 2)
+		if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Academy) == 0)
 		{
-			buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstChokePoint, true);
-			if (InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self()) != nullptr){
-				buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), BuildOrderItem::SeedPositionStrategy::FirstExpansionLocation, true);
-			}
+			buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Academy), true);
 		}
-
-		if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay) == 0)
-		{
-			buildQueue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Engineering_Bay), true);
-		}
-
-		if (Config::Debug::DrawBuildOrderSearchInfo)
-		{
-			BWAPI::Broodwar->printf("Enemy Cloaked Unit Detected!");
-		}
-
 		_enemyCloakedDetected = true;
 	}
 	checkBuildOrderQueueDeadlockAndRemove();
@@ -941,4 +928,17 @@ bool BuildManager::hasUnitInQueue(BWAPI::UnitType ut){
 	}
 
 	return false;
+}
+
+void BuildManager::consumeRemainingResource(){
+	std::pair<int, int> queueResource = getQueueResource();
+
+	//약간의 마진을 준다. 너무 타이트하게 여유자원을 사용하지 않기 위해서
+	if (getAvailableMinerals() > (queueResource.first + marginResource.first) && getAvailableGas() > (queueResource.second + marginResource.second)){
+		/*
+		여유자원 소비원칙
+		1. 터렛짓기
+		2. 전투유닛 뽑기
+		*/
+	}
 }

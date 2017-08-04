@@ -64,6 +64,7 @@ namespace MyBot
 		BWAPI::Race			selfRace;		///< 아군 Player의 종족		
 		BWAPI::Player       enemyPlayer;	///< 적군 Player		
 		BWAPI::Race			enemyRace;		///< 적군 Player의 종족  
+		BWAPI::UnitType     enemyResourceDepotType;
 
 		bool hasCloakedUnits;
 		bool hasFlyingUnits;

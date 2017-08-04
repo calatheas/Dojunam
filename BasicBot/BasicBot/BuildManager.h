@@ -26,9 +26,6 @@ namespace MyBot
 		BWAPI::Unit         getClosestUnitToPosition(const BWAPI::Unitset & units, BWAPI::Position closestTo);
 		BWAPI::Unit         selectUnitOfType(BWAPI::UnitType type, BWAPI::Position closestTo = BWAPI::Position(0, 0));
 
-		int                 getAvailableMinerals();
-		int                 getAvailableGas();
-		std::pair<int, int> getQueueResource();
 		bool                hasEnoughResources(MetaType type);
 		bool                hasNumCompletedUnitType(BWAPI::UnitType type, int num);
 
@@ -55,7 +52,7 @@ namespace MyBot
 		/// buildQueue 에 대해 Dead lock 이 있으면 제거하고, 가장 우선순위가 높은 BuildOrderItem 를 실행되도록 시도합니다
 		void				update();
 		void                consumeBuildQueue();
-
+		void                consumeRemainingResource();
 		/// BuildOrderItem 들의 목록을 저장하는 buildQueue 
 		BuildOrderQueue     buildQueue;
 
@@ -76,6 +73,12 @@ namespace MyBot
 		//addon 달려있는지 확인하는 함수
 		bool hasAddon(BWAPI::Unit u);
 		bool hasUnitInQueue(BWAPI::UnitType ut);
+
+		//자원확인
+		int                 getAvailableMinerals();
+		int                 getAvailableGas();
+		std::pair<int, int> getQueueResource();
+		const std::pair<int, int> marginResource;
 	};
 
 

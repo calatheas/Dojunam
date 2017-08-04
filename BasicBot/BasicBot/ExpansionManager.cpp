@@ -2,6 +2,12 @@
 
 using namespace MyBot;
 
+ExpansionManager::ExpansionManager()
+	: startPositionDestroyed(false)
+{
+
+}
+
 ExpansionManager & ExpansionManager::Instance()
 {
 	static ExpansionManager instance;
@@ -26,6 +32,12 @@ void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 				if (unit->getID() == expansions[i].cc->getID()){
 					expansions.erase(expansions.begin() + i);
 					WorkerManager::Instance().getWorkerData().removeDepot(unit);
+					
+					if (i == 0){
+						startPositionDestroyed = true;
+						std::cout << "Self start location is destroyed " << std::endl;
+					}
+
 					std::cout << "onUnitDestroy numExpansion:" << expansions.size() << std::endl;
 					break;
 				}
@@ -55,6 +67,19 @@ void ExpansionManager::onUnitComplete(BWAPI::Unit unit){
 		//아군 건물은 혼잡도 계산을 한다.
 		if(unit->getType().isBuilding()){
 			changeComplexity(unit); //increase complexity;
+		}
+	}
+
+	//적이 점령했던 지역을 저장함. 단 업데이트는 어려움.(해처리를 여러개 지을수도 있어서)
+	else{
+		if (unit->getType() == InformationManager::Instance().enemyResourceDepotType){
+			BWTA::Region *p_region = BWTA::getRegion(unit->getPosition());
+			auto & it = enemyResourceRegions.find(p_region);
+			if (it == enemyResourceRegions.end())
+			{
+				std::cout << "insert the enemy resource region:" << enemyResourceRegions.size() << std::endl;
+				enemyResourceRegions.insert(p_region);
+			}
 		}
 	}
 }
@@ -109,7 +134,8 @@ void ExpansionManager::update(){
 				if (!comsatExists){
 
 					if ((BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Terran_Academy) > 0) &&
-						!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitType(BWAPI::UnitTypes::Terran_Comsat_Station))){
+						!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitType(BWAPI::UnitTypes::Terran_Comsat_Station)) &&
+							BWAPI::Broodwar->self()->gatheredGas() > 0){
 						BuildManager::Instance().addBuildOrderOneItem(MetaType(BWAPI::UnitTypes::Terran_Comsat_Station));
 					}	
 				}
@@ -125,59 +151,49 @@ bool ExpansionManager::shouldExpandNow()
 	if (BWAPI::Broodwar->self()->incompleteUnitCount(BWAPI::UnitTypes::Terran_Command_Center) > 0){
 		return false;
 	}
-	/*
-	// if there is no place to expand to, we can't expand
-	if (MapTools::Instance().getNextExpansion() == BWAPI::TilePositions::None)
-	{
-	BWAPI::Broodwar->printf("No valid expansion location");
-	return false;
-	}
-	*/
 
+	//아군 유닛이 적당히 나가있는 경우에만 수행한다. 이때가 비교적 안전한 경우 이므로
+	if (InformationManager::Instance().comBatStatusIndex >= 4){
+		//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
+		if (expansions.size() < 3 && enemyResourceRegions.size() > expansions.size()){
+			std::cout << "add expansions(less than enemy expansions)" << std::endl;
+			return true;
+		}
 
-	size_t numDepots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center)
+		//일꾼이 남는경우
+		if (WorkerManager::Instance().getNumIdleWorkers() / (float)(WorkerManager::Instance().getNumMineralWorkers() + WorkerManager::Instance().getNumGasWorkers()) > 0.5)
+		{
+			std::cout << "add expansions(enough workers)" << std::endl;
+			return true;
+		}
+
+		// 현재 큐에 있는거 만들고도 남는 미네랄이 많다면... 빌드매니저에서 사용하는 여유자원소비기준(현재는 200) * 2 
+		BuildManager &tmpObj = BuildManager::Instance();
+		if ((tmpObj.getAvailableMinerals() - tmpObj.getQueueResource().first) > (tmpObj.marginResource.first * 2))
+		{
+			std::cout << "add expansions(enough minerals)" << std::endl;
+			return true;
+		}
+
+		/* 시간으로 멀티까는 로직은 삭제함
+		size_t numDepots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center)
 		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus)
 		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
 		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
 		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
-	int frame = BWAPI::Broodwar->getFrameCount();
-	int minute = frame / (24 * 60);
+		int frame = BWAPI::Broodwar->getFrameCount();
+		int minute = frame / (24 * 60);
 
-	//적 종족 확인후 멀티개수 확인한다. 우리 1개인데 적 2개이면 우리도 멀티깜
-	if (InformationManager::Instance().enemyRace == BWAPI::Races::Terran || InformationManager::Instance().enemyRace == BWAPI::Races::Zerg || InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
-		BWAPI::UnitType ut = InformationManager::Instance().getBasicResourceDepotBuildingType(InformationManager::Instance().enemyRace);
-		int enemy_expansions = InformationManager::Instance().getUnitData(InformationManager::Instance().enemyPlayer).getNumUnits(ut);
-		if (ExpansionManager::Instance().getExpansions().size() == 1 && enemy_expansions == 2){
-			return true;
-		}
-	}
+		std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
 
-	if (expansions.size() == 1 && InformationManager::Instance().comBatStatusIndex < 4){
-		return false;
-	}
-	
-	// if we have a ton of idle workers then we need a new expansion
-	
-	if (WorkerManager::Instance().getNumIdleWorkers() / (float)(WorkerManager::Instance().getNumMineralWorkers() + WorkerManager::Instance().getNumGasWorkers()) > 0.5)
-	{
-		return true;
-	}
-
-	// if we have a ridiculous stockpile of minerals, expand
-	if (BWAPI::Broodwar->self()->minerals() > 1700)
-	{
-		return true;
-	}
-
-	// we will make expansion N after array[N] minutes have passed
-	std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
-
-	for (size_t i(0); i < expansionTimes.size(); ++i)
-	{
+		for (size_t i(0); i < expansionTimes.size(); ++i)
+		{
 		if (numDepots < (i + 2) && minute > expansionTimes[i])
 		{
-			return true;
+		return true;
 		}
+		}
+		*/
 	}
 
 	return false;
