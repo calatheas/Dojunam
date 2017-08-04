@@ -62,6 +62,7 @@ WorkerManager::WorkerManager()
 {
 	currentRepairWorker = nullptr;
 	initial_attack = false;
+	_freeHP = 40;
 }
 
 WorkerManager & WorkerManager::Instance() 
@@ -336,7 +337,7 @@ void WorkerManager::handleCombatWorkers()
 					{
 						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Combat) {
 
-							if (worker->getHitPoints() <= 35) {
+							if (worker->getHitPoints() <= _freeHP) {
 								workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
 							}
 							else {
@@ -353,7 +354,7 @@ void WorkerManager::handleCombatWorkers()
 					for (auto & worker : workerData.getWorkers())
 					{
 						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals){
-							if (worker->getHitPoints() > 35) {
+							if (worker->getHitPoints() > _freeHP) {
 								workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
 								Micro::SmartAttackMove(worker, unit->getPosition());
 								maxCombatWorker--;
