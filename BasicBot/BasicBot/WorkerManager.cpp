@@ -296,7 +296,7 @@ void WorkerManager::handleCombatWorkers()
 				//std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
 				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
 
-				if (InformationManager::Instance().comBatStatusIndex == 1)
+				if (scoutInRangeOfenemy)
 				{
 					for (auto & worker : workerData.getWorkers())
 					{
@@ -330,7 +330,7 @@ void WorkerManager::handleCombatWorkers()
 
 				int maxCombatWorker = 7;
 
-				if (scoutInRangeOfenemy)
+				if (InformationManager::Instance().comBatStatusIndex == 1)
 				{
 					for (auto & worker : workerData.getWorkers())
 					{
