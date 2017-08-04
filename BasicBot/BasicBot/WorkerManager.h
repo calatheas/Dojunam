@@ -18,6 +18,7 @@ namespace MyBot
 		//719
 		//ssh
 		BWAPI::Unitset          _enemyworkerUnits;
+		int			_freeHP;
 	public:
 		/// 각 Worker 에 대한 WorkerJob 상황을 저장하는 자료구조 객체
 		WorkerData  workerData;
