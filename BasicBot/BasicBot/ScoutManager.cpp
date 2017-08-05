@@ -18,6 +18,7 @@ ScoutManager::ScoutManager()
 	, currentScoutTargetBaseLocation(nullptr)
 	, currentScoutTargetPosition(BWAPI::Positions::None)
 	, currentScoutFreeToVertexIndex(-1)
+	, second_scout(false)
 
 {
 }
@@ -136,7 +137,7 @@ void ScoutManager::moveScouts()
 	}*/
 
 	// if we know where the enemy region is and where our scout is
-	if (_workerScout && enemyBaseLocation)
+	if (_workerScout && enemyBaseLocation && second_scout == false)
 	{
 		int scoutDistanceToEnemy = MapTools::Instance().getGroundDistance(_workerScout->getPosition(), enemyBaseLocation->getPosition());
 		bool scoutInRangeOfenemy = scoutDistanceToEnemy <= scoutDistanceThreshold;
@@ -227,6 +228,13 @@ void ScoutManager::moveScouts()
 		return;
 	}
 
+	if (_workerScout && enemyBaseLocation && second_scout == true)
+	{
+
+		BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+  	if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
+		Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
+	}
 	_previousScoutHP = scoutHP;
 }
 

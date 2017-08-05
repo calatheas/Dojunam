@@ -1,4 +1,4 @@
-﻿#include "TransportManager.h"
+#include "TransportManager.h"
 
 using namespace MyBot;
 
@@ -139,19 +139,71 @@ void TransportManager::update()
 	//		}
 	//	}
 	//}
-
+	
 	if (_transportShip != nullptr && _transportShip->getSpaceRemaining() == 0)
 	{
-		BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
-		setFrom(_transportShip->getPosition());
-		setTo(BWAPI::Position(10*32, 10*32));
-		//if (_transportShip->getSpaceRemaining() != 0)
+		if (InformationManager::Instance().getMapName() == 'L')
 		{
-			moveTroops();
-			moveTransport();
-		}
+			BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+			if (InformationManager::Instance().getMainBaseLocation(enemy) != nullptr)
+			{
+				if (InformationManager::Instance().getMainBaseLocation(enemy)->getTilePosition().x == 57)//12
+				{
+					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
+					setFrom(_transportShip->getPosition());
+					setTo(BWAPI::Position(3480 * 32, 56 * 32));
+					//if (_transportShip->getSpaceRemaining() != 0)
+					{
+						moveTroops();
+						moveTransport();
+					}
 
+				}
+				else if (InformationManager::Instance().getMainBaseLocation(enemy)->getTilePosition().x == 117)//3
+				{
+					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
+					setFrom(_transportShip->getPosition());
+					setTo(BWAPI::Position(3855 * 32, 2489 * 32));
+					//if (_transportShip->getSpaceRemaining() != 0)
+					{
+						moveTroops();
+						moveTransport();
+					}
+
+				}
+				else if (InformationManager::Instance().getMainBaseLocation(enemy)->getTilePosition().x == 7)//9
+				{
+					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
+					setFrom(_transportShip->getPosition());
+					setTo(BWAPI::Position(65 * 32, 1230 * 32));
+					//if (_transportShip->getSpaceRemaining() != 0)
+					{
+						moveTroops();
+						moveTransport();
+					}
+
+				}
+				else if (InformationManager::Instance().getMainBaseLocation(enemy)->getTilePosition().x == 27)//6
+				{
+					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
+					setFrom(_transportShip->getPosition());
+					setTo(BWAPI::Position(2580 * 32, 4002 * 32));
+					//if (_transportShip->getSpaceRemaining() != 0)
+					{
+						moveTroops();
+						moveTransport();
+					}
+
+				}
+			}
+		}
+		else
+		{
+
+		}
 	}
+	
+
 
 	
 	drawTransportInformation();
@@ -196,7 +248,7 @@ void TransportManager::moveTroops()
 
 	//if (enemyBaseLocation && (_transportShip->getDistance(enemyBaseLocation->getPosition()) < 300 || transportHP < 100)
 	//	&& _transportShip->canUnloadAtPosition(_transportShip->getPosition()))
-	if (_to.getDistance(_transportShip->getPosition()) <400)
+	if (InformationManager::Instance().getMapName() == 'L' && _to.getDistance(_transportShip->getPosition()) <400)
 	{
 		BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Can Drop");
 		//unload troops 
@@ -214,6 +266,26 @@ void TransportManager::moveTroops()
 
 		//else unload
 		_transportShip->unloadAll(_to);
+	}
+	else if (InformationManager::Instance().getMapName() != 'L'  && enemyBaseLocation && _transportShip->getDistance(enemyBaseLocation->getPosition()) < 300
+			&& _transportShip->canUnloadAtPosition(_transportShip->getPosition()))
+	{
+		BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Can Drop");
+		//unload troops 
+		//and return? 
+
+		// get the unit's current command
+		BWAPI::UnitCommand currentCommand(_transportShip->getLastCommand());
+
+		// if we've already told this unit to unload, wait
+		if (currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All || currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All_Position)
+		{
+			BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Odered Drop");
+			return;
+		}
+
+		//else unload
+		_transportShip->unloadAll(_transportShip->getPosition());
 	}
 	//else
 	//{

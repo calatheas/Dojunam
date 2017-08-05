@@ -276,6 +276,39 @@ void GameCommander::setScoutUnits()
 		}
 		//std::cout << "Lucky??" << std::endl;
 	}
+	else if (_scoutUnits.empty() && _initialScoutSet == true && ScoutManager::Instance().second_scout == false)
+	{
+		BWAPI::Unit workerScout = nullptr;
+
+
+		for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+		{
+			if (!unit)
+			{
+				continue;
+			}
+
+			if (unit->isCompleted()
+				&& unit->getHitPoints() > 0
+				&& unit->exists()
+				&& unit->getType().isWorker()
+				&& !unit->isCarryingMinerals()
+				&& WorkerManager::Instance().isMineralWorker(unit))
+			{
+				workerScout = unit;
+				break;
+			}
+		}
+		//	getClosestWorkerToTarget(supplyProvider->getPosition());
+
+		// if we find a worker (which we should) add it to the scout units
+		if (workerScout)
+		{
+			ScoutManager::Instance().setWorkerScout(workerScout);
+			assignUnit(workerScout, _scoutUnits);
+			ScoutManager::Instance().second_scout == true;
+		}
+	}
 }
 
 //@도주남 김지훈 // 전투유닛을 setting 해주는 부분 기존 로직과 다르게 적용함.
