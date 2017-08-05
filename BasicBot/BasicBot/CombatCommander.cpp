@@ -107,22 +107,7 @@ void CombatCommander::updateIdleSquad()
 {
 	int radi = 300;
     Squad & idleSquad = _squadData.getSquad("Idle");
-	//if (_combatUnits.size() % 10 == 1)
-	{
-		//int diff_x = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().x - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().x;
-		//int diff_y = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().y - InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getPosition().y;
-		//if (abs(diff_x) > abs(diff_y))
-		//{
-		//	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-		//		+ BWAPI::Position(_combatUnits.size(), 32), radi, "Move Out");
-		//	idleSquad.setSquadOrder(idleOrder);
-		//}
-		//else{
-		//	SquadOrder idleOrder(SquadOrderTypes::Attack, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
-		//		+ BWAPI::Position(32, _combatUnits.size()), radi, "Move Out");
-		//	idleSquad.setSquadOrder(idleOrder);
-		//}
-
+	{	
 		//BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 		for (auto & unit : _combatUnits)
 		{
@@ -134,13 +119,6 @@ void CombatCommander::updateIdleSquad()
 			{
 				//idleSquad.addUnit(unit);
 				_squadData.assignUnitToSquad(unit, idleSquad);
-				//if (mineralPosition == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition())
-				//	for (auto &unit_in_region : unit->getUnitsInRadius(600)){
-				//		if (unit_in_region->getType() == BWAPI::UnitTypes::Resource_Mineral_Field){
-				//			mineralPosition = unit_in_region->getPosition();
-				//			break;
-				//		}
-				//	}
 			}
 		}
 

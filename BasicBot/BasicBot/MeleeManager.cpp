@@ -40,7 +40,6 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		{
 			//@도주남 김지훈 64 라는 절대적인 수치 기준으로 , choke point 진입여부를 판단하고 있음 , 다른 getDistance 기준 64 미만의 경우
 			// 근접해있다고 판단해도 무방할 것으로 보임
-			
 			if ((InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy()) == choke || InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy()) == choke) && choke->getCenter().getDistance(meleeUnit->getPosition()) < 64)
 			{
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
@@ -54,14 +53,7 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
         {
             // run away if we meet the retreat critereon
-            if (meleeUnitShouldRetreat(meleeUnit, targets))
-            {
-                BWAPI::Position fleeTo(BWAPI::Broodwar->self()->getStartLocation());
-
-                Micro::SmartMove(meleeUnit, fleeTo);
-            }
-			// if there are targets
-			else if (!meleeUnitTargets.empty())
+            if (!meleeUnitTargets.empty())
 			{
 				// find the best target for this meleeUnit
 				BWAPI::Unit target = getTarget(meleeUnit, meleeUnitTargets);
@@ -79,8 +71,7 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				if (meleeUnit->getStimTimer() > 0
 					&& meleeUnit->getType() == BWAPI::UnitTypes::Terran_Firebat)
 				{
-					std::string stimPacksUsed = "stimPacks On";
-					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x + 50, meleeUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
+					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x, meleeUnit->getPosition().y + 50, "%s", "stimPacks On");
 
 				}
 				// attack it
@@ -89,28 +80,10 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
-				//if (meleeUnit->getDistance(order.getPosition()) > 100 
-				//	&& order.getFarUnit() != nullptr
-				//	&& order.getFarUnit()->getDistance(meleeUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 86
-				//	//&& order.getFarUnit()->getDistance(meleeUnit->getPosition()) < BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() + 500
-				//	&& order.getFarUnit()->getID() != meleeUnit->getID()
-				//	&& order.getType() == SquadOrderTypes::Attack 
-				//	&& order.getFarUnit()->getID() != meleeUnit->getID()
-				//	&& !nearChokepoint
-				//	&& order.getStatus() != "Move Out")
-				if (
-					order.getClosestUnit() != nullptr
-					&& order.getClosestUnit() == meleeUnit
-					&& !nearChokepoint
-					&& order.getFarUnit() != nullptr
-					&& order.getFarUnit()->getDistance(meleeUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 64
-					&& order.getFarUnit() != meleeUnit
-					)
+				if (order.getClosestUnit() != nullptr)
 				{
-					//std::cout << "FireBat " << std::endl;
-					//Micro::SmartMove(meleeUnit, order.getFarUnit()->getPosition() - meleeUnit->getPosition() + meleeUnit->getPosition());
-					meleeUnit->holdPosition();
-					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x , meleeUnit->getPosition().y + 50, "%s", "Hold On Position");
+					Micro::SmartAttackMove(meleeUnit, order.getClosestUnit()->getPosition());
+					BWAPI::Broodwar->drawTextMap(meleeUnit->getPosition().x, meleeUnit->getPosition().y + 50, "%s", "Go Near Medic");
 				} else
 				// if we're not near the order position
 				if (meleeUnit->getDistance(order.getPosition()) > 100)

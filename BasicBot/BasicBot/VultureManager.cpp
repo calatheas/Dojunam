@@ -19,6 +19,40 @@ void VultureManager::miningPositionSetting()
 	if (!BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Spider_Mines))
 		return;
 
+	startPointCount = 0;
+
+	std::list<BWTA::BaseLocation *> enemayBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->enemy());
+	std::list<BWTA::BaseLocation *> selfBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->self());
+
+	for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
+	{
+		bool insertable = true;
+		for (BWTA::BaseLocation * eBaseLocation : enemayBaseLocations)
+		{
+			if (startLocation == eBaseLocation)
+			{
+				insertable = false;
+				break;
+			}
+		}
+		if (insertable)
+		{
+			for (BWTA::BaseLocation * sBaseLocation : enemayBaseLocations)
+			{
+				if (startLocation == sBaseLocation)
+				{
+					insertable = false;
+					break;
+				}
+			}
+		}
+		if (insertable)
+		{
+			chokePointForVulture.push_back(startLocation->getPosition());
+		}
+	}
+	startPointCount = chokePointForVulture.size();
+
 	std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(mysecChokePoint->getCenter()), BWAPI::TilePosition(enemySecChokePoint->getCenter()));
 	
 	for (auto & t : tileList) {
@@ -59,6 +93,7 @@ void VultureManager::executeMicro(const BWAPI::Unitset & targets)
 void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 {
 	const BWAPI::Unitset & vultureUnits = getUnits();
+	int spiderMineCount = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture_Spider_Mine);
 	// figure out targets
 	BWAPI::Unitset vultureUnitTargets;
 	std::copy_if(targets.begin(), targets.end(), std::inserter(vultureUnitTargets, vultureUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });	
@@ -84,7 +119,9 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					BWAPI::Position mineSetPosition = vultureUnit->getPosition();
 					
 					//@도주남 김지훈 스파이더마인 설치를 지나가는 패스에 우선적으로 설치한다.
-					if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture_Spider_Mine) <= pathTileCount)
+					if (spiderMineCount <= startPointCount)
+						mineSetPosition = chokePointForVulture[startPointCount - spiderMineCount];
+					else if (spiderMineCount <= pathTileCount)
 						mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % pathTileCount];
 					else
 						mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % chokePointForVulture.size()];
@@ -120,8 +157,6 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(vultureUnit, vultureUnitTargets);
 
-				// attack it
-//					if (vultureUnit->getType() == BWAPI::UnitTypes::Zerg_Mutalisk || vultureUnit->getType() == BWAPI::UnitTypes::Terran_Vulture)
 				{
 					Micro::MutaDanceTarget(vultureUnit, target);
 				}

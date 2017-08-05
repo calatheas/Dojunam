@@ -152,8 +152,9 @@ void Squad::setAllUnits()
 	else
 		_order.setOrganicUnits(organicUnits);
 
-	_order.setFarUnit(unitFarToOrderPosition);	
-	_order.setClosestUnit(unitClosestToEnemyForOrder());	
+	_order.setFarUnit(unitFarToOrderPosition);
+	if (organicUnits.size() != 0)
+		_order.setClosestUnit(unitClosestToEnemyForOrder());	
 	if (_order.getClosestUnit() == nullptr)
 		_order.setClosestUnit(nullptr);
 }
@@ -526,7 +527,7 @@ BWAPI::Unit Squad::unitClosestToEnemyForOrder()
 
 	for (auto & unit : _units)
 	{
-		if (unit->getType() == BWAPI::UnitTypes::Terran_Medic)
+		if (unit->getType() != BWAPI::UnitTypes::Terran_Medic)
 		{
 			continue;
 		}
@@ -546,7 +547,7 @@ BWAPI::Unit Squad::unitClosestToEnemyForOrder()
 	{
 		for (auto & unit : _units)
 		{
-			if (unit->getType() == BWAPI::UnitTypes::Terran_Medic)
+			if (unit->getType() != BWAPI::UnitTypes::Terran_Medic)
 			{
 				continue;
 			}
@@ -555,23 +556,6 @@ BWAPI::Unit Squad::unitClosestToEnemyForOrder()
 
 			// the distance to the order position
 			int dist = unit->getDistance(BWAPI::Position(BWAPI::Broodwar->enemy()->getStartLocation()));
-
-			if (dist != -1 && (!closest || dist < closestDist))
-			{
-				closest = unit;
-				closestDist = dist;
-			}
-		}
-	}
-	if (!closest)
-	{
-		for (auto & unit : _units)
-		{
-			if (unit->getHitPoints() <= 0)
-				continue;
-
-			// the distance to the order position
-			int dist = MapTools::Instance().getGroundDistance(unit->getPosition(), _order.getPosition());
 
 			if (dist != -1 && (!closest || dist < closestDist))
 			{

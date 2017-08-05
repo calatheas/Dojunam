@@ -189,7 +189,7 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 	{
 		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I'm Going for mining");
 		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 60), "%d", BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame());
-		if ((pos.getDistance(unit->getPosition()) < 60 && BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame() > 100) && !unit->isMoving())
+		if ((BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame() > 100) && !unit->isMoving())
 		{
 			pos = pos + BWAPI::Position(7, -1);
 			while (!pos.isValid())

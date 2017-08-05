@@ -21,21 +21,20 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
     bool haveSiege = BWAPI::Broodwar->self()->hasResearched(BWAPI::TechTypes::Tank_Siege_Mode);
 	BWAPI::Position mbase = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 	BWAPI::Position fchokePoint = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter();
+	
 	int mbToFcP = mbase.getDistance(fchokePoint);
 	//std::cout << " mbase.getDistance(fchokePoint)  " << mbToFcP  << std::endl;
 	// for each zealot
 	for (auto & tank : tanks)
 	{
 		// train sub units such as scarabs or interceptors
-		//trainSubUnits(rangedUnit);
-		//std::cout << "order.getType()  " << order.getType() << std::endl;
-		//BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 50), "%d", order.getType());
 		if (order.getType() == SquadOrderTypes::Drop)
 		{
-			if (tank->getDistance(mbase) > mbase.getDistance(fchokePoint) && tank->canSiege())
+			if ( tank->canSiege()
+				&& tank->getRegion()->getCenter() != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()->getCenter() )
 			{
 				tank->siege();
-			}			
+			}
 			continue;
 		}
 
@@ -107,15 +106,16 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                     else
                     {
     					// move to it
-						if (order.getClosestUnit() != nullptr 
-							&& order.getClosestUnit() == tank 
-							&& !tankNearChokepoint
+						if (!tankNearChokepoint
 							&& order.getFarUnit() != nullptr
 							&& order.getFarUnit()->getDistance(tank->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 64
 							&& order.getFarUnit() != tank )
 						{
 							BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 30), "%s", "Hold On Position");
-							tank->holdPosition();
+							if (!tank->isHoldingPosition())
+							{
+								tank->holdPosition();
+							}
 						}
 						else
     						Micro::SmartAttackMove(tank, order.getPosition());

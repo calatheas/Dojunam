@@ -25,9 +25,7 @@ void RangedManager::checkBunkerNum()
 	bunkerNum = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);	
 	if (bunkerNum > 0)
 	{
-		bunkerUnit = UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));	
-		if (bunkerUnit->getLoadedUnits().size() >= 3)
-			bunkerNum = 0;
+		bunkerUnit = UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
 	}
 }
 
@@ -41,13 +39,19 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	
     for (auto & rangedUnit : rangedUnits)
 	{
-		if (order.getType() == SquadOrderTypes::Idle && rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
-			&& rangedUnit->getHitPoints() == rangedUnit->getType().maxHitPoints())
+		if (order.getType() == SquadOrderTypes::Idle 
+			&& rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
+			&& rangedUnit->getHitPoints() > 0)
 		{
 			if (bunkerNum > 0)
-			{				
-				rangedUnit->load(bunkerUnit);
-				continue;
+			{	
+				if (bunkerUnit->getLoadedUnits().size() < 4)
+				{
+					rangedUnit->load(bunkerUnit);
+					continue;
+				}
+				else
+					bunkerNum = 0;
 			}			
 		}
 		// train sub units such as scarabs or interceptors
@@ -57,7 +61,9 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		{
 			//@도주남 김지훈 64 라는 절대적인 수치 기준으로 , choke point 진입여부를 판단하고 있음 , 다른 getDistance 기준 64 미만의 경우
 			// 근접해있다고 판단해도 무방할 것으로 보임
-			if ((InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy()) == choke || InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy()) == choke) && choke->getCenter().getDistance(rangedUnit->getPosition()) < 64)
+			if ((InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy()) == choke 
+				|| InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy()) == choke) 
+				&& choke->getCenter().getDistance(rangedUnit->getPosition()) < 64)
 			{
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
 				BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");
@@ -95,50 +101,20 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				}
 
 				// attack it
-                if (Config::Micro::KiteWithRangedUnits)
-                {
-                    if (rangedUnit->getType() == BWAPI::UnitTypes::Zerg_Mutalisk || rangedUnit->getType() == BWAPI::UnitTypes::Terran_Vulture)
-                    {
-				        Micro::MutaDanceTarget(rangedUnit, target);
-                    }
-                    else
-                    {
-                        Micro::SmartKiteTarget(rangedUnit, target);
-                    }
-                }
-                else
-                {
-                    Micro::SmartAttackUnit(rangedUnit, target);
-                }
+				Micro::SmartKiteTarget(rangedUnit, target);
 			}
 			// if there are no targets
 			else
 			{
-				//if (rangedUnit->getDistance(order.getPosition()) > 100 
-				//	&& order.getFarUnit() != nullptr
-				//	&& order.getFarUnit()->getDistance(rangedUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 86
-				//	//&& order.getFarUnit()->getDistance(rangedUnit->getPosition()) < BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() + 500
-				//	&& order.getFarUnit()->getID() != rangedUnit->getID()
-				//	&& order.getStatus() != "Move Out"
-				//	&& !nearChokepoint
-				//	)
-				if (
-					order.getClosestUnit() != nullptr
-					&& order.getClosestUnit() == rangedUnit
-					&& !nearChokepoint
-					&& order.getFarUnit() != nullptr
-					&& order.getFarUnit()->getDistance(rangedUnit->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 64
-					&& order.getFarUnit() != rangedUnit
-					)
+				if (order.getClosestUnit() != nullptr)
 				{
-					//std::cout << "Marin  " << rangedUnit->getID() << std::endl;
-					//Micro::SmartMove(rangedUnit, order.getFarUnit()->getPosition() - rangedUnit->getPosition() + rangedUnit->getPosition());
-					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 30), "%s", "Hold On Position");
-					rangedUnit->holdPosition();
+					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 30), "%s", "Go Near Medic");
+					Micro::SmartAttackMove(rangedUnit, order.getClosestUnit()->getPosition());
+					
 				}
 				else
 				// if we're not near the order position
-				//if (rangedUnit->getDistance(order.getPosition()) > 20)
+				if (rangedUnit->getDistance(order.getPosition()) > 100)
 				{
 					// move to it
 					Micro::SmartAttackMove(rangedUnit, order.getPosition());
