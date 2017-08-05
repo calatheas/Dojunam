@@ -198,8 +198,14 @@ void TransportManager::update()
 				}
 			}
 		}
-		else
+		else if (InformationManager::Instance().getMapName() != 'L')
 		{
+			BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+			if (InformationManager::Instance().getMainBaseLocation(enemy) != nullptr)
+			{
+						moveTroops();
+						moveTransport();								
+			}
 
 		}
 	}
