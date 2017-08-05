@@ -59,6 +59,6 @@ public:
 	void update(const BWAPI::Unitset & combatUnits);
     
 	void drawSquadInformation(int x, int y);
-	int           _comBatStatusIndex;
+	InformationManager::combatStatus	_combatStatus;
 };
 }

@@ -321,7 +321,7 @@ void WorkerManager::handleCombatWorkers()
 
 				int maxCombatWorker = 7;
 
-				if (InformationManager::Instance().comBatStatusIndex == 1)
+				if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::nHelpDefence)
 				{
 					for (auto & worker : workerData.getWorkers())
 					{

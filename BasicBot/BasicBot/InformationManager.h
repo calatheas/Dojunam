@@ -117,8 +117,18 @@ namespace MyBot
 		/// 게임 맵에 따라서, secondChokePoint 는 일반 상식과 다른 지점이 될 수도 있습니다
 		BWTA::Chokepoint *      getSecondChokePoint(BWAPI::Player player);
 
-		int           comBatStatusIndex;
-
+		enum combatStatus {
+			idle,
+			nHelpDefence,		// need to help for base Defence 1 
+			rDefence,		// ready for base Defence 2 
+			wFirstChokePoint,	// wait first choke point 3 
+			wSecondChokePoint,	// wait second choke point 4
+			rMainAttack,		// ready for Main Attack 5
+			gEnemybase,			// go Enemay base (Attack) 6
+			jMainAttack			// join to Main Attack 7
+			
+		};
+		combatStatus nowCombatStatus;
 		/// 해당 Player (아군 or 적군) 의 모든 유닛 목록 (가장 최근값) UnitAndUnitInfoMap 을 리턴합니다		 
 		/// 파악된 정보만을 리턴하기 때문에 적군의 정보는 틀린 값일 수 있습니다
 		const UnitAndUnitInfoMap &           getUnitAndUnitInfoMap(BWAPI::Player player) const;

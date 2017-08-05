@@ -153,7 +153,7 @@ bool ExpansionManager::shouldExpandNow()
 	}
 
 	//아군 유닛이 적당히 나가있는 경우에만 수행한다. 이때가 비교적 안전한 경우 이므로
-	if (InformationManager::Instance().comBatStatusIndex >= 4){
+	if (InformationManager::Instance().nowCombatStatus >= InformationManager::combatStatus::wSecondChokePoint){
 		//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
 		if (expansions.size() < 3 && enemyResourceRegions.size() > expansions.size()){
 			std::cout << "add expansions(less than enemy expansions)" << std::endl;

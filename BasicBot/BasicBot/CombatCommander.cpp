@@ -96,7 +96,7 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
         updateScoutDefenseSquad();		
 		updateDefenseSquads();		
 		updateAttackSquads();
-		InformationManager::Instance().comBatStatusIndex = _comBatStatusIndex;
+		InformationManager::Instance().nowCombatStatus = _combatStatus;
 	}
 	
 	_squadData.update();
@@ -145,26 +145,26 @@ void CombatCommander::updateIdleSquad()
 		}
 
 
-		if (_comBatStatusIndex <= 2)
+		if (_combatStatus <= InformationManager::combatStatus::rDefence)
 		{
 			int tmp_radi = 200;
 			SquadOrder idleOrder(SquadOrderTypes::Idle, mineralPosition
 				, tmp_radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
-		else if (_comBatStatusIndex == 3)
+		else if (_combatStatus == InformationManager::combatStatus::wFirstChokePoint)
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Idle, getPositionForDefenceChokePoint(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
 				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + 100 , "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
-		else if (_comBatStatusIndex == 4)
+		else if (_combatStatus == InformationManager::combatStatus::wSecondChokePoint)
 		{
 			SquadOrder idleOrder(SquadOrderTypes::Idle, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
 				, radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
-		else if (_comBatStatusIndex == 5){
+		else if (_combatStatus == InformationManager::combatStatus::rMainAttack){
 			SquadOrder idleOrder(SquadOrderTypes::Idle,
 				getIdleSquadLastOrderLocation()
 				, radi, "Move Out");
@@ -191,7 +191,7 @@ void CombatCommander::updateAttackSquads()
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 	Squad & candiAttackerSquad = _squadData.getSquad("Idle");
 	
-	if (_comBatStatusIndex == 6)
+	if (_combatStatus == InformationManager::combatStatus::gEnemybase)
 	{
 		for (auto & unit : _combatUnits)
 		{
@@ -203,7 +203,7 @@ void CombatCommander::updateAttackSquads()
 			}
 		}
 	}
-	else if (_comBatStatusIndex == 7)
+	else if (_combatStatus == InformationManager::combatStatus::jMainAttack)
 	{
 		for (auto & unit : _combatUnits)
 		{
@@ -456,8 +456,8 @@ void CombatCommander::updateDefenseSquads()
         }
         else 
         {
-			if (_comBatStatusIndex == 2)
-				_comBatStatusIndex = 1;
+			if (_combatStatus == InformationManager::combatStatus::rDefence)
+				_combatStatus = InformationManager::combatStatus::nHelpDefence;
             // if we don't have a squad assigned to this region already, create one
             if (!_squadData.squadExists(squadName.str()))
             {
@@ -848,21 +848,21 @@ void CombatCommander::updateComBatStatusIndex()
 	int tatalUnits = _combatUnits.size();
 	Squad & idleSquad = _squadData.getSquad("Idle");
 	int idleUnitSize = idleSquad.getUnits().size();
-	if (idleUnitSize < 7 && _comBatStatusIndex <= 2)
-		_comBatStatusIndex = 2; // ready to Defence
+	if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::rDefence)
+		_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
 	else if (idleUnitSize < 14)
-		_comBatStatusIndex = 3; // see first choke point
+		_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
 	else if (idleUnitSize < 21)
-		_comBatStatusIndex = 4; // see second choke point
+		_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
 	else if (idleUnitSize < 28)
-		_comBatStatusIndex = 5; // ready to Attack
+		_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
 	else if (idleUnitSize >= 28)
-		_comBatStatusIndex = 6; // MainAttack
-	else if (_comBatStatusIndex >= 2 && tatalUnits > 10)
-		_comBatStatusIndex = 7; // add More Combat Unit For MainAttack
+		_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
+	else if (_combatStatus >= 2 && tatalUnits > 10)
+		_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
 	else
-		_comBatStatusIndex = 0;
+		_combatStatus = InformationManager::combatStatus::idle;
 
-	if (InformationManager::Instance().comBatStatusIndex > _comBatStatusIndex)
-		_comBatStatusIndex = InformationManager::Instance().comBatStatusIndex;
+	if (InformationManager::Instance().nowCombatStatus > _combatStatus)
+		_combatStatus = InformationManager::Instance().nowCombatStatus;
 }
