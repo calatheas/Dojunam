@@ -26,6 +26,7 @@ namespace MyBot
 
 		bool            isEvolvedBuilding(BWAPI::UnitType type);
 		bool            isBuildingPositionExplored(const ConstructionTask & b) const;
+		BWAPI::Unit     checkSpiderMine(const ConstructionTask & b) const;
 
 		/// constructionQueue 에서 건설 상태가 UnderConstruction 인 ConstructionTask 여러개를 삭제합니다
 		/// 건설을 시작했었던 ConstructionTask 이기 때문에 _reservedMinerals, _reservedGas 는 건드리지 않는다

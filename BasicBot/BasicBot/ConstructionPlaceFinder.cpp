@@ -307,7 +307,7 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 
 	// maxRange 를 설정하지 않거나, maxRange 를 128으로 설정하면 지도 전체를 다 탐색하는데, 매우 느려질뿐만 아니라, 대부분의 경우 불필요한 탐색이 된다
 	// maxRange 는 16 ~ 64가 적당하다
-	int maxRange = 32; // maxRange = BWAPI::Broodwar->mapWidth()/4;
+	int maxRange = 48; // maxRange = BWAPI::Broodwar->mapWidth()/4;
 	bool isPossiblePlace = false;
 		
 	if (constructionPlaceSearchMethod == ConstructionPlaceSearchMethod::SpiralMethod)

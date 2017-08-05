@@ -84,7 +84,7 @@ void GameCommander::onFrame()
 		
 	log_write("MapGrid, ");
 
-	BOSSManager::Instance().update(49.0); //순서가 중요?
+	BOSSManager::Instance().update(30.0); //순서가 중요?
 
 	log_write("BOSSManager, ");
 

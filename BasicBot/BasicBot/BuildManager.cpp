@@ -98,7 +98,6 @@ void BuildManager::consumeBuildQueue(){
 
 		// 건물을 만들수 있는 유닛(일꾼)이나, 유닛을 만들수 있는 유닛(건물 or 유닛)이 있으면
 		if (producer != nullptr) {
-
 			// check to see if we can make it right now
 			// 지금 해당 유닛을 건설/생산 할 수 있는지에 대해 자원, 서플라이, 테크 트리, producer 만을 갖고 판단한다
 			canMake = canMakeNow(producer, currentItem.metaType);
@@ -364,22 +363,27 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 
 		if (except_candidates) continue;
 
+		//애드온이 지어지고 있는 경우... 판단하는 api없는듯
+		if (isConstructingAddon(unit)) continue;
+
         // if we haven't cut it, add it to the set of candidates
         candidateProducers.insert(unit);
     }
 
-	/*
-	if (t.getUnitType() == BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode || t.getUnitType() == BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode || t.getUnitType() == BWAPI::UnitTypes::Terran_Machine_Shop){
-	std::cout << t.getUnitType() << " candidateProducers:";
-	for (auto &u : candidateProducers){
-	std::cout << u->getType() << "(" << u->getPosition() << ")";
+	//애드온이 필요없는 유닛은 애드온 없는 건물 우선으로 배정
+	BWAPI::Unitset candidateProducers_no_addon;
+	if (t.getUnitType() == BWAPI::UnitTypes::Terran_Vulture ||
+		t.getUnitType() == BWAPI::UnitTypes::Terran_Goliath ||
+		t.getUnitType() == BWAPI::UnitTypes::Terran_Wraith){
+		for (auto u : candidateProducers){
+			if (!hasAddon(u)){
+				candidateProducers_no_addon.insert(u);
+			}
+		}
 	}
-	std::cout << std::endl;
-	}
-	*/
 
 
-	return getClosestUnitToPosition(candidateProducers, closestTo);;
+	return getClosestUnitToPosition(candidateProducers_no_addon.size()>0 ? candidateProducers_no_addon : candidateProducers, closestTo);
 }
 
 BWAPI::Unit BuildManager::getClosestUnitToPosition(const BWAPI::Unitset & units, BWAPI::Position closestTo)
@@ -917,6 +921,20 @@ bool BuildManager::hasAddon(BWAPI::Unit u){
 		return true;
 	else
 		return false;
+}
+
+bool BuildManager::isConstructingAddon(BWAPI::Unit u){
+	//달려있는 경우에는 완료여부만 검사
+	if (u->getAddon() || u->getAddon() != nullptr){
+		return !u->getAddon()->isCompleted();
+	}
+	//안 달려있는 경우에는 명령을 내렸으면 건설중임
+	else{
+		if (!verifyBuildAddonCommand(u))
+			return true;
+	}
+
+	return false;
 }
 
 bool BuildManager::hasUnitInQueue(BWAPI::UnitType ut){

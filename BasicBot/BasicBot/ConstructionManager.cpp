@@ -273,6 +273,13 @@ void ConstructionManager::constructAssignedBuildings()
 			// 이 경우, 해당 일꾼의 build command 를 해제하고, 건물 상태를 Unassigned 로 바꿔서, 다시 건물 위치를 정하고, 다른 일꾼을 지정하는 식으로 처리한다
 			else
             {
+				//스파이더마인이 있으면 제거 후 건설시작
+				BWAPI::Unit spiderMine = checkSpiderMine(b);
+				if (spiderMine != nullptr){
+					CommandUtil::attackUnit(b.constructionWorker, spiderMine);
+					continue;
+				}
+
 				if (BWAPI::Broodwar->getFrameCount() - b.lastBuildCommandGivenFrame > 24) {
 
 					//std::cout << b.type.c_str()
@@ -624,6 +631,20 @@ bool ConstructionManager::isBuildingPositionExplored(const ConstructionTask & b)
     }
 
     return true;
+}
+
+BWAPI::Unit ConstructionManager::checkSpiderMine(const ConstructionTask & b) const
+{
+	BWAPI::Position offset(BWAPI::UnitTypes::Terran_Vulture_Spider_Mine.width(), BWAPI::UnitTypes::Terran_Vulture_Spider_Mine.height());
+	BWAPI::Position top_left(b.finalPosition.x * 32 - offset.x, b.finalPosition.y * 32 - offset.y);
+	BWAPI::Position bottom_right(top_left.x + b.type.width() + offset.x, top_left.y + b.type.height() + offset.y);
+	for (auto u : BWAPI::Broodwar->getUnitsInRectangle(top_left, bottom_right)){
+		if (u->getType() == BWAPI::UnitTypes::Terran_Vulture_Spider_Mine && u->getPlayer() == InformationManager::Instance().selfPlayer){
+			return u;
+		}
+	}
+
+	return nullptr;
 }
 
 int ConstructionManager::getReservedMinerals() 

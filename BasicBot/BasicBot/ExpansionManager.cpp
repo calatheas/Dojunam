@@ -161,7 +161,7 @@ bool ExpansionManager::shouldExpandNow()
 		}
 
 		//일꾼이 남는경우
-		if (WorkerManager::Instance().getNumIdleWorkers() / (float)(WorkerManager::Instance().getNumMineralWorkers() + WorkerManager::Instance().getNumGasWorkers()) > 0.5)
+		if (WorkerManager::Instance().getNumIdleWorkers() / (float)WorkerManager::Instance().getNumMineralWorkers() > 0.5)
 		{
 			std::cout << "add expansions(enough workers)" << std::endl;
 			return true;
@@ -175,23 +175,17 @@ bool ExpansionManager::shouldExpandNow()
 			return true;
 		}
 
-		/* 시간으로 멀티까는 로직은 삭제함
-		size_t numDepots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
-		int frame = BWAPI::Broodwar->getFrameCount();
-		int minute = frame / (24 * 60);
+		/*
+		int minute = BWAPI::Broodwar->getFrameCount() / (24 * 60);
+		int numExpansions = ExpansionManager::Instance().expansions.size();
 
 		std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
 
-		for (size_t i(0); i < expansionTimes.size(); ++i)
-		{
-		if (numDepots < (i + 2) && minute > expansionTimes[i])
-		{
-		return true;
-		}
+		for (size_t i(0); i < expansionTimes.size(); ++i){
+			if (numExpansions < (i + 2) && minute > expansionTimes[i]){
+				std::cout << "add expansions(time limit)" << std::endl;
+				return true;
+			}
 		}
 		*/
 	}

@@ -72,6 +72,8 @@ namespace MyBot
 
 		//addon 달려있는지 확인하는 함수
 		bool hasAddon(BWAPI::Unit u);
+		bool isConstructingAddon(BWAPI::Unit u);
+
 		bool hasUnitInQueue(BWAPI::UnitType ut);
 
 		//자원확인
