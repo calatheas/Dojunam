@@ -95,12 +95,12 @@ void GameCommander::onFrame()
 	log_write("WorkerManager, ");
 
 	// 빌드오더큐를 관리하며, 빌드오더에 따라 실제 실행(유닛 훈련, 테크 업그레이드 등)을 지시한다.
-	BuildManager::Instance().update();
+	//BuildManager::Instance().update();
 
 	log_write("BuildManager, ");
 
 	// 빌드오더 중 건물 빌드에 대해서는, 일꾼유닛 선정, 위치선정, 건설 실시, 중단된 건물 빌드 재개를 지시한다
-	ConstructionManager::Instance().update();
+	//ConstructionManager::Instance().update();
 
 	log_write("ConstructionManager, ");
 
@@ -306,7 +306,7 @@ void GameCommander::setScoutUnits()
 		{
 			ScoutManager::Instance().setWorkerScout(workerScout);
 			assignUnit(workerScout, _scoutUnits);
-			ScoutManager::Instance().second_scout == true;
+			ScoutManager::Instance().second_scout = true;
 		}
 	}
 }

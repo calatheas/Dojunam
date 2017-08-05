@@ -18,7 +18,6 @@ ScoutManager::ScoutManager()
 	, currentScoutTargetBaseLocation(nullptr)
 	, currentScoutTargetPosition(BWAPI::Positions::None)
 	, currentScoutFreeToVertexIndex(-1)
-	, second_scout(false)
 
 {
 }
@@ -232,8 +231,8 @@ void ScoutManager::moveScouts()
 	{
 
 		BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
-  	if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
-		Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
+		if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
+			Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
 	}
 	_previousScoutHP = scoutHP;
 }

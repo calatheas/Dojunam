@@ -66,8 +66,8 @@ namespace MyBot
 
 
 	public:
-
 		bool second_scout;
+
 		static ScoutManager & Instance();
 
 		void update();

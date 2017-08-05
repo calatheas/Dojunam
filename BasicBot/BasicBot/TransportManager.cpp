@@ -151,7 +151,8 @@ void TransportManager::update()
 				{
 					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
 					setFrom(_transportShip->getPosition());
-					setTo(BWAPI::Position(3480 * 32, 56 * 32));
+					//setTo(BWAPI::Position(3480 * 32, 56 * 32));
+					setTo(BWAPI::Position(3480, 56));
 					//if (_transportShip->getSpaceRemaining() != 0)
 					{
 						moveTroops();
@@ -163,7 +164,7 @@ void TransportManager::update()
 				{
 					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
 					setFrom(_transportShip->getPosition());
-					setTo(BWAPI::Position(3855 * 32, 2489 * 32));
+					setTo(BWAPI::Position(3855, 2489));
 					//if (_transportShip->getSpaceRemaining() != 0)
 					{
 						moveTroops();
@@ -175,7 +176,7 @@ void TransportManager::update()
 				{
 					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
 					setFrom(_transportShip->getPosition());
-					setTo(BWAPI::Position(65 * 32, 1230 * 32));
+					setTo(BWAPI::Position(65, 1230));
 					//if (_transportShip->getSpaceRemaining() != 0)
 					{
 						moveTroops();
@@ -187,7 +188,7 @@ void TransportManager::update()
 				{
 					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
 					setFrom(_transportShip->getPosition());
-					setTo(BWAPI::Position(2580 * 32, 4002 * 32));
+					setTo(BWAPI::Position(2580, 4002));
 					//if (_transportShip->getSpaceRemaining() != 0)
 					{
 						moveTroops();
@@ -263,7 +264,7 @@ void TransportManager::moveTroops()
 			BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Odered Drop");
 			return;
 		}
-
+		//std::cout << "_transportShip->unloadAll(_to) :" << _to.x << " " << _to.y << std::endl;
 		//else unload
 		_transportShip->unloadAll(_to);
 	}
@@ -283,7 +284,7 @@ void TransportManager::moveTroops()
 			BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Odered Drop");
 			return;
 		}
-
+				//std::cout << "wow" << std::endl;
 		//else unload
 		_transportShip->unloadAll(_transportShip->getPosition());
 	}
@@ -519,6 +520,11 @@ void TransportManager::setFrom(BWAPI::Position from)
 }
 void TransportManager::setTo(BWAPI::Position to)
 {
+	//std::cout << "setTo :" << _to.x << " " << _to.y << std::endl;
 	if (to.isValid())
+	{
+		//std::cout << "to.isValid() :" << _to.x << " " << _to.y << std::endl;
 		_to = to;
+	}
+		
 }
