@@ -832,9 +832,9 @@ void CombatCommander::updateComBatStatusIndex()
 		_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
 	else if (idleUnitSize < 21)
 		_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
-	else if (idleUnitSize < 28)
+	else if (idleUnitSize < 56)
 		_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
-	else if (idleUnitSize >= 28)
+	else if (idleUnitSize >= 56)
 		_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
 	else if (_combatStatus >= 2 && tatalUnits > 10)
 		_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack

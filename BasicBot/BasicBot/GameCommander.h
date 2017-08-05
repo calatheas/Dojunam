@@ -14,6 +14,8 @@
 #include "WorkerManager.h"
 #include "ExpansionManager.h"
 
+#include <chrono>
+
 namespace MyBot
 {
 	/// 실제 봇프로그램의 본체가 되는 class

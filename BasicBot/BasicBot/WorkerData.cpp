@@ -568,7 +568,7 @@ char WorkerData::getJobCode(BWAPI::Unit unit)
 	if (j == WorkerData::Repair) return 'R';
 	if (j == WorkerData::Move) return 'O';
 	if (j == WorkerData::Scout) return 'S';
-	if (j == WorkerData::Black) return 'K';
+	if (j == WorkerData::Block) return 'K';
 	return 'X';
 }
 

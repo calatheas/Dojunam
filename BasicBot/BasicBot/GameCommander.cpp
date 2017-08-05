@@ -67,66 +67,114 @@ void GameCommander::onEnd(bool isWinner)
 
 void GameCommander::onFrame()
 {
-	if (BWAPI::Broodwar->isPaused() 
+	if (BWAPI::Broodwar->isPaused()
 		|| BWAPI::Broodwar->self() == nullptr || BWAPI::Broodwar->self()->isDefeated() || BWAPI::Broodwar->self()->leftGame()
 		|| BWAPI::Broodwar->enemy() == nullptr || BWAPI::Broodwar->enemy()->isDefeated() || BWAPI::Broodwar->enemy()->leftGame()) {
 		return;
 	}
 	log_write(BWAPI::Broodwar->getFrameCount());
+	log_write(":");
+	
+	auto getNow = [](){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); };
+
+	long long start_time = getNow();
+	long long sum_time = 0;
+	std::map<std::string, long long> each_time;
 
 	// 아군 베이스 위치. 적군 베이스 위치. 각 유닛들의 상태정보 등을 Map 자료구조에 저장/업데이트
 	InformationManager::Instance().update();
-
-	log_write(":InformationManager, ");
-
+	log_write("InformationManager-1");
+	log_write("/2");
+	each_time["InformationManager"] = getNow() - start_time;
+	sum_time += each_time["InformationManager"];
+	
 	// 각 유닛의 위치를 자체 MapGrid 자료구조에 저장
 	MapGrid::Instance().update();
-		
-	log_write("MapGrid, ");
-
+	log_write(", MapGrid-1");
+	log_write("/2");
+	log_write("/3");
+	each_time["MapGrid"] = getNow() - sum_time - start_time;
+	sum_time += each_time["MapGrid"];
+	
 	BOSSManager::Instance().update(49.0); //순서가 중요?
-
-	log_write("BOSSManager, ");
+	log_write(", BOSSManager");
+	each_time["BOSSManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["BOSSManager"];
 
 	// economy and base managers
 	// 일꾼 유닛에 대한 명령 (자원 채취, 이동 정도) 지시 및 정리
 	WorkerManager::Instance().update();
-
-	log_write("WorkerManager, ");
+	log_write(", WorkerManager-1");
+	log_write("/2");
+	log_write("/3");
+	log_write("/4");
+	log_write("/5");
+	log_write("/6");
+	each_time["WorkerManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["WorkerManager"];
 
 	// 빌드오더큐를 관리하며, 빌드오더에 따라 실제 실행(유닛 훈련, 테크 업그레이드 등)을 지시한다.
 	BuildManager::Instance().update();
-
-	log_write("BuildManager, ");
+	log_write(", BuildManager-1");
+	log_write("/2");
+	log_write("/3");
+	log_write("/4");
+	log_write("/5");
+	log_write("/6");
+	each_time["BuildManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["BuildManager"];
 
 	// 빌드오더 중 건물 빌드에 대해서는, 일꾼유닛 선정, 위치선정, 건설 실시, 중단된 건물 빌드 재개를 지시한다
 	ConstructionManager::Instance().update();
-
-	log_write("ConstructionManager, ");
+	log_write(", ConstructionManager-1");
+	log_write("/2");
+	log_write("/3");
+	log_write("/4");
+	log_write("/5");
+	log_write("/6");
+	log_write("/7");
+	each_time["ConstructionManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["ConstructionManager"];
 
 	// 게임 초기 정찰 유닛 지정 및 정찰 유닛 컨트롤을 실행한다
 	ScoutManager::Instance().update();
-
-	log_write("ScoutManager, ");
+	log_write(", ScoutManager-1");
+	log_write("/2");
+	each_time["ScoutManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["ScoutManager"];
 
 	// 전략적 판단 및 유닛 컨트롤
 	StrategyManager::Instance().update();
-
-	log_write("StrategyManager, ");
+	log_write(", StrategyManager");
 
 	//@도주남 김지훈 전투유닛 셋팅
 	handleUnitAssignments();
 	CombatCommander::Instance().update(_combatUnits);
-
-	log_write("CombatCommander, ");
+	log_write(", CombatCommander-1");
+	log_write("/2");
+	each_time["CombatCommander"] = getNow() - sum_time - start_time;
+	sum_time += each_time["CombatCommander"];
 
 	ComsatManager::Instance().update();
-
-	log_write("ComsatManager, ");
+	log_write(", ComsatManager");
+	each_time["ComsatManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["ComsatManager"];
 
 	ExpansionManager::Instance().update(); //본진 및 확장정보 저장, 가스/컴셋 주기적으로 생성
+	log_write(", ExpansionManager", true);
+	each_time["ExpansionManager"] = getNow() - sum_time - start_time;
+	sum_time += each_time["ExpansionManager"];
 
-	log_write("ExpansionManager");
+	static bool f = false;
+	if (!f || sum_time > 55){
+		std::cout << "total - " << sum_time;
+		for (auto a : each_time){
+			std::cout << ", " << a.first << "-" << a.second;
+		}
+		std::cout << std::endl;
+
+		f = true;
+	}
 }
 
 // BasicBot 1.1 Patch Start ////////////////////////////////////////////////
