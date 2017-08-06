@@ -62,14 +62,14 @@ WorkerManager & WorkerManager::Instance()
 
 void WorkerManager::update()
 {
-	if (BWAPI::Broodwar->getFrameCount() % 24 == 0){
+	if (BWAPI::Broodwar->getFrameCount() % 24 == 1){
 		updateWorkerStatus();
 		handleGasWorkers();
 		handleIdleWorkers();
 		handleMoveWorkers();
 		handleScoutCombatWorker();
 	}
-	if (BWAPI::Broodwar->getFrameCount() % 8 == 0) {
+	if (BWAPI::Broodwar->getFrameCount() % 8 == 1) {
 		handleCombatWorkers();
 		handleRepairWorkers();
 	}
@@ -268,6 +268,9 @@ void WorkerManager::handleCombatWorkers()
 		if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling || unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Terran_Marine)
 		{
 
+			if (BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()) {
+				continue;
+			}
 			int maxCombatWorker = 7;
 
 			if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::nHelpDefence)
@@ -310,18 +313,35 @@ void WorkerManager::handleCombatWorkers()
 }
 
 void WorkerManager::handleScoutCombatWorker() {
-	for (auto & worker : workerData.getWorkers())
+	BWTA::BaseLocation * selfBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self());
+
+	//일꾼처리
+
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
-		if (!worker) continue;
-
-		if (workerData.getWorkerJob(worker) == WorkerData::ScoutCombat)
+		if (unit->getType().isWorker())
 		{
-			BWAPI::Broodwar->drawCircleMap(worker->getPosition().x, worker->getPosition().y, 4, BWAPI::Colors::Yellow, true);
-			BWAPI::Unit target = getClosestEnemyUnitFromWorker(worker);
+			if (_enemyworkerUnits.contains(unit))
+				continue;
 
-			if (target)
+			int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
+			//std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
+			bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
+
+			if (scoutInRangeOfenemy)
 			{
-				CommandUtil::attackUnit(worker, target);
+				for (auto & worker : workerData.getWorkers())
+				{
+					if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == 0 && worker->isCompleted() == true)
+					{
+						if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
+						{
+							_enemyworkerUnits.insert(unit);
+							CommandUtil::attackUnit(worker, unit);
+							return;
+						}
+					}
+				}
 			}
 		}
 	}
