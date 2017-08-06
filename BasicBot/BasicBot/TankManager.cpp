@@ -35,9 +35,10 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			{
 				tank->siege();
 			}
-			else
+			else if (BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
 			{
-				tank->unsiege();
+				if (tank->isSieged())
+					tank->unsiege();
 			}
 			continue;
 		}
