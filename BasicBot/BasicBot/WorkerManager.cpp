@@ -51,7 +51,6 @@ void WorkerManager::onUnitComplete(BWAPI::Unit unit){
 WorkerManager::WorkerManager() 
 {
 	currentRepairWorker = nullptr;
-	initial_attack = false;
 	_freeHP = 40;
 }
 
@@ -68,6 +67,7 @@ void WorkerManager::update()
 		handleGasWorkers();
 		handleIdleWorkers();
 		handleMoveWorkers();
+		handleScoutCombatWorker();
 	}
 	if (BWAPI::Broodwar->getFrameCount() % 8 == 0) {
 		handleCombatWorkers();
@@ -95,7 +95,7 @@ void WorkerManager::updateWorkerStatus()
 				|| (workerData.getWorkerJob(worker) == WorkerData::Move)
 				|| (workerData.getWorkerJob(worker) == WorkerData::Scout)) {
 
-				std::cout << "idle worker " << worker->getID()
+				std::cout << "idle worker " << worker->getID()C
 					<< " job: " << workerData.getWorkerJob(worker)
 					<< " exists " << worker->exists()
 					<< " isConstructing " << worker->isConstructing()
@@ -116,10 +116,12 @@ void WorkerManager::updateWorkerStatus()
 			}
 		}
 
+		/*
 		if (worker->isGatheringGas() && workerData.getWorkerJob(worker) != WorkerData::Gas) {
 			workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
 		}
-		
+		*/
+
 		// if its job is gas
 		if (workerData.getWorkerJob(worker) == WorkerData::Gas)
 		{
@@ -159,22 +161,20 @@ void WorkerManager::handleGasWorkers()
 
 			int targetNumGasWorker = 0;
 
-			if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Vulture && BWAPI::Broodwar->self()->gatheredGas() >= 100) {
-				targetNumGasWorker = 1;
-			}
-			else if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac_Tank && BWAPI::Broodwar->self()->gatheredGas() >= 150) {
+			if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac && BWAPI::Broodwar->self()->gatheredGas() >= 150) {
 				targetNumGasWorker = 1;
 			}
 			else if (StrategyManager::Instance().getMainStrategy() == Strategy::BSB || StrategyManager::Instance().getMainStrategy() == Strategy::BBS) {
 				targetNumGasWorker = 0;
 			}
 			else {
-				if (getNumMineralWorkers() < 10) {
-					targetNumGasWorker = 0;
-				} 
 				targetNumGasWorker = Config::Macro::WorkersPerRefinery;
 			}
-			
+
+			if (getNumMineralWorkers() < 4) {
+				targetNumGasWorker = 0;
+			}
+
 			if (numAssigned > targetNumGasWorker) {
 				for (int i = 0; i<(numAssigned - targetNumGasWorker); ++i)
 				{
@@ -258,113 +258,63 @@ void WorkerManager::handleMoveWorkers()
 	}
 }
 
-
-
 // 719
 void WorkerManager::handleCombatWorkers()
 {//ssh
-
-	int numworker = 0;
-	for (auto & worker : workerData.getWorkers())
+	//질럿저글링 처리
+	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
-		numworker++;
-	}
-	if (numworker < 20){
-		BWTA::BaseLocation * selfBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self());
-		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 15, BWAPI::Colors::Yellow, true);
-		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 5, BWAPI::Colors::Yellow, true);
-		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 20, BWAPI::Colors::Yellow, true);
-		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 20, BWAPI::Colors::Yellow, true);
-		//BWAPI::Broodwar->drawCircleMap(selfBaseLocation->getPosition().x, selfBaseLocation->getPosition().y, 400, BWAPI::Colors::Yellow, true);
-		//일꾼처리
-		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
+
+		if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling || unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Terran_Marine)
 		{
-			if (unit->getType().isWorker())
+
+			int maxCombatWorker = 7;
+
+			if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::nHelpDefence)
 			{
-				if (_enemyworkerUnits.contains(unit))
-					continue;
-				int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
-				//std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
-				bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
-
-				if (scoutInRangeOfenemy)
+				for (auto & worker : workerData.getWorkers())
 				{
-					for (auto & worker : workerData.getWorkers())
-					{
-						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == 0 && worker->isCompleted() == true)
-						{
-							if (MapTools::Instance().getGroundDistance(unit->getPosition(), worker->getPosition()) <= 200)
-							{
-								_enemyworkerUnits.insert(unit);
-								CommandUtil::attackUnit(worker, unit);
-								return;
-							}
+					if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Combat) {
 
+						if (worker->getHitPoints() <= _freeHP) {
+							workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
 						}
+						else {
+							maxCombatWorker--;
+							Micro::SmartAttackMove(worker, unit->getPosition());
+						}
+					}
+
+					if (maxCombatWorker == 0) {
+						return;
 					}
 				}
-			}
-		}
 
-		initial_attack = false;
-		//질럿저글링 처리
-		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
-		{
-			
-			if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling || unit->getType() == BWAPI::UnitTypes::Protoss_Zealot)
-			{
-
-				//int enemyworkerdistance = MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
-				int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
-					//MapTools::Instance().getGroundDistance(unit->getPosition(), selfBaseLocation->getPosition());
-				bool scoutInRangeOfenemy = enemyworkerdistance <= 200;
-
-				int maxCombatWorker = 7;
-
-				if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::nHelpDefence)
+				for (auto & worker : workerData.getWorkers())
 				{
-					for (auto & worker : workerData.getWorkers())
-					{
-						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Combat) {
-
-							if (worker->getHitPoints() <= _freeHP) {
-								workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
-							}
-							else {
-								maxCombatWorker--;
-								Micro::SmartAttackMove(worker, unit->getPosition());
-							}
-						}
-
-						if (maxCombatWorker == 0) {
-							return;
+					if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals){
+						if (worker->getHitPoints() > _freeHP) {
+							workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
+							Micro::SmartAttackMove(worker, unit->getPosition());
+							maxCombatWorker--;
 						}
 					}
 
-					for (auto & worker : workerData.getWorkers())
-					{
-						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals){
-							if (worker->getHitPoints() > _freeHP) {
-								workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
-								Micro::SmartAttackMove(worker, unit->getPosition());
-								maxCombatWorker--;
-							}
-						}
-
-						if (maxCombatWorker == 0) {
-							return;
-						}
+					if (maxCombatWorker == 0) {
+						return;
 					}
 				}
 			}
 		}
 	}
-	/*
+}
+
+void WorkerManager::handleScoutCombatWorker() {
 	for (auto & worker : workerData.getWorkers())
 	{
 		if (!worker) continue;
 
-		if (workerData.getWorkerJob(worker) == WorkerData::Combat)
+		if (workerData.getWorkerJob(worker) == WorkerData::ScoutCombat)
 		{
 			BWAPI::Broodwar->drawCircleMap(worker->getPosition().x, worker->getPosition().y, 4, BWAPI::Colors::Yellow, true);
 			BWAPI::Unit target = getClosestEnemyUnitFromWorker(worker);
@@ -375,7 +325,6 @@ void WorkerManager::handleCombatWorkers()
 			}
 		}
 	}
-	*/
 }
 
 BWAPI::Unit WorkerManager::getClosestEnemyUnitFromWorker(BWAPI::Unit worker)
@@ -766,6 +715,13 @@ void WorkerManager::setCombatWorker(BWAPI::Unit worker)
 	if (!worker) return;
 
 	workerData.setWorkerJob(worker, WorkerData::Combat, nullptr);
+}
+
+void WorkerManager::setScoutCombatWorker(BWAPI::Unit worker)
+{
+	if (!worker) return;
+
+	workerData.setWorkerJob(worker, WorkerData::ScoutCombat, nullptr);
 }
 
 void WorkerManager::setRepairWorker(BWAPI::Unit worker, BWAPI::Unit unitToRepair)

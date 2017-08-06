@@ -38,7 +38,7 @@ namespace MyBot
 		void        handleMoveWorkers();
 		void        handleCombatWorkers();
 		void        handleRepairWorkers();
-
+		void		handleScoutCombatWorker();
 		void        rebalanceWorkers();
 
 		WorkerManager();
@@ -124,6 +124,8 @@ namespace MyBot
 		void        setCombatWorker(BWAPI::Unit worker);
 		/// 모든 Combat 일꾼 유닛에 대해 임무를 해제합니다
 		void        stopCombat();
+
+		void		setScoutCombatWorker(BWAPI::Unit worker);
 
 	};
 }
