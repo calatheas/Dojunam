@@ -152,6 +152,11 @@ bool ExpansionManager::shouldExpandNow()
 		return false;
 	}
 
+	//일꾼이 너무 많으면 멀티 안까도록
+	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV) > 70){
+		return false;
+	}
+
 	//아군 유닛이 적당히 나가있는 경우에만 수행한다. 이때가 비교적 안전한 경우 이므로
 	if (InformationManager::Instance().nowCombatStatus >= InformationManager::combatStatus::wSecondChokePoint){
 		//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
@@ -167,9 +172,9 @@ bool ExpansionManager::shouldExpandNow()
 			return true;
 		}
 
-		// 현재 큐에 있는거 만들고도 남는 미네랄이 많다면... 빌드매니저에서 사용하는 여유자원소비기준(현재는 200) * 2 
+		// 현재 큐에 있는거 만들고도 남는 미네랄이 많다면... 빌드매니저에서 사용하는 여유자원소비기준(현재는 400)
 		BuildManager &tmpObj = BuildManager::Instance();
-		if ((tmpObj.getAvailableMinerals() - tmpObj.getQueueResource().first) > (tmpObj.marginResource.first * 2))
+		if ((tmpObj.getAvailableMinerals() - tmpObj.getQueueResource().first) > tmpObj.marginResource.first)
 		{
 			std::cout << "add expansions(enough minerals)" << std::endl;
 			return true;

@@ -4,7 +4,7 @@ using namespace MyBot;
 
 BuildManager::BuildManager() 
 	: _enemyCloakedDetected (false),
-	marginResource(std::make_pair(200, 0))
+	marginResource(std::make_pair(400, 0))
 {
 	setBuildOrder(StrategyManager::Instance().getOpeningBookBuildOrder());
 }
@@ -78,6 +78,9 @@ void BuildManager::update()
 	checkBuildOrderQueueDeadlockAndRemove();
 	//커맨드센터는 작업이 없으면 일꾼을 만든다.
 	executeWorkerTraining();
+
+	//여유자원 소비
+	//consumeRemainingResource();
 }
 
 void BuildManager::consumeBuildQueue(){
@@ -892,11 +895,20 @@ void BuildManager::executeWorkerTraining(){
 		
 		int tmpWorkerCnt = WorkerManager::Instance().getWorkerData().getDepotWorkerCount(e.cc);
 
-		//최대생산량 = 현재남은 미네랄덩어리수 * 1.5 * 초기가중치(1.3)
-		if (tmpWorkerCnt > -1 && 
-			tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(e.cc)*2*StrategyManager::Instance().weightByFrame(1.3)) ){
-			e.cc->train(BWAPI::UnitTypes::Terran_SCV);
-			return;
+		//최대생산량 = 현재남은 미네랄덩어리수 * 1.5 * 멀티개수별가중치
+		if (tmpWorkerCnt > -1){
+			double weight = 1.0;
+			if(ExpansionManager::Instance().getExpansions().size() == 1){
+				weight = 2.0;
+			}
+			else if(ExpansionManager::Instance().getExpansions().size() <= 3){
+				weight = 1.5;
+			}
+
+			if (tmpWorkerCnt < (int)(WorkerManager::Instance().getWorkerData().getMineralsNearDepot(e.cc) * 2 * weight)){
+				e.cc->train(BWAPI::UnitTypes::Terran_SCV);
+				return;
+			}
 		}
 	}
 }
@@ -953,10 +965,16 @@ void BuildManager::consumeRemainingResource(){
 
 	//약간의 마진을 준다. 너무 타이트하게 여유자원을 사용하지 않기 위해서
 	if (getAvailableMinerals() > (queueResource.first + marginResource.first) && getAvailableGas() > (queueResource.second + marginResource.second)){
+		std::cout << "consumeRemainingResource" << std::endl;
 		/*
 		여유자원 소비원칙
 		1. 터렛짓기
 		2. 전투유닛 뽑기
+
+		if (InformationManager::Instance().hasFlyingUnits){
+
+		}
 		*/
+
 	}
 }
