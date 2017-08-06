@@ -37,7 +37,7 @@ void VultureManager::miningPositionSetting()
 		}
 		if (insertable)
 		{
-			for (BWTA::BaseLocation * sBaseLocation : enemayBaseLocations)
+			for (BWTA::BaseLocation * sBaseLocation : selfBaseLocations)
 			{
 				if (startLocation == sBaseLocation)
 				{
