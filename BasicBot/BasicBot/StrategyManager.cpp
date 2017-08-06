@@ -461,20 +461,24 @@ const bool StrategyManager::shouldExpandNow() const
 
 //각 건물에 대한 설치전략
 BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrategy(MetaType type){
+	BuildOrderItem::SeedPositionStrategy rst = BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
+
 	//TODO : 큐 단위 이므로 큐에 있는것까지 고려는 잘 안됨.
 	//서플라이 2개까지만 본진커맨드 주변, 이후 본진과 쵸크포인트 둘다 먼곳
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
 		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 3){
 			std::cout << "build supply depot on MainBaseOppositeChock" << std::endl;
-			return BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
+			rst = BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
 		}
 	}
 
-	if (!ExpansionManager::Instance().getExpansions().empty() && ExpansionManager::Instance().getExpansions()[0].complexity > 0.2){
+	//본진 포화되면 다른데가서 짓도록
+	if (!ExpansionManager::Instance().getExpansions().empty() && ExpansionManager::Instance().getExpansions()[0].complexity > 0.25){
 		std::cout << "build " << type.getName() << " on LowComplexityExpansionLocation" << std::endl;
-		return BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation;
+		rst = BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation;
 	}
-	return BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
+
+	return rst;
 }
 
 int StrategyManager::getUnitLimit(MetaType type){

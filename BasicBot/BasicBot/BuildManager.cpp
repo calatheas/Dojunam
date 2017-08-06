@@ -45,6 +45,8 @@ void BuildManager::update()
 	}
 	*/
 
+	checkErrorBuildOrderAndRemove(); //최상위 빌드1개 잘못된 빌드면 삭제 : 현재는 애드온이 다 붙어있는데 만드려고 하는것 삭제
+
 	consumeBuildQueue(); //빌드오더 소비
 	//큐가 비어 있으면 새로운 빌드오더 생성
 	
@@ -208,8 +210,9 @@ void BuildManager::performBuildOrderSearch()
 		return;
 	}
 	*/
-
+	//std::cout << "buildOrder.size():";
 	BuildOrder & buildOrder = BOSSManager::Instance().getBuildOrder();
+	//std::cout << buildOrder.size() << std::endl;
 
 	if (buildOrder.size() > 0)
 	{
@@ -704,18 +707,6 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 			if (!isProducerWillExist(producerType)) {
 				isDeadlockCase = true;
 			}
-			// 애드온인 경우, 모든 팩토리가 애드온이 달렸거나 달리는중이면 데드락
-			else if (currentItem.metaType.getUnitType().isAddon()){
-				bool all_producer_has_addon = true;
-				for (BWAPI::Unit u : BWAPI::Broodwar->self()->getUnits()){
-					if (u->getType() == producerType && !hasAddon(u)){
-						all_producer_has_addon = false;
-						break;
-					}
-				}
-
-				if (all_producer_has_addon) isDeadlockCase = true;
-			}
 
 			// Refinery 건물의 경우, Refinery 가 건설되지 않은 Geyser가 있는 경우에만 가능
 			// TODO TODO TODO TODO
@@ -882,7 +873,7 @@ void BuildManager::executeWorkerTraining(){
 		return;
 	}
 
-	if (BOSSManager::Instance().isSearchInProgress()){
+	if (buildQueue.isEmpty()){
 		return;
 	}
 	
@@ -976,5 +967,30 @@ void BuildManager::consumeRemainingResource(){
 		}
 		*/
 
+	}
+}
+
+void BuildManager::checkErrorBuildOrderAndRemove(){
+	if (buildQueue.isEmpty())
+		return;
+
+	//가장 첫 빌드만 확인한다.
+	BuildOrderItem currentItem = buildQueue.getHighestPriorityItem();
+
+	BWAPI::UnitType producerType = currentItem.metaType.whatBuilds();
+	// 애드온인 경우, 모든 팩토리가 애드온이 달렸거나 달리는중이면 삭제처리
+	// 전제사항 : 애드온은 항상 본 건물이 먼저 큐에 들어온다.
+	if (currentItem.metaType.getUnitType().isAddon()){
+		bool all_producer_has_addon = true;
+		for (BWAPI::Unit u : BWAPI::Broodwar->self()->getUnits()){
+			if (u->getType() == producerType && !hasAddon(u)){
+				all_producer_has_addon = false;
+				break;
+			}
+		}
+		if (all_producer_has_addon){
+			std::cout << "checkErrorBuildOrderAndRemove : " << currentItem.metaType.getName() << std::endl;
+			buildQueue.removeCurrentItem();
+		}
 	}
 }
