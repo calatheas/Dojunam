@@ -41,8 +41,8 @@ void StrategyManager::setOpeningBookBuildOrder(){
 		_main_strategy = Strategy::main_strategies::One_Fac_Tank;
 	}
 	else{
-		_main_strategy = Strategy::main_strategies::Bionic;
 	}
+		_main_strategy = Strategy::main_strategies::Bionic;
 
 	//초기 빌드 큐에 세팅
 	std::istringstream iss(_strategies[_main_strategy].opening_build_order);

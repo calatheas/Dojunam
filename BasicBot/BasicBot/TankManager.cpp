@@ -96,6 +96,16 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
+				if (tank->isUnderAttack())
+				{
+					if (InformationManager::combatStatus::wSecondChokePoint >= InformationManager::Instance().nowCombatStatus)
+						tank->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+					else if (InformationManager::combatStatus::wFirstChokePoint >= InformationManager::Instance().nowCombatStatus)
+						tank->move(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
+					else
+						tank->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+				}
+				else
 				// if we're not near the order position
 				if (tank->getDistance(order.getPosition()) > 100)
 				{
@@ -105,20 +115,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
                     }
                     else
                     {
-    					// move to it
-						if (!tankNearChokepoint
-							&& order.getFarUnit() != nullptr
-							&& order.getFarUnit()->getDistance(tank->getPosition()) > BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode.groundWeapon().maxRange() - 64
-							&& order.getFarUnit() != tank )
-						{
-							BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 30), "%s", "Hold On Position");
-							if (!tank->isHoldingPosition())
-							{
-								tank->holdPosition();
-							}
-						}
-						else
-    						Micro::SmartAttackMove(tank, order.getPosition());
+    					Micro::SmartAttackMove(tank, order.getPosition());
                     }
 				}
 				else

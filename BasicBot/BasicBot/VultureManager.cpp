@@ -103,8 +103,15 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		//trainSubUnits(vultureUnit);
 		//if (order.getType() == SquadOrderTypes::MineInstallation)
 		// 만들까 말까 고민됨 
+		if (order.getType() == SquadOrderTypes::Drop)
 		{
-			
+			if (vultureUnit->getRegion()->getCenter() != 
+				InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()->getCenter())
+			{
+				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0)
+					Micro::SmartLaySpiderMine(vultureUnit, vultureUnit->getPosition());
+			}
+			continue;
 		}
 		//else
 		// if the order is to attack or defend
@@ -122,12 +129,13 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					if (spiderMineCount <= startPointCount)
 						mineSetPosition = chokePointForVulture[startPointCount - spiderMineCount];
 					else if (spiderMineCount <= pathTileCount)
-						mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % pathTileCount];
+						mineSetPosition = chokePointForVulture[((vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % pathTileCount) + startPointCount];
 					else
-						mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % chokePointForVulture.size()];
-					//std::cout << " vulture No.  " << vultureUnit->getID() << " set Mine pos ( " << mineSetPosition.x << ", " << mineSetPosition.y << ")" << std::endl;
-					
-					//int mineCount = vultureUnit->getSpiderMineCount();
+						mineSetPosition 
+						= chokePointForVulture[
+							((vultureUnit->getID() + vultureUnit->getSpiderMineCount()) 
+								% (chokePointForVulture.size() - pathTileCount - startPointCount)) + pathTileCount + startPointCount];
+				
 					while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition) || BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)).size() > 1)
 					{						
 						if (vultureUnit->getID() % 4 == 0)

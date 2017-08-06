@@ -18,23 +18,39 @@ CombatCommander & CombatCommander::Instance()
 CombatCommander::CombatCommander() 
     : _initialized(false)
 {
-	mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
-	BWAPI::Position mySecChokePointCenter = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter();
+
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	//tstruct = *localtime(&now);
+	localtime_s(&tstruct, &now);
+	strftime(buf, sizeof(buf), "%Y%m%d%H%M%S_combat", &tstruct);
+
+	log_file_path = Config::Strategy::WriteDir + std::string(buf) + ".log";
+	std::cout << "log_file_path:" << log_file_path << std::endl;
+	/////////////////////////////////////////////////////////////////////////
+
+	indexFirstChokePoint_OrderPosition = -1;
+	rDefence_OrderPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+	BWAPI::Position myFirstChokePointCenter = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter();
 	BWAPI::Unit targetDepot = nullptr;
 	double maxDistance = 0;
 	for (auto & munit : BWAPI::Broodwar->getAllUnits())
 	{
-		if ((munit->getType() == BWAPI::UnitTypes::Resource_Mineral_Field) && munit->isVisible() && mySecChokePointCenter.getDistance(munit->getPosition()) > maxDistance)
+		if ((munit->getType() == BWAPI::UnitTypes::Resource_Mineral_Field) 
+			&& munit->isVisible() 
+			&& myFirstChokePointCenter.getDistance(munit->getPosition()) > maxDistance)
 		{
-			maxDistance = munit->getDistance(mySecChokePointCenter);
+			maxDistance = munit->getDistance(myFirstChokePointCenter);
 			targetDepot = munit;
 		}
 	}
 	float dx =0 , dy =0;
-	dx = (targetDepot->getPosition().x - mineralPosition.x)*0.7f;
-	dy = (targetDepot->getPosition().y - mineralPosition.y)*0.7f;
-	mineralPosition = mineralPosition + BWAPI::Position(dx, dy);// (mineralPosition + closestDepot->getPosition()) / 2;
+	dx = (targetDepot->getPosition().x - rDefence_OrderPosition.x)*0.7f;
+	dy = (targetDepot->getPosition().y - rDefence_OrderPosition.y)*0.7f;
+	rDefence_OrderPosition = rDefence_OrderPosition + BWAPI::Position(dx, dy);// (mineralPosition + closestDepot->getPosition()) / 2;
 	
+	wFirstChokePoint_OrderPosition = getPositionForDefenceChokePoint(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()));
 	initMainAttackPath = false;
 	curIndex = 0;
 }
@@ -51,8 +67,8 @@ void CombatCommander::initializeSquads()
     BWAPI::Position ourBasePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
 
     // the scout defense squad will handle chasing the enemy worker scout
-	SquadOrder enemyScoutDefense(SquadOrderTypes::Defend, ourBasePosition, ourBasePosition.getDistance(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter()), "Kill the scout");
-    _squadData.addSquad("ScoutDefense", Squad("ScoutDefense", enemyScoutDefense, ScoutDefensePriority));
+	//SquadOrder enemyScoutDefense(SquadOrderTypes::Defend, ourBasePosition, ourBasePosition.getDistance(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter()), "Kill the scout");
+    //_squadData.addSquad("ScoutDefense", Squad("ScoutDefense", enemyScoutDefense, ScoutDefensePriority));
 	
 	////BaseDefensePriority
 	//SquadOrder baseDefense(SquadOrderTypes::Defend, ourBasePosition, ourBasePosition.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()), "Handle In Base Enemy");
@@ -93,19 +109,23 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 	{		
         updateIdleSquad();		
         updateDropSquads();
-        updateScoutDefenseSquad();		
+        //updateScoutDefenseSquad();		
 		updateDefenseSquads();		
 		updateAttackSquads();
 		InformationManager::Instance().nowCombatStatus = _combatStatus;
 	}
 	
 	_squadData.update();
-	drawSquadInformation(220, 200);
+	drawSquadInformation(20, 200);
 }
 
 void CombatCommander::updateIdleSquad()
 {
 	int radi = 300;
+	if (InformationManager::Instance().getMapName() == 'H')
+	{
+		radi = 500;
+	}
     Squad & idleSquad = _squadData.getSquad("Idle");
 	{	
 		//BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
@@ -126,19 +146,24 @@ void CombatCommander::updateIdleSquad()
 		if (_combatStatus <= InformationManager::combatStatus::rDefence)
 		{
 			int tmp_radi = 200;
-			SquadOrder idleOrder(SquadOrderTypes::Idle, mineralPosition
-				, tmp_radi, "Move Out");
+			SquadOrder idleOrder(SquadOrderTypes::Idle, rDefence_OrderPosition
+				, rDefence_OrderPosition.getDistance(wFirstChokePoint_OrderPosition), "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 		else if (_combatStatus == InformationManager::combatStatus::wFirstChokePoint)
 		{
-			SquadOrder idleOrder(SquadOrderTypes::Idle, getPositionForDefenceChokePoint(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
-				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + 100 , "Move Out");
+			int addSquadRadi = 100;
+			if (InformationManager::Instance().getMapName() == 'H')
+			{
+				addSquadRadi += 100;
+			}
+			SquadOrder idleOrder(SquadOrderTypes::Idle, wFirstChokePoint_OrderPosition
+				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + addSquadRadi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
 		else if (_combatStatus == InformationManager::combatStatus::wSecondChokePoint)
 		{
-			SquadOrder idleOrder(SquadOrderTypes::Idle, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()
+			SquadOrder idleOrder(SquadOrderTypes::Idle, getFirstChokePoint_OrderPosition()
 				, radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
@@ -148,17 +173,26 @@ void CombatCommander::updateIdleSquad()
 				, radi, "Move Out");
 			idleSquad.setSquadOrder(idleOrder);
 		}
-
+		log_write("END, ");
 	}
     
 }
 
 BWAPI::Position CombatCommander::getIdleSquadLastOrderLocation()
 {
-	BWAPI::Position mCenter(BWAPI::Broodwar->mapWidth(), BWAPI::Broodwar->mapHeight());
+	log_write("getIdleSquadLastOrderLocation , ");
+	BWAPI::Position mCenter((BWAPI::Broodwar->mapWidth()*16), BWAPI::Broodwar->mapHeight()*16);
 	BWTA::Chokepoint * mSec = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
+	float fIndex = 110 / mainAttackPath.size();
+	if (fIndex <= 1)
+		fIndex = 7;
 	if (mainAttackPath.size() > 0)
-		return mainAttackPath[2];
+	{
+		if ((_combatUnits.size() / fIndex) + 1 < mainAttackPath.size())
+			return mainAttackPath[(_combatUnits.size() / fIndex) + 1];
+		else
+			return mainAttackPath[mainAttackPath.size()-1];
+	}
 	else
 		return mSec->getCenter();
 
@@ -272,14 +306,28 @@ void CombatCommander::updateDropSquads()
             }
 
             // get every unit of a lower priority and put it into the attack squad
-			if (unit->getType() == BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode
-				&& _squadData.canAssignUnitToSquad(unit, dropSquad)
-				&& unit->getDistance(mbase) < mbase.getDistance(fchokePoint) && dropSquadHasTransport
-				)
-            {
-                _squadData.assignUnitToSquad(unit, dropSquad);
-                transportSpotsRemaining -= unit->getType().spaceRequired();
-            }
+			if (InformationManager::Instance().getMapName() == 'L')
+			{
+				if (unit->getType() == BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode
+					&& _squadData.canAssignUnitToSquad(unit, dropSquad)
+					&& unit->getDistance(mbase) < mbase.getDistance(fchokePoint) && dropSquadHasTransport
+					)
+				{
+					_squadData.assignUnitToSquad(unit, dropSquad);
+					transportSpotsRemaining -= unit->getType().spaceRequired();
+				}
+			}
+			else
+			{
+				if (unit->getType() == BWAPI::UnitTypes::Terran_Vulture
+					&& _squadData.canAssignUnitToSquad(unit, dropSquad)
+					&& unit->getDistance(mbase) < mbase.getDistance(fchokePoint) && dropSquadHasTransport
+					)
+				{
+					_squadData.assignUnitToSquad(unit, dropSquad);
+					transportSpotsRemaining -= unit->getType().spaceRequired();
+				}
+			}
         }
     }
     // otherwise the drop squad is full, so execute the order
@@ -385,7 +433,7 @@ void CombatCommander::updateDefenseSquads()
 		}
 
 		// start off assuming all enemy units in region are just workers
-		int numDefendersPerEnemyUnit = 15;
+		int numDefendersPerEnemyUnit = 20;
 
 		// all of the enemy units in this region
 		BWAPI::Unitset enemyUnitsInRegion;
@@ -405,15 +453,6 @@ void CombatCommander::updateDefenseSquads()
         }
 
         // we can ignore the first enemy worker in our region since we assume it is a scout
-        for (auto & unit : enemyUnitsInRegion)
-        {
-            if (unit->getType().isWorker())
-            {
-                enemyUnitsInRegion.erase(unit);
-                break;
-            }
-        }
-
         int numEnemyFlyingInRegion = std::count_if(enemyUnitsInRegion.begin(), enemyUnitsInRegion.end(), [](BWAPI::Unit u) { return u->isFlying(); });
         int numEnemyGroundInRegion = std::count_if(enemyUnitsInRegion.begin(), enemyUnitsInRegion.end(), [](BWAPI::Unit u) { return !u->isFlying(); });
 
@@ -493,7 +532,7 @@ void CombatCommander::updateDefenseSquads()
 
 void CombatCommander::updateDefenseSquadUnits(Squad & defenseSquad, const size_t & flyingDefendersNeeded, const size_t & groundDefendersNeeded)
 {
-	//@���ֳ� ������ ������������ ������
+
 	//const BWAPI::Unitset & squadUnits = defenseSquad.getUnits();
 	const BWAPI::Unitset & squadUnits = _squadData.getSquad("Idle").getUnits();
     size_t flyingDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackAir);
@@ -555,7 +594,8 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
 
 	for (auto & unit : _combatUnits) 
 	{
-		if ((flyingDefender && !UnitUtil::CanAttackAir(unit)) || (!flyingDefender && !UnitUtil::CanAttackGround(unit)))
+		if (((flyingDefender && !UnitUtil::CanAttackAir(unit)) || (!flyingDefender && !UnitUtil::CanAttackGround(unit))) 
+			&& unit->getType() != BWAPI::UnitTypes::Terran_Medic )
         {
             continue;
         }
@@ -607,23 +647,32 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 				BWAPI::Position tp(t.x * 32, t.y * 32);
 				if (!tp.isValid())
 					continue;
-				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()) < 120)
+				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()) < 50)
 					continue;
-				candidate_pos.push_back(std::make_pair(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter().getDistance(tp), tp));
+				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy())->getCenter()) < 200)
+					continue;
+				
+				mainAttackPath.push_back(tp);
+				
 			}
-			std::sort(candidate_pos.begin(), candidate_pos.end(),
-				[](std::pair<double, BWAPI::Position> &a, std::pair<double, BWAPI::Position> &b){ return a.first < b.first; });
 			
-			for (auto &i : candidate_pos) mainAttackPath.push_back(i.second);
 			initMainAttackPath = true;
 		}
 		else{
 			Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 			if (curIndex < mainAttackPath.size())
 			{
-				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*4)
+				//@도주남 김지훈 만약 공격 중이다가 우리의 인원수가 줄었다면 뒤로 뺀다 ?
+				if (InformationManager::combatStatus::gEnemybase > InformationManager::Instance().nowCombatStatus)
+				{
+					curIndex = curIndex/2;
+				}
+				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*5)
 					curIndex++;
-				return mainAttackPath[curIndex];
+				if (curIndex >= mainAttackPath.size())
+					return mainAttackPath[mainAttackPath.size()-1];
+				else
+					return mainAttackPath[curIndex];
 			}
 		}
 	}
@@ -825,6 +874,7 @@ void CombatCommander::updateComBatStatusIndex()
 {
 	int tatalUnits = _combatUnits.size();
 	Squad & idleSquad = _squadData.getSquad("Idle");
+	
 	int idleUnitSize = idleSquad.getUnits().size();
 	if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::rDefence)
 		_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
@@ -834,13 +884,51 @@ void CombatCommander::updateComBatStatusIndex()
 		_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
 	else if (idleUnitSize < 28)
 		_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
-	else if (idleUnitSize >= 28)
+	else if (BWAPI::Broodwar->self()->supplyTotal() > 350)
+	{
 		_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
-	else if (_combatStatus >= 2 && tatalUnits > 10)
+	}
+	else if (_combatStatus >= 2 && _combatStatus != InformationManager::combatStatus::rMainAttack)
 		_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
 	else
 		_combatStatus = InformationManager::combatStatus::idle;
 
-	if (InformationManager::Instance().nowCombatStatus > _combatStatus)
+	if (InformationManager::Instance().nowCombatStatus > _combatStatus && _combatStatus <= InformationManager::combatStatus::wSecondChokePoint)
 		_combatStatus = InformationManager::Instance().nowCombatStatus;
+}
+
+
+BWAPI::Position CombatCommander::getFirstChokePoint_OrderPosition()
+{
+	log_write("getFirstChokePoint_OrderPosition , ");
+	
+	if (indexFirstChokePoint_OrderPosition == -1)
+	{
+		BWTA::Chokepoint * startCP = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self());
+		BWTA::Chokepoint * endCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self());
+		std::vector<BWAPI::TilePosition> tileList = 
+			BWTA::getShortestPath(BWAPI::TilePosition(startCP->getCenter())
+			, BWAPI::TilePosition(endCP->getCenter()));
+		for (auto & t : tileList) {
+			BWAPI::Position tp(t.x * 32, t.y * 32);
+			if (!tp.isValid())
+				continue;
+			firstChokePoint_OrderPositionPath.push_back(tp);
+		}
+		if (firstChokePoint_OrderPositionPath.size() > 0)
+			indexFirstChokePoint_OrderPosition = 0;
+		return firstChokePoint_OrderPositionPath[indexFirstChokePoint_OrderPosition];
+	}
+	else{
+		Squad & idleSquad = _squadData.getSquad("Idle");
+		if (indexFirstChokePoint_OrderPosition < firstChokePoint_OrderPositionPath.size()-1)
+		{
+			if (firstChokePoint_OrderPositionPath[indexFirstChokePoint_OrderPosition].getDistance(idleSquad.calcCenter()) 
+				< idleSquad.getUnits().size() * 5)
+				indexFirstChokePoint_OrderPosition++;
+			
+			return firstChokePoint_OrderPositionPath[indexFirstChokePoint_OrderPosition];
+		}
+	}
+	
 }

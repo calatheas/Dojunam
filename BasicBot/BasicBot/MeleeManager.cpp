@@ -89,8 +89,7 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				if (meleeUnit->getDistance(order.getPosition()) > 100)
 				{
 					// move to it
-					Micro::SmartAttackMove(meleeUnit, order.getPosition());
-					
+					Micro::SmartAttackMove(meleeUnit, order.getPosition());	
 				}
 			}
 		}

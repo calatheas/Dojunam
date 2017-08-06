@@ -34,7 +34,7 @@ void Squad::update()
 	
 	// determine whether or not we should regroup
 	bool needToRegroup = needsToRegroup();
-	needToRegroup = false;
+	//needToRegroup = false;
 	// draw some debug info
 	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
 	{
@@ -117,11 +117,21 @@ void Squad::setAllUnits()
 			unit->getPosition().isValid() &&
 			unit->getType() != BWAPI::UnitTypes::Unknown)
 		{
-			if (unit->isLoaded() && unit->getType() != BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode)
+			if (unit->isLoaded() && unit->getType() == BWAPI::UnitTypes::Terran_Marine)
 				continue;
 
+			if (MapTools::Instance().getGroundDistance(unit->getPosition(), _order.getPosition()) < 0)
+			{
+				unit->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+				//BWAPI::Broodwar->drawCircleMap(unit->getPosition(), 5, BWAPI::Colors::White, true);
+				//std::cout << "124	 " << unit->getID() << std::endl;
+				//continue;
+			}
 			goodUnits.insert(unit);
-			if ((maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0) && unit->getType() != BWAPI::UnitTypes::Terran_Vulture)
+			if ((maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0) 
+				&& unit->getType() != BWAPI::UnitTypes::Terran_Vulture
+				&& unit->getType() != BWAPI::UnitTypes::Terran_Medic
+				)
 			{
 				maxDist = unit->getDistance(_order.getPosition());
 				unitFarToOrderPosition = unit;
@@ -134,25 +144,9 @@ void Squad::setAllUnits()
 	}	
 	_units.clear();
 	_units = goodUnits;
-	if (organicUnits.size() == 0)
-	{
-		goodUnits.clear();
-		for (auto & unit : _units)
-		{
-			if (unit->getType() == BWAPI::UnitTypes::Terran_Medic && unit != unitFarToOrderPosition)
-			{
-				unit->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
-			}
-			else
-				goodUnits.insert(unit);
-		}
-		_units.clear();
-		_units = goodUnits;
-	}	
-	else
+	if (organicUnits.size() > 0)
 		_order.setOrganicUnits(organicUnits);
 
-	_order.setFarUnit(unitFarToOrderPosition);
 	if (organicUnits.size() != 0)
 		_order.setClosestUnit(unitClosestToEnemyForOrder());	
 	if (_order.getClosestUnit() == nullptr)
@@ -240,7 +234,6 @@ void Squad::addUnitsToMicroManagers()
 	_transportManager.setUnits(transportUnits);
 	_tankManager.setUnits(tankUnits);
 	_vultureManager.setUnits(vultureUnits);
-	//_medicManager.meleeUnitsetCenterP = _meleeManager.calcCenter();
 	_medicManager.setUnits(medicUnits);
 
 }

@@ -34,6 +34,9 @@ class CombatCommander
 	
 	//@도주남 김지훈
 	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
+	BWAPI::Position getFirstChokePoint_OrderPosition();
+	int				indexFirstChokePoint_OrderPosition;
+	std::vector<BWAPI::Position> firstChokePoint_OrderPositionPath;
 	bool			initMainAttackPath;
 	std::vector<BWAPI::Position> mainAttackPath;
 	int				curIndex;
@@ -52,7 +55,8 @@ class CombatCommander
     bool            beingBuildingRushed();
 public:
 	void             updateComBatStatusIndex();
-	BWAPI::Position mineralPosition;
+	BWAPI::Position rDefence_OrderPosition;
+	BWAPI::Position wFirstChokePoint_OrderPosition;
 	static CombatCommander &	Instance();
 	CombatCommander();
 
@@ -60,5 +64,23 @@ public:
     
 	void drawSquadInformation(int x, int y);
 	InformationManager::combatStatus	_combatStatus;
+
+	//에러위치 찾는 용도
+	std::ofstream log_file;
+	std::string log_file_path;
+
+	template<typename T>
+	void log_write(T s, bool end = false){
+		if (!Config::Debug::createTrackingLog) return;
+
+		log_file.open(log_file_path, std::ofstream::out | std::ofstream::app);
+
+		if (log_file.is_open()){
+			log_file << s;
+			if (end) log_file << std::endl;
+		}
+		log_file.close();
+	}
+
 };
 }
