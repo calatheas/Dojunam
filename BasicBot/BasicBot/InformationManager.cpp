@@ -51,13 +51,13 @@ void InformationManager::onStart(){
 	std::string mapFileName = BWAPI::Broodwar->mapFileName();
 	for (auto & c : mapFileName) c = std::toupper(c);
 
-	if (mapFileName.find("HUNTER") > -1){
+	if (mapFileName.find("HUNTER") != std::string::npos){
 		mapName = 'H';
 	}
-	else if (mapFileName.find("FIGHTING") > -1){
+	else if (mapFileName.find("FIGHTING") != std::string::npos){
 		mapName = 'F';
 	}
-	else{
+	else if (mapFileName.find("LOST") != std::string::npos){
 		mapName = 'L';
 	}
 }
