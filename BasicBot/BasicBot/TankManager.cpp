@@ -31,9 +31,14 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 		if (order.getType() == SquadOrderTypes::Drop)
 		{
 			if ( tank->canSiege()
-				&& tank->getRegion()->getCenter() != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()->getCenter() )
+				&& BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
 			{
 				tank->siege();
+			}
+			else if (BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
+			{
+				if (tank->isSieged())
+					tank->unsiege();
 			}
 			continue;
 		}

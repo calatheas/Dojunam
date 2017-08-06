@@ -71,7 +71,7 @@ public:
 
 	template<typename T>
 	void log_write(T s, bool end = false){
-		if (!Config::Debug::createTrackingLog) return;
+		//if (!Config::Debug::createTrackingLog) return;
 
 		log_file.open(log_file_path, std::ofstream::out | std::ofstream::app);
 
