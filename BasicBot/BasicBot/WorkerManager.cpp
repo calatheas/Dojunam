@@ -51,7 +51,7 @@ void WorkerManager::onUnitComplete(BWAPI::Unit unit){
 WorkerManager::WorkerManager() 
 {
 	currentRepairWorker = nullptr;
-	_freeHP = 40;
+	_freeHP = 45;
 }
 
 WorkerManager & WorkerManager::Instance() 
@@ -162,7 +162,7 @@ void WorkerManager::handleGasWorkers()
 			int targetNumGasWorker = 0;
 
 			if (StrategyManager::Instance().getMainStrategy() == Strategy::One_Fac && BWAPI::Broodwar->self()->gatheredGas() >= 150) {
-				targetNumGasWorker = 1;
+				targetNumGasWorker = 2;
 			}
 			else if (StrategyManager::Instance().getMainStrategy() == Strategy::BSB || StrategyManager::Instance().getMainStrategy() == Strategy::BBS) {
 				targetNumGasWorker = 0;
@@ -392,7 +392,7 @@ void WorkerManager::handleRepairWorkers()
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
 	{
 		// 건물의 경우 아무리 멀어도 무조건 수리. 일꾼 한명이 순서대로 수리
-		if (unit->getType().isBuilding() && unit->isCompleted() == true && unit->getHitPoints() < unit->getType().maxHitPoints())
+		if (unit->getType().isBuilding() && unit->isCompleted() == true && unit->getHitPoints() < unit->getType().maxHitPoints() - 400)
 		{
 			BWAPI::Unit repairWorker = chooseRepairWorkerClosestTo(unit->getPosition());
 			setRepairWorker(repairWorker, unit);
@@ -405,7 +405,7 @@ void WorkerManager::handleRepairWorkers()
 			if (unit->getType() != BWAPI::UnitTypes::Terran_SCV) {
 				BWAPI::Unit repairWorker = chooseRepairWorkerClosestTo(unit->getPosition(), 10 * TILE_SIZE);
 				setRepairWorker(repairWorker, unit);
-				break;
+				//break;
 			}
 		}
 
