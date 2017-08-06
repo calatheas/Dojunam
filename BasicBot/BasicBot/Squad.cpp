@@ -104,10 +104,10 @@ void Squad::setAllUnits()
 {
 	// clean up the _units vector just in case one of them died
 	BWAPI::Unitset goodUnits;
-	int maxDist = 0;
+	
 	//@도주남 김지훈 메딕이 힐링이 가능한 캐릭터가 몇명인지 확인한다.  의견을 들어보고 적용 여부 결정
 	BWAPI::Unitset organicUnits;
-	unitFarToOrderPosition = nullptr;
+	
 	for (auto & unit : _units)
 	{
 		if (unit->isCompleted() &&
@@ -120,22 +120,15 @@ void Squad::setAllUnits()
 			if (unit->isLoaded() && unit->getType() == BWAPI::UnitTypes::Terran_Marine)
 				continue;
 
-			if (MapTools::Instance().getGroundDistance(unit->getPosition(), _order.getPosition()) < 0)
-			{
-				unit->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
-				//BWAPI::Broodwar->drawCircleMap(unit->getPosition(), 5, BWAPI::Colors::White, true);
-				//std::cout << "124	 " << unit->getID() << std::endl;
-				//continue;
-			}
+			//if (MapTools::Instance().getGroundDistance(unit->getPosition(), _order.getPosition()) < 0)
+			//{
+			//	unit->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+			//	//BWAPI::Broodwar->drawCircleMap(unit->getPosition(), 5, BWAPI::Colors::White, true);
+			//	//std::cout << "124	 " << unit->getID() << std::endl;
+			//	//continue;
+			//}
 			goodUnits.insert(unit);
-			if ((maxDist < unit->getDistance(_order.getPosition()) || maxDist == 0) 
-				&& unit->getType() != BWAPI::UnitTypes::Terran_Vulture
-				&& unit->getType() != BWAPI::UnitTypes::Terran_Medic
-				)
-			{
-				maxDist = unit->getDistance(_order.getPosition());
-				unitFarToOrderPosition = unit;
-			}
+			
 			if (unit->getType().isOrganic() && unit->getType() != BWAPI::UnitTypes::Terran_Medic)
 			{
 				organicUnits.insert(unit);

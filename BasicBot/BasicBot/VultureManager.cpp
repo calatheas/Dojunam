@@ -105,11 +105,19 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		// 만들까 말까 고민됨 
 		if (order.getType() == SquadOrderTypes::Drop)
 		{
-			if (vultureUnit->getRegion()->getCenter() != 
-				InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()->getCenter())
+			if (BWTA::getRegion(BWAPI::TilePosition(vultureUnit->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
 			{
 				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0)
 					Micro::SmartLaySpiderMine(vultureUnit, vultureUnit->getPosition());
+				else
+				{
+					if (!vultureUnitTargets.empty())
+					{
+						// find the best target for this zealot
+						BWAPI::Unit target = getTarget(vultureUnit, vultureUnitTargets);
+						Micro::MutaDanceTarget(vultureUnit, target);
+					}
+				}
 			}
 			continue;
 		}
