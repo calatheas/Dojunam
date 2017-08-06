@@ -48,6 +48,13 @@ void VultureManager::miningPositionSetting()
 		}
 		if (insertable)
 		{
+			if (BWTA::isConnected(startLocation->getTilePosition(), InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition()) == false)
+			{
+				insertable = false;
+			}
+		}
+		if (insertable)
+		{
 			chokePointForVulture.push_back(startLocation->getPosition());
 		}
 	}

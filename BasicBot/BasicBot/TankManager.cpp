@@ -27,15 +27,30 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 	// for each zealot
 	for (auto & tank : tanks)
 	{
+
+		bool tankNearChokepoint = false;
+		for (auto & choke : BWTA::getChokepoints())
+		{
+			//@도주남 김지훈 64 라는 절대적인 수치 기준으로 , choke point 진입여부를 판단하고 있음 , 다른 getDistance 기준 64 미만의 경우
+			// 근접해있다고 판단해도 무방할 것으로 보임
+			if (choke->getCenter().getDistance(tank->getPosition()) < 64)
+			{
+				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
+				BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");
+				tankNearChokepoint = true;
+				break;
+			}
+		}
 		// train sub units such as scarabs or interceptors
 		if (order.getType() == SquadOrderTypes::Drop)
 		{
 			if ( tank->canSiege()
 				&& BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
 			{
-				tank->siege();
+				if (!tankNearChokepoint)
+					tank->siege();
 			}
-			else if (BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
+			else if (BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
 			{
 				if (tank->isSieged())
 					tank->unsiege();
@@ -43,19 +58,6 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			continue;
 		}
 
-        bool tankNearChokepoint = false; 
-        for (auto & choke : BWTA::getChokepoints())
-        {
-			//@도주남 김지훈 64 라는 절대적인 수치 기준으로 , choke point 진입여부를 판단하고 있음 , 다른 getDistance 기준 64 미만의 경우
-			// 근접해있다고 판단해도 무방할 것으로 보임
-			if (choke->getCenter().getDistance(tank->getPosition()) < 64)
-            {
-				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
-				BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0,50), "%s", "In Choke Point");
-                tankNearChokepoint = true;
-                break;
-            }
-        }
 
 		// if the order is to attack or defend
 		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
