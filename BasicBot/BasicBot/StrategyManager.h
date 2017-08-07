@@ -84,7 +84,6 @@ namespace MyBot
 
 		const BuildOrder & getOpeningBookBuildOrder() const;
 		const MetaPairVector getBuildOrderGoal();
-		const bool shouldExpandNow() const;
 		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
 		int getUnitLimit(MetaType type);
 		double weightByFrame(double max_weight);

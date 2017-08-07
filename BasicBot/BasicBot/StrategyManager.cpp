@@ -401,63 +401,9 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		//BWAPI::Broodwar->printf("Warning: No build order goal for Terran Strategy: %s", Config::Strategy::StrategyName.c_str());
 	}
 
-	if (ExpansionManager::Instance().shouldExpandNow())
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numUnits["CC"] + 1));
-		//goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numUnits["Workers"] + 1));
-	}
-
 	return goal;
 }
 
-const bool StrategyManager::shouldExpandNow() const
-{
-	//@도주남 김유진 현재 커맨드센터 지어지고 있으면 그 때동안은 멀티 추가 안함
-	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
-		if (u->getType() == BWAPI::UnitTypes::Terran_Command_Center && !u->isCompleted()){
-			return false;
-		}
-	}
-	// if there is no place to expand to, we can't expand
-	if (MapTools::Instance().getNextExpansion() == BWAPI::TilePositions::None)
-	{
-		BWAPI::Broodwar->printf("No valid expansion location");
-		return false;
-	}
-
-	size_t numDepots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
-	int frame = BWAPI::Broodwar->getFrameCount();
-	int minute = frame / (24 * 60);
-
-	// if we have a ton of idle workers then we need a new expansion
-	if (WorkerManager::Instance().getNumIdleWorkers() > 7)
-	{
-		return true;
-	}
-
-	// if we have a ridiculous stockpile of minerals, expand
-	if (BWAPI::Broodwar->self()->minerals() > 1700)
-	{
-		return true;
-	}
-
-	// we will make expansion N after array[N] minutes have passed
-	std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
-
-	for (size_t i(0); i < expansionTimes.size(); ++i)
-	{
-		if (numDepots < (i + 2) && minute > expansionTimes[i])
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
 
 //각 건물에 대한 설치전략
 BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrategy(MetaType type){
@@ -510,6 +456,10 @@ int StrategyManager::getUnitLimit(MetaType type){
 	}
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Science_Facility) {
 		return 0;
+	}
+
+	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Missile_Turret) {
+		return ExpansionManager::Instance().getExpansions().size() * 3;
 	}
 
 	return -1;
