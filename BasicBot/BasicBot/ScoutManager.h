@@ -67,7 +67,7 @@ namespace MyBot
 
 	public:
 		bool second_scout;
-
+		BWTA::BaseLocation* dopichu;
 		static ScoutManager & Instance();
 
 		void update();
@@ -94,5 +94,7 @@ namespace MyBot
 
 		/// 적군의 Main Base Location 이 있는 Region 의 경계선에 해당하는 Vertex 들의 목록을 리턴합니다
 		std::vector<BWAPI::Position> & getEnemyRegionVertices();
+
+		//bool second_scout;
 	};
 }

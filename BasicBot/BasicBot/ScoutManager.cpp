@@ -18,7 +18,7 @@ ScoutManager::ScoutManager()
 	, currentScoutTargetBaseLocation(nullptr)
 	, currentScoutTargetPosition(BWAPI::Positions::None)
 	, currentScoutFreeToVertexIndex(-1)
-
+	, dopichu(nullptr)
 {
 }
 
@@ -134,7 +134,44 @@ void ScoutManager::moveScouts()
 	{
 	_gasStealFinished = true;
 	}*/
+	if (enemyBaseLocation && dopichu == nullptr)
+	{
+		for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
+		{
+			if (startLocation != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())
+				&& startLocation != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy())
+				)
+			{
+				dopichu = startLocation;
+					break;
+			}
+			
+		}
+	}
+	else if (enemyBaseLocation && dopichu != nullptr)
+	{
+		if (_workerScout != nullptr)
+		{
+			
+			if (BWTA::getRegion(_workerScout->getPosition()) == BWTA::getRegion(dopichu->getPosition()))
+			{
+				for (BWTA::BaseLocation * startLocation : BWTA::getStartLocations())
+				{
+					if (startLocation != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())
+						&& startLocation != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy())
+						&& startLocation != dopichu
+						)
+					{
+						dopichu = startLocation;
+						break;
+					}
 
+				}
+			}
+		}
+		
+	}
+	
 	// if we know where the enemy region is and where our scout is
 	if (_workerScout && enemyBaseLocation && second_scout == false)
 	{
@@ -154,7 +191,7 @@ void ScoutManager::moveScouts()
 		}
 
 		// if the scout is in the enemy region
-		if (scoutInRangeOfenemy && scoutHP > 40)
+		if (scoutInRangeOfenemy && scoutHP > 49)
 		{
 			// get the closest enemy worker
 			BWAPI::Unit closestWorker = closestEnemyWorker();
@@ -173,7 +210,24 @@ void ScoutManager::moveScouts()
 				else
 				{
 					_scoutStatus = "Following perimeter";
-					followPerimeter();
+					//	followPerimeter();
+				
+					BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+					if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
+					{
+						bool flag = true;
+						for (auto &attacker : _workerScout->getUnitsInRadius(750)){
+							if (attacker->getPlayer() == InformationManager::Instance().enemyPlayer) {
+								Micro::SmartMove(_workerScout, dopichu->getPosition());// InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+								flag = false;
+								break;
+							}
+						}
+						if (flag)
+							Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
+
+					}
+					
 				}
 
 			}
@@ -181,22 +235,65 @@ void ScoutManager::moveScouts()
 			else
 			{
 				_scoutStatus = "Under attack inside, fleeing";
-				followPerimeter();
+				//followPerimeter();
+				BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+				if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
+				{
+					bool flag = true;
+					for (auto &attacker : _workerScout->getUnitsInRadius(750)){
+						if (attacker->getPlayer() == InformationManager::Instance().enemyPlayer) {
+							Micro::SmartMove(_workerScout, dopichu->getPosition());// InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+							flag = false;
+							break;
+						}
+					}
+					if (flag)
+						Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
+
+				}
 			}
 		}
 		// if the scout is not in the enemy region
 		else if (_scoutUnderAttack)
 		{
 			_scoutStatus = "Under attack inside, fleeing";
+			BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+			if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
+			{
+				bool flag = true;
+				for (auto &attacker : _workerScout->getUnitsInRadius(750)){
+					if (attacker->getPlayer() == InformationManager::Instance().enemyPlayer) {
+						Micro::SmartMove(_workerScout, dopichu->getPosition());// InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+						flag = false;
+						break;
+					}
+				}
+				if (flag)
+					Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
 
-			followPerimeter();
+			}
+			//followPerimeter();
 		}
 		else
 		{
 			_scoutStatus = "Enemy region known, going there";
+			BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
+			if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
+			{
+				bool flag = true;
+				for (auto &attacker : _workerScout->getUnitsInRadius(750)){
+					if (attacker->getPlayer() == InformationManager::Instance().enemyPlayer) {
+						Micro::SmartMove(_workerScout, dopichu->getPosition());// InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+						flag = false;
+						break;
+					}
+				}
+				if (flag)
+					Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
 
+			}
 			// move to the enemy region
-			followPerimeter();
+			//followPerimeter();
 		}
 
 	}
@@ -232,7 +329,20 @@ void ScoutManager::moveScouts()
 
 		BWAPI::Player enemy = InformationManager::Instance().enemyPlayer;
 		if (InformationManager::Instance().getFirstExpansionLocation(enemy) != nullptr)
-			Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
+		{
+			bool flag = true;
+			for (auto &attacker : _workerScout->getUnitsInRadius(750)){
+				if (attacker->getPlayer() == InformationManager::Instance().enemyPlayer) {
+					Micro::SmartMove(_workerScout, dopichu->getPosition());// InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+					flag = false;
+					break;
+				}
+			}
+			if (flag)
+				Micro::SmartMove(_workerScout, InformationManager::Instance().getFirstExpansionLocation(enemy)->getPosition());
+			
+		}
+			
 	}
 	_previousScoutHP = scoutHP;
 }

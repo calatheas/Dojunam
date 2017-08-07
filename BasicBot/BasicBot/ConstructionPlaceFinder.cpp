@@ -188,16 +188,28 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationWithSeedPositionAnd
 		case BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation:
 			{
 				double minCompexity = 100.0;
+				int minRegionArea = 250000; //대략 전체 리젼의 하위 30퍼센트는 제외하는 수준
 				int minIdx = -1;
 				const std::vector<Expansion> & expansions = ExpansionManager::Instance().getExpansions();
 				for (size_t i = 0; i<expansions.size(); i++){
 					if (minCompexity > expansions[i].complexity && expansions[i].complexity > 0.0){
+
+						//혼잡도가 가장 작은 리젼을 구하더라도 절대적으로 너무 작은 리젼은 제외함(건물이 안들어간다)
+						if (BWTA::getRegion(expansions[i].cc->getPosition())->getPolygon().getArea() < minRegionArea) 
+							continue;
+
 						minCompexity = expansions[i].complexity;
 						minIdx = i;
 					}
 				}
 
 				desiredPosition = getBuildLocationNear(buildingType, expansions[minIdx].cc->getTilePosition());
+			}
+			break;
+		case BuildOrderItem::SeedPositionStrategy::DefenceChokePoint:
+			{
+				tempChokePoint = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self());
+				desiredPosition = getBuildLocationNear(buildingType, BWAPI::TilePosition(StrategyManager::Instance().getPositionForDefenceChokePoint(tempChokePoint, BWAPI::UnitTypes::Terran_Marine)));
 			}
 			break;
 		}
@@ -245,17 +257,6 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 	if (buildingType.isResourceDepot()) {
 		buildingGapSpace = Config::Macro::BuildingResourceDepotSpacing;		
 	}
-	else if (buildingType == BWAPI::UnitTypes::Protoss_Pylon) {
-		int numPylons = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Pylon);
-		
-		// Protoss_Pylon 은 특히 최초 2개 건설할때는 Config::Macro::BuildingPylonEarlyStageSpacing 값으로 설정한다
-		if (numPylons < 3) {
-			buildingGapSpace = Config::Macro::BuildingPylonEarlyStageSpacing;
-		}
-		else {
-			buildingGapSpace = Config::Macro::BuildingPylonSpacing;
-		}
-	}
 	else if (buildingType == BWAPI::UnitTypes::Terran_Supply_Depot) {
 		buildingGapSpace = Config::Macro::BuildingSupplyDepotSpacing;
 	}
@@ -264,7 +265,8 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 		buildingGapSpace = Config::Macro::BuildingDefenseTowerSpacing;
 	}
 
-	while (buildingGapSpace >= 0) {
+	//while (buildingGapSpace >= 0) 
+	{
 
 		testPosition = getBuildLocationNear(buildingType, desiredPosition, buildingGapSpace, constructionPlaceSearchMethod);
 
@@ -272,24 +274,24 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 
 		if (testPosition != BWAPI::TilePositions::None && testPosition != BWAPI::TilePositions::Invalid)
 			return testPosition;
-				
-		// 찾을 수 없다면, buildingGapSpace 값을 줄여서 다시 탐색한다
-		// buildingGapSpace 값이 1이면 지상유닛이 못지나가는 경우가 많아  제외하도록 한다 
-		// 4 -> 3 -> 2 -> 0 -> 탐색 종료
-		//      3 -> 2 -> 0 -> 탐색 종료 
-		//           1 -> 0 -> 탐색 종료
-		if (buildingGapSpace > 2) {
-			buildingGapSpace -= 1;
-		}
-		else if (buildingGapSpace == 2){
-			buildingGapSpace = 0;
-		}
-		else if (buildingGapSpace == 1){
-			buildingGapSpace = 0;
-		}
-		else {
-			break;
-		}
+		//		
+		//// 찾을 수 없다면, buildingGapSpace 값을 줄여서 다시 탐색한다
+		//// buildingGapSpace 값이 1이면 지상유닛이 못지나가는 경우가 많아  제외하도록 한다 
+		//// 4 -> 3 -> 2 -> 0 -> 탐색 종료
+		////      3 -> 2 -> 0 -> 탐색 종료 
+		////           1 -> 0 -> 탐색 종료
+		//if (buildingGapSpace > 2) {
+		//	buildingGapSpace -= 1;
+		//}
+		//else if (buildingGapSpace == 2){
+		//	buildingGapSpace = 0;
+		//}
+		//else if (buildingGapSpace == 1){
+		//	buildingGapSpace = 0;
+		//}
+		//else {
+		//	break;
+		//}
 	}
 
 	return BWAPI::TilePositions::None;
@@ -307,7 +309,7 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 
 	// maxRange 를 설정하지 않거나, maxRange 를 128으로 설정하면 지도 전체를 다 탐색하는데, 매우 느려질뿐만 아니라, 대부분의 경우 불필요한 탐색이 된다
 	// maxRange 는 16 ~ 64가 적당하다
-	int maxRange = 48; // maxRange = BWAPI::Broodwar->mapWidth()/4;
+	int maxRange = 32; // maxRange = BWAPI::Broodwar->mapWidth()/4;
 	bool isPossiblePlace = false;
 		
 	if (constructionPlaceSearchMethod == ConstructionPlaceSearchMethod::SpiralMethod)
@@ -319,12 +321,15 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 		int spiralMaxLength = 1;
 		int numSteps = 0;
 		boolean isFirstStep = true;
+		BWTA::Region *seedRegion = BWTA::getRegion(BWAPI::TilePosition(desiredPosition.x, desiredPosition.y));
 
 		int spiralDirectionX = 0;
 		int spiralDirectionY = 1;
 		while (spiralMaxLength < maxRange)
 		{
-			if (currentX >= 0 && currentX < BWAPI::Broodwar->mapWidth() && currentY >= 0 && currentY <BWAPI::Broodwar->mapHeight()) {
+			if (currentX >= 0 && currentX < BWAPI::Broodwar->mapWidth() && currentY >= 0 && currentY <BWAPI::Broodwar->mapHeight() && 
+				seedRegion->getPolygon().isInside(BWAPI::Position(currentX * 32, currentY * 32))) //같은 리젼에만 짓도록
+			{
 
 				isPossiblePlace = canBuildHereWithSpace(BWAPI::TilePosition(currentX, currentY), b, buildingGapSpace);
 
@@ -432,7 +437,6 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 		}
 
 		// 상하좌우에 buildingGapSpace 만큼 간격을 띄운다
-		horizontalOnly = true; //@도주남 김지훈
 		if (horizontalOnly == false)
 		{
 			startx = position.x - buildingGapSpace;
@@ -441,18 +445,31 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 			endy = position.y + height + buildingGapSpace;
 		}
 		// 좌우로만 buildingGapSpace 만큼 간격을 띄운다
-		else {
-			startx = position.x - 2;
-			starty = position.y;
-			endx = position.x + width + buildingGapSpace;
-			endy = position.y + height + 1;
-		}
+		//else {
+		//	startx = position.x - 2;
+		//	starty = position.y - 1;
+		//	endx = position.x + width + buildingGapSpace;
+		//	endy = position.y + height + 1;
+		//}
 
 		// 테란종족 건물의 경우 다른 건물의 Addon 공간을 확보해주기 위해, 왼쪽 2칸은 반드시 GapSpace가 되도록 한다
-		if (b.type.getRace() == BWAPI::Races::Terran) {
-			if (buildingGapSpace < 2) {
-				startx = position.x - 2;
-				endx = position.x + width + buildingGapSpace + 1;
+		//if (b.type.getRace() == BWAPI::Races::Terran) {
+		//	if (buildingGapSpace < 2) {
+		//		startx = position.x - 3;
+		//	}
+		//}
+		for (int y = position.y; y < position.y + height; y++)
+		{
+			for (auto & unit : BWAPI::Broodwar->getUnitsOnTile(position.x - 3, y))
+			{
+				if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center || 
+					unit->getType() == BWAPI::UnitTypes::Terran_Factory ||
+					unit->getType() == BWAPI::UnitTypes::Terran_Starport ||
+					unit->getType() == BWAPI::UnitTypes::Terran_Science_Facility
+					)
+				{
+					return false;
+				}
 			}
 		}
 

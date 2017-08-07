@@ -148,7 +148,8 @@ void ExpansionManager::update(){
 bool ExpansionManager::shouldExpandNow()
 {
 	//@도주남 김유진 현재 커맨드센터 지어지고 있으면 그 때동안은 멀티 추가 안함
-	if (BWAPI::Broodwar->self()->incompleteUnitCount(BWAPI::UnitTypes::Terran_Command_Center) > 0){
+	if (BWAPI::Broodwar->self()->incompleteUnitCount(BWAPI::UnitTypes::Terran_Command_Center) > 0 ||
+		ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Command_Center) > 0){
 		return false;
 	}
 

@@ -37,7 +37,7 @@ namespace Config
 		bool DrawSquadInfo = false;
 		bool DrawBOSSStateInfo = false;
 		bool PrintModuleTimeout = false;
-		bool createTrackingLog = false;
+		bool createTrackingLog = true;
 
 		std::string ErrorLogFilename = "UAB_ErrorLog.txt";
 		bool LogAssertToErrorFile = false;
@@ -122,12 +122,12 @@ namespace Config
 	namespace Macro
 	{
 		int WorkersPerRefinery = 3;
-		int BuildingSpacing = 2;
+		int BuildingSpacing = 1;
 		int BuildingResourceDepotSpacing = 0;
 		int BuildingPylonEarlyStageSpacing = 4;
 		int BuildingPylonSpacing = 2;
-		int BuildingSupplyDepotSpacing = 0;
-		int BuildingDefenseTowerSpacing = 0;
+		int BuildingSupplyDepotSpacing = 1;
+		int BuildingDefenseTowerSpacing = 1;
 	}
 
 	/*namespace Debug

@@ -33,8 +33,7 @@ void Squad::update()
 	updateUnits();
 	
 	// determine whether or not we should regroup
-	bool needToRegroup = needsToRegroup();
-	//needToRegroup = false;
+	
 	// draw some debug info
 	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
 	{
@@ -44,34 +43,15 @@ void Squad::update()
 	}
 
 	// if we do need to regroup, do it
-	if (needToRegroup)
-	{
-		BWAPI::Position regroupPosition = calcRegroupPosition();
+	_meleeManager.execute(_order);		
+	_rangedManager.execute(_order);
+	_vultureManager.execute(_order);
+	_medicManager.execute(_order);
+	_tankManager.execute(_order);
+	_transportManager.update();
+	_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
+	_detectorManager.execute(_order);
 	
-		if (Config::Debug::DrawCombatSimulationInfo)
-		{
-			BWAPI::Broodwar->drawTextScreen(200, 150, "REGROUP");
-		}
-	
-		BWAPI::Broodwar->drawCircleMap(regroupPosition.x, regroupPosition.y, 30, BWAPI::Colors::Purple, true);
-	
-		_meleeManager.regroup(regroupPosition);
-		_rangedManager.regroup(regroupPosition);
-		_tankManager.regroup(regroupPosition);
-		_medicManager.regroup(regroupPosition);
-		_vultureManager.regroup(regroupPosition);
-	}
-	else // otherwise, execute micro
-	{
-		_meleeManager.execute(_order);		
-		_rangedManager.execute(_order);
-		_vultureManager.execute(_order);
-		_medicManager.execute(_order);
-		_tankManager.execute(_order);
-		_transportManager.update();
-		_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
-		_detectorManager.execute(_order);
-	}
 }
 
 bool Squad::isEmpty() const

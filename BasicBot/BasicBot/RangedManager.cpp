@@ -39,7 +39,7 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	
     for (auto & rangedUnit : rangedUnits)
 	{
-		if (order.getType() == SquadOrderTypes::Idle 
+		if ((order.getType() == SquadOrderTypes::Idle || order.getType() == SquadOrderTypes::Defend)
 			&& rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
 			&& rangedUnit->getHitPoints() > 0)
 		{

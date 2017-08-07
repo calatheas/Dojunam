@@ -152,7 +152,7 @@ void TransportManager::update()
 					BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Go Drop");
 					setFrom(_transportShip->getPosition());
 					//setTo(BWAPI::Position(3480 * 32, 56 * 32));
-					setTo(BWAPI::Position(3480, 56));
+					setTo(BWAPI::Position(3479, 56));
 					//if (_transportShip->getSpaceRemaining() != 0)
 					{
 						moveTroops();
@@ -274,25 +274,31 @@ void TransportManager::moveTroops()
 		//else unload
 		_transportShip->unloadAll(_to);
 	}
-	else if (InformationManager::Instance().getMapName() != 'L'  && enemyBaseLocation && _transportShip->getDistance(enemyBaseLocation->getPosition()) < 300
-			&& _transportShip->canUnloadAtPosition(_transportShip->getPosition()))
+	else if (InformationManager::Instance().getMapName() != 'L' && enemyBaseLocation)
+			//&& _transportShip->canUnloadAtPosition(_transportShip->getPosition()))
 	{
-		BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Can Drop");
-		//unload troops 
-		//and return? 
-
-		// get the unit's current command
-		BWAPI::UnitCommand currentCommand(_transportShip->getLastCommand());
-
-		// if we've already told this unit to unload, wait
-		if (currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All || currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All_Position)
+		//std::cout << "orida " << _transportShip->getDistance(enemyBaseLocation->getPosition()) << std::endl;
+		if (enemyBaseLocation && _transportShip->getDistance(enemyBaseLocation->getPosition()) < 400)
 		{
-			BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Odered Drop");
-			return;
+		
+			BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Can Drop");
+			//unload troops 
+			//and return? 
+
+			// get the unit's current command
+			BWAPI::UnitCommand currentCommand(_transportShip->getLastCommand());
+
+			// if we've already told this unit to unload, wait
+			if (currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All || currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All_Position)
+			{
+				BWAPI::Broodwar->drawTextMap(_transportShip->getPosition() + BWAPI::Position(0, 30), "%s", "Odered Drop");
+				return;
+			}
+					//std::cout << "wow" << std::endl;
+			//else unload
+			//_transportShip->unloadAll(_transportShip->getPosition());
+			_transportShip->unloadAll(enemyBaseLocation->getPosition());
 		}
-				//std::cout << "wow" << std::endl;
-		//else unload
-		_transportShip->unloadAll(_transportShip->getPosition());
 	}
 	//else
 	//{

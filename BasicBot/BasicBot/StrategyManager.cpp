@@ -282,6 +282,10 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		int goal_num_vultures = numUnits["Vultures"];
 		int goal_num_tanks = numUnits["Tanks"];
 
+		if (numUnits["Marines"] > 1 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 0) {
+			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
+		}
+
 		if (numUnits["Vultures"] > numUnits["Tanks"] && BWAPI::Broodwar->self()->gas() > 90) {
 			goal_num_tanks += 1;
 		}
@@ -401,80 +405,43 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		//BWAPI::Broodwar->printf("Warning: No build order goal for Terran Strategy: %s", Config::Strategy::StrategyName.c_str());
 	}
 
-	if (ExpansionManager::Instance().shouldExpandNow())
-	{
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numUnits["CC"] + 1));
-		//goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numUnits["Workers"] + 1));
+	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1 && InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wSecondChokePoint) {
+		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
 	}
 
 	return goal;
 }
 
-const bool StrategyManager::shouldExpandNow() const
-{
-	//@도주남 김유진 현재 커맨드센터 지어지고 있으면 그 때동안은 멀티 추가 안함
-	for (auto &u : BWAPI::Broodwar->self()->getUnits()){
-		if (u->getType() == BWAPI::UnitTypes::Terran_Command_Center && !u->isCompleted()){
-			return false;
-		}
-	}
-	// if there is no place to expand to, we can't expand
-	if (MapTools::Instance().getNextExpansion() == BWAPI::TilePositions::None)
-	{
-		BWAPI::Broodwar->printf("No valid expansion location");
-		return false;
-	}
-
-	size_t numDepots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
-		+ UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
-	int frame = BWAPI::Broodwar->getFrameCount();
-	int minute = frame / (24 * 60);
-
-	// if we have a ton of idle workers then we need a new expansion
-	if (WorkerManager::Instance().getNumIdleWorkers() > 7)
-	{
-		return true;
-	}
-
-	// if we have a ridiculous stockpile of minerals, expand
-	if (BWAPI::Broodwar->self()->minerals() > 1700)
-	{
-		return true;
-	}
-
-	// we will make expansion N after array[N] minutes have passed
-	std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
-
-	for (size_t i(0); i < expansionTimes.size(); ++i)
-	{
-		if (numDepots < (i + 2) && minute > expansionTimes[i])
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
 
 //각 건물에 대한 설치전략
 BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrategy(MetaType type){
+	BuildOrderItem::SeedPositionStrategy rst = BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
+
+	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Bunker) {
+		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 0) {
+			return BuildOrderItem::SeedPositionStrategy::DefenceChokePoint;
+		}
+		else if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1) {
+			return BuildOrderItem::SeedPositionStrategy::SecondChokePoint;
+		}
+	}
+
 	//TODO : 큐 단위 이므로 큐에 있는것까지 고려는 잘 안됨.
 	//서플라이 2개까지만 본진커맨드 주변, 이후 본진과 쵸크포인트 둘다 먼곳
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
 		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 3){
 			std::cout << "build supply depot on MainBaseOppositeChock" << std::endl;
-			return BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
+			rst = BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
 		}
 	}
 
-	if (!ExpansionManager::Instance().getExpansions().empty() && ExpansionManager::Instance().getExpansions()[0].complexity > 0.2){
+	//본진 포화되면 다른데가서 짓도록
+	if (!ExpansionManager::Instance().getExpansions().empty() && ExpansionManager::Instance().getExpansions()[0].complexity > 0.25){
 		std::cout << "build " << type.getName() << " on LowComplexityExpansionLocation" << std::endl;
-		return BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation;
+		rst = BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation;
 	}
-	return BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
+
+	return rst;
 }
 
 int StrategyManager::getUnitLimit(MetaType type){
@@ -506,6 +473,10 @@ int StrategyManager::getUnitLimit(MetaType type){
 	}
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Science_Facility) {
 		return 0;
+	}
+
+	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Missile_Turret) {
+		return ExpansionManager::Instance().getExpansions().size() * 3;
 	}
 
 	return -1;
@@ -608,4 +579,23 @@ double StrategyManager::weightByFrame(double max_weight){
 
 Strategy::main_strategies StrategyManager::getMainStrategy() {
 	return _main_strategy;
+}
+
+BWAPI::Position StrategyManager::getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint, BWAPI::UnitType unit)
+{
+	BWAPI::Position ourBasePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
+	std::vector<BWAPI::TilePosition> tpList = BWTA::getShortestPath(BWAPI::TilePosition(ourBasePosition), BWAPI::TilePosition(chokepoint->getCenter()));
+	BWAPI::Position resultPosition = ourBasePosition;
+	for (auto & t : tpList) {
+		BWAPI::Position tp(t.x * 32, t.y * 32);
+		if (!tp.isValid())
+			continue;
+		
+		if (tp.getDistance(chokepoint->getCenter()) <= unit.groundWeapon().maxRange() + 64
+			&& tp.getDistance(chokepoint->getCenter()) >= unit.groundWeapon().maxRange() + 30)
+		{
+			resultPosition = tp;
+		}
+	}
+	return resultPosition;
 }

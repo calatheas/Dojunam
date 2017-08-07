@@ -45,8 +45,11 @@ void BuildManager::update()
 	}
 	*/
 
+	checkErrorBuildOrderAndRemove(); //최상위 빌드1개 잘못된 빌드면 삭제 : 현재는 애드온이 다 붙어있는데 만드려고 하는것 삭제
+
 	consumeBuildQueue(); //빌드오더 소비
 	//큐가 비어 있으면 새로운 빌드오더 생성
+	
 	
 	if (buildQueue.isEmpty()) {
 		if ((buildQueue.size() == 0) && (BWAPI::Broodwar->getFrameCount() > 10))
@@ -56,6 +59,8 @@ void BuildManager::update()
 			performBuildOrderSearch();
 		}
 	}
+	
+
 	// 서플라이 데드락 체크
 	// detect if there's a build order deadlock once per second
 	if ((BWAPI::Broodwar->getFrameCount() % 24 == 0) && detectSupplyDeadlock())
@@ -76,11 +81,12 @@ void BuildManager::update()
 		_enemyCloakedDetected = true;
 	}
 	checkBuildOrderQueueDeadlockAndRemove();
+
 	//커맨드센터는 작업이 없으면 일꾼을 만든다.
 	executeWorkerTraining();
 
-	//여유자원 소비
-	//consumeRemainingResource();
+	//여유자원 소비 - 너무 짧은 주기로 하면 미네랄이 적은 친구들만 들어갈것이므로 적당한 주기로 한다.
+	if(BWAPI::Broodwar->getFrameCount() % 48 == 0) consumeRemainingResource();
 }
 
 void BuildManager::consumeBuildQueue(){
@@ -208,8 +214,9 @@ void BuildManager::performBuildOrderSearch()
 		return;
 	}
 	*/
-
+	//std::cout << "buildOrder.size():";
 	BuildOrder & buildOrder = BOSSManager::Instance().getBuildOrder();
+	//std::cout << buildOrder.size() << std::endl;
 
 	if (buildOrder.size() > 0)
 	{
@@ -367,6 +374,7 @@ BWAPI::Unit BuildManager::getProducer(MetaType t, BWAPI::Position closestTo, int
 		if (except_candidates) continue;
 
 		//애드온이 지어지고 있는 경우... 판단하는 api없는듯
+		//애드온을 짓는 경우에는 hasAddon에서 판단할수 있지만... 시즈 같은 것은 같이 판단할 수 없으므로
 		if (isConstructingAddon(unit)) continue;
 
         // if we haven't cut it, add it to the set of candidates
@@ -638,7 +646,7 @@ bool BuildManager::isProducerWillExist(BWAPI::UnitType producerType)
 					{
 						if (unit->getType() == producerTypeOfProducerType){
 							// 모건물이 완성되어있고, 모건물이 해당 Addon 건물을 건설중인지 확인한다
-							if (unit->isCompleted() && unit->isConstructing() && unit->getBuildType() == producerType) {
+							if (hasAddon(unit)) {
 								isAddonConstructing = true;
 								break;
 							}
@@ -703,18 +711,6 @@ void BuildManager::checkBuildOrderQueueDeadlockAndRemove()
 			// 건물을 생산하는 유닛이나, 유닛을 생산하는 건물이 존재하지 않고, 건설 예정이지도 않으면 dead lock
 			if (!isProducerWillExist(producerType)) {
 				isDeadlockCase = true;
-			}
-			// 애드온인 경우, 모든 팩토리가 애드온이 달렸거나 달리는중이면 데드락
-			else if (currentItem.metaType.getUnitType().isAddon()){
-				bool all_producer_has_addon = true;
-				for (BWAPI::Unit u : BWAPI::Broodwar->self()->getUnits()){
-					if (u->getType() == producerType && !hasAddon(u)){
-						all_producer_has_addon = false;
-						break;
-					}
-				}
-
-				if (all_producer_has_addon) isDeadlockCase = true;
 			}
 
 			// Refinery 건물의 경우, Refinery 가 건설되지 않은 Geyser가 있는 경우에만 가능
@@ -813,7 +809,7 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 			}
 		}
 
-		std::cout << "before : " << buildOrder.size() << std::endl;
+		//std::cout << "before : " << buildOrder.size() << std::endl;
 
 		if (buildOrder[i].isBuilding()){
 			buildQueue.queueAsLowestPriority(buildOrder[i], StrategyManager::Instance().getBuildSeedPositionStrategy(buildOrder[i]), true);
@@ -821,14 +817,29 @@ void BuildManager::setBuildOrder(const BuildOrder & buildOrder)
 		else{
 			buildQueue.queueAsLowestPriority(buildOrder[i], true);
 		}
-		std::cout << "after : " << buildOrder.size() << std::endl;
+		//std::cout << "after : " << buildOrder.size() << std::endl;
 
 	}
 }
 
-void BuildManager::addBuildOrderOneItem(MetaType buildOrder, BWAPI::TilePosition position)
+void BuildManager::addBuildOrderOneItem(MetaType buildOrder, BWAPI::TilePosition position, BuildOrderItem::SeedPositionStrategy seedPositionStrategy)
 {
-	buildQueue.queueAsHighestPriority(buildOrder, position, true);
+	/*
+		1. 포지션을 안 준 경우 - 전략을 따로 안주면 메인베이스 건설전략으로 세팅, 전략 주면 전략 우선
+		2. 포지션 준 경우 - 포지션 우선
+	*/
+	if (position == BWAPI::TilePositions::None){
+		if (seedPositionStrategy == BuildOrderItem::SeedPositionStrategy::MainBaseLocation){
+			buildQueue.queueAsHighestPriority(buildOrder, true);
+		}
+		else{
+			buildQueue.queueAsHighestPriority(buildOrder, seedPositionStrategy, true);
+		}
+		
+	}
+	else{
+		buildQueue.queueAsHighestPriority(buildOrder, position, true);
+	}
 }
 
 //dhj ssh
@@ -841,29 +852,36 @@ void BuildManager::onUnitComplete(BWAPI::Unit unit){
 	return;
 }
 
+//큐 제일 위에 있는 것을 서플라이제한으로 못만드는 경우
+//완전 빨간색이거나 값이 동일한 경우도 서플라이 만들어준다.
 bool BuildManager::detectSupplyDeadlock()
 {
-	// if the _queue is empty there is no deadlock
-	if (buildQueue.size() == 0 || BWAPI::Broodwar->self()->supplyTotal() >= 390)
+	// 빌드큐 비어 있으면 추가하지 않음, 보스에서 해결함
+	if (buildQueue.isEmpty()){
+		return false;
+	}
+
+	// 서플라이 최대량에 가까우면 체크하지 않음
+	if (BWAPI::Broodwar->self()->supplyTotal() >= 390)
 	{
 		return false;
 	}
 
-	// are any supply providers being built currently
+	// 서플라이 건설 중에는 고려하지 않음
 	// 건설큐에 있으면 건설할 것으로 판단
 	// 건물은 isComplete 될때까지 건설큐에 있음
-	bool supplyInProgress = false;
 	if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 0){
-		supplyInProgress = true;
+		return false;
 	}
 
-	// does the current item being built require more supply
-
+	// 큐 최상위 유닛판단
+	// 반드시 최상위 큐를 위한 서플라이 여유분만 고려하지 않고 서플라이가 완전히 막혀있는 상황도 고려
 	int supplyCost = buildQueue.getHighestPriorityItem().metaType.supplyRequired();
-	int supplyAvailable = std::max(0, BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed());
+	int supplyAvailable = BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed();
 
-	// if we don't have enough supply and none is being built, there's a deadlock
-	if ((supplyAvailable < supplyCost) && !supplyInProgress)
+	// 최상위 큐의 코스트보다 적으면 서플라이 건설
+	// 현재상태만으로 서플라이 막혀있으면 건설
+	if (supplyAvailable < supplyCost || supplyAvailable <= 0)
 	{
 		return true;
 	}
@@ -882,7 +900,7 @@ void BuildManager::executeWorkerTraining(){
 		return;
 	}
 
-	if (BOSSManager::Instance().isSearchInProgress()){
+	if (buildQueue.isEmpty()){
 		return;
 	}
 	
@@ -912,6 +930,75 @@ void BuildManager::executeWorkerTraining(){
 		}
 	}
 }
+
+void BuildManager::executeCombatUnitTraining(std::pair<int, int> availableResource){
+	if (!StrategyManager::Instance().isInitialBuildOrderFinished){
+		return;
+	}
+
+	if (buildQueue.isEmpty()){
+		return;
+	}
+
+	BWAPI::Unitset idle_barracks;
+	BWAPI::Unitset idle_Factory;
+	BWAPI::Unitset idle_Factory_Machine_shop;
+
+	for (auto u : BWAPI::Broodwar->self()->getUnits()){
+		if (u->getType() == BWAPI::UnitTypes::Terran_Barracks){
+			if (u->isIdle()){
+				idle_barracks.insert(u);
+			}
+		}
+
+		if (u->getType() == BWAPI::UnitTypes::Terran_Factory){
+			if (u->isIdle() && !isConstructingAddon(u)){
+				if (hasAddon(u)){
+					idle_Factory_Machine_shop.insert(u);
+				}
+				else{
+					idle_Factory.insert(u);
+				}
+			}
+		}
+	}
+
+	BWAPI::UnitType marine(BWAPI::UnitTypes::Terran_Marine);
+	for (auto b : idle_barracks){
+		if (availableResource.first > marine.mineralPrice() && (BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed()) >= marine.supplyRequired()){
+			b->train(marine);
+			availableResource.first -= marine.mineralPrice();
+			std::cout << "executeCombatUnitTraining - marine(remainingResource:" << availableResource.first << "," << availableResource.second << ")" << std::endl;
+		}
+		else{
+			break;
+		}
+	}
+	
+	BWAPI::UnitType vulture(BWAPI::UnitTypes::Terran_Vulture);
+	for (auto b : idle_Factory){
+		if (availableResource.first > vulture.mineralPrice() && (BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed()) >= vulture.supplyRequired()){
+			b->train(vulture);
+			availableResource.first -= vulture.mineralPrice();
+			std::cout << "executeCombatUnitTraining - vulture(remainingResource:" << availableResource.first << "," << availableResource.second << ")" << std::endl;
+		}
+		else{
+			break;
+		}
+	}
+	for (auto b : idle_Factory_Machine_shop){
+		if (availableResource.first > vulture.mineralPrice() && (BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed()) >= vulture.supplyRequired()){
+			b->train(vulture);
+			availableResource.first -= vulture.mineralPrice();
+			std::cout << "executeCombatUnitTraining - vulture(remainingResource:" << availableResource.first << "," << availableResource.second << ")" << std::endl;
+		}
+		else{
+			break;
+		}
+	}
+}
+
+
 bool BuildManager::verifyBuildAddonCommand(BWAPI::Unit u){
 	//브루드워를 통과하는데 시간이 좀 걸림, 이 체크 안하고 isidle 같은걸로 확인이 안되서 명령이 덮어써짐
 	if (u->getLastCommand().getType() == BWAPI::UnitCommandTypes::Build_Addon
@@ -962,19 +1049,81 @@ bool BuildManager::hasUnitInQueue(BWAPI::UnitType ut){
 
 void BuildManager::consumeRemainingResource(){
 	std::pair<int, int> queueResource = getQueueResource();
+	queueResource.first += marginResource.first; //약간의 마진을 준다. 너무 타이트하게 여유자원을 사용하지 않기 위해서
+	queueResource.second += marginResource.second;
 
-	//약간의 마진을 준다. 너무 타이트하게 여유자원을 사용하지 않기 위해서
-	if (getAvailableMinerals() > (queueResource.first + marginResource.first) && getAvailableGas() > (queueResource.second + marginResource.second)){
-		std::cout << "consumeRemainingResource" << std::endl;
-		/*
-		여유자원 소비원칙
-		1. 터렛짓기
-		2. 전투유닛 뽑기
+	std::pair<int, int> remainingResource(getAvailableMinerals() - queueResource.first, getAvailableGas() - queueResource.second);
 
-		if (InformationManager::Instance().hasFlyingUnits){
+	/*
+		0. 미네랄 최대여유만큼 남은 경우 - 멀티를 위해 멀티로직에서 사용
+		1. 상대방 비행유닛 가능하면
+		 - 엔지니어링베이 없는 경우, 미네랄 125 남으면 짓기
+		 - 엔지니어링베이 있고, 터렛이 커맨드센터당 3기씩 없으면 미네랄 75 남으면 짓기
+		2. 상대방 비행유닛 없으면
+		 - 남는 건물에서 컴뱃유닛 훈련
+	*/
 
+	if (ExpansionManager::Instance().shouldExpandNow())
+	{
+		MetaType cc(BWAPI::UnitTypes::Terran_Command_Center);
+		addBuildOrderOneItem(cc);
+		remainingResource.first -= cc.mineralPrice();
+		std::cout << "add command center(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
+	}
+
+	//멀티를 제외하고는 자원부족하면 그냥 리턴
+	if (remainingResource.first < 50)
+		return;
+
+	if (InformationManager::Instance().hasFlyingUnits){
+		if (!isProducerWillExist(BWAPI::UnitTypes::Terran_Engineering_Bay)){
+			MetaType eb(BWAPI::UnitTypes::Terran_Engineering_Bay);
+			if (remainingResource.first >= eb.mineralPrice()){
+				addBuildOrderOneItem(eb);
+				remainingResource.first -= eb.mineralPrice();
+				std::cout << "add command engineering(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
+			}
 		}
-		*/
+		else{
+			//한번에 한개씩만 건설
+			if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Missile_Turret) == 0){
+				MetaType mt(BWAPI::UnitTypes::Terran_Missile_Turret);
+				if (remainingResource.first >= mt.mineralPrice()){
+					int numTurret = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret);
+					if (numTurret < StrategyManager::Instance().getUnitLimit(BWAPI::UnitTypes::Terran_Missile_Turret)){
+						addBuildOrderOneItem(mt);
+						remainingResource.first -= mt.mineralPrice();
+						std::cout << "add turret(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
+					}
+				}
+			}
+		}
+	}
 
+	executeCombatUnitTraining(remainingResource);
+}
+
+void BuildManager::checkErrorBuildOrderAndRemove(){
+	if (buildQueue.isEmpty())
+		return;
+
+	//가장 첫 빌드만 확인한다.
+	BuildOrderItem currentItem = buildQueue.getHighestPriorityItem();
+
+	BWAPI::UnitType producerType = currentItem.metaType.whatBuilds();
+	// 애드온인 경우, 모든 팩토리가 애드온이 달렸거나 달리는중이면 삭제처리
+	// 전제사항 : 애드온은 항상 본 건물이 먼저 큐에 들어온다.
+	if (currentItem.metaType.getUnitType().isAddon()){
+		bool all_producer_has_addon = true;
+		for (BWAPI::Unit u : BWAPI::Broodwar->self()->getUnits()){
+			if (u->getType() == producerType && !hasAddon(u)){
+				all_producer_has_addon = false;
+				break;
+			}
+		}
+		if (all_producer_has_addon){
+			std::cout << "checkErrorBuildOrderAndRemove : " << currentItem.metaType.getName() << std::endl;
+			buildQueue.removeCurrentItem();
+		}
 	}
 }

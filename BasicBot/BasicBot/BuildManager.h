@@ -34,6 +34,8 @@ namespace MyBot
 		BWAPI::TilePosition getDesiredPosition(BWAPI::UnitType unitType, BWAPI::TilePosition seedPosition, BuildOrderItem::SeedPositionStrategy seedPositionStrategy);
 
 		void				checkBuildOrderQueueDeadlockAndRemove();
+		//잘못된 빌드 삭제
+		void                checkErrorBuildOrderAndRemove();
 
 		//addon 관련 : 예외처리판단함수
 		bool verifyBuildAddonCommand(BWAPI::Unit u);
@@ -67,8 +69,9 @@ namespace MyBot
 		void		onUnitComplete(BWAPI::Unit unit);
 
 		void                setBuildOrder(const BuildOrder & buildOrder);
-		void                addBuildOrderOneItem(MetaType buildOrder, BWAPI::TilePosition position = BWAPI::TilePositions::None);
+		void                addBuildOrderOneItem(MetaType buildOrder, BWAPI::TilePosition position = BWAPI::TilePositions::None, BuildOrderItem::SeedPositionStrategy seedPositionStrategy = BuildOrderItem::SeedPositionStrategy::MainBaseLocation);
 		void executeWorkerTraining();
+		void executeCombatUnitTraining(std::pair<int, int> availableResource);
 
 		//addon 달려있는지 확인하는 함수
 		bool hasAddon(BWAPI::Unit u);

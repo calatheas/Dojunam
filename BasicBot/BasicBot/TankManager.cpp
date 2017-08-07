@@ -33,7 +33,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 		{
 			//@도주남 김지훈 64 라는 절대적인 수치 기준으로 , choke point 진입여부를 판단하고 있음 , 다른 getDistance 기준 64 미만의 경우
 			// 근접해있다고 판단해도 무방할 것으로 보임
-			if (choke->getCenter().getDistance(tank->getPosition()) < 64)
+			if (choke->getCenter().getDistance(tank->getPosition()) < 80)
 			{
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
 				BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");

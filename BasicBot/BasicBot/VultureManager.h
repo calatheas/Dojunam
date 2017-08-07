@@ -7,6 +7,7 @@ namespace MyBot
 {
 	class VultureManager : public MicroManager
 	{
+		BWAPI::Unit miningUnit;
 	public:
 		//@도주남 김지훈
 		int startPointCount = 0;
