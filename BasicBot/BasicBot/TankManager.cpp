@@ -114,7 +114,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 				}
 				else
 				// if we're not near the order position
-				if (tank->getDistance(order.getPosition()) > 100)
+				if (tank->getDistance(order.getPosition()) > 120)
 				{
                     if (tank->canUnsiege())
                     {
@@ -127,7 +127,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 				}
 				else
 				{
-					if (tank->canSiege())
+					if (tank->canSiege() && !tank->isStuck())
 					{
 						tank->siege();
 					}

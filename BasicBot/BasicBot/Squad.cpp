@@ -28,12 +28,13 @@ Squad::~Squad()
 
 void Squad::update()
 {
-	
+
 	// update all necessary unit information within this squad
+	_order.setCenterPosition(BWAPI::Position(0, 0));
 	updateUnits();
-	
+
 	// determine whether or not we should regroup
-	
+
 	// draw some debug info
 	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
 	{
@@ -43,7 +44,7 @@ void Squad::update()
 	}
 
 	// if we do need to regroup, do it
-	_meleeManager.execute(_order);		
+	_meleeManager.execute(_order);
 	_rangedManager.execute(_order);
 	_vultureManager.execute(_order);
 	_medicManager.execute(_order);
@@ -51,7 +52,7 @@ void Squad::update()
 	_transportManager.update();
 	_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
 	_detectorManager.execute(_order);
-	
+
 }
 
 bool Squad::isEmpty() const
@@ -78,16 +79,17 @@ void Squad::updateUnits()
 	}
 	setNearEnemyUnits();
 	addUnitsToMicroManagers();
+	_order.setCenterPosition(calcCenter());
 }
 
 void Squad::setAllUnits()
 {
 	// clean up the _units vector just in case one of them died
 	BWAPI::Unitset goodUnits;
-	
+
 	//@도주남 김지훈 메딕이 힐링이 가능한 캐릭터가 몇명인지 확인한다.  의견을 들어보고 적용 여부 결정
 	BWAPI::Unitset organicUnits;
-	
+
 	for (auto & unit : _units)
 	{
 		if (unit->isCompleted() &&
@@ -107,21 +109,29 @@ void Squad::setAllUnits()
 			//	//std::cout << "124	 " << unit->getID() << std::endl;
 			//	//continue;
 			//}
+			if (unit->isStuck())
+			{
+				unit->stop();
+				unit->move(_order.getPosition());
+				BWAPI::Broodwar->drawCircleMap(unit->getPosition(), 5, BWAPI::Colors::Red, true);
+			}
+			else
+				BWAPI::Broodwar->drawCircleMap(unit->getPosition(), 5, BWAPI::Colors::Blue, true);
 			goodUnits.insert(unit);
-			
+
 			if (unit->getType().isOrganic() && unit->getType() != BWAPI::UnitTypes::Terran_Medic)
 			{
 				organicUnits.insert(unit);
 			}
 		}
-	}	
+	}
 	_units.clear();
 	_units = goodUnits;
 	if (organicUnits.size() > 0)
 		_order.setOrganicUnits(organicUnits);
 
 	if (organicUnits.size() != 0)
-		_order.setClosestUnit(unitClosestToEnemyForOrder());	
+		_order.setClosestUnit(unitClosestToEnemyForOrder());
 	if (_order.getClosestUnit() == nullptr)
 		_order.setClosestUnit(nullptr);
 }
@@ -187,7 +197,7 @@ void Squad::addUnitsToMicroManagers()
 			else if (unit->getType() == BWAPI::UnitTypes::Protoss_Shuttle || unit->getType() == BWAPI::UnitTypes::Terran_Dropship)
 			{
 				transportUnits.insert(unit);
-			}			
+			}
 			// select ranged _units
 			else if ((unit->getType().groundWeapon().maxRange() > 32) || (unit->getType() == BWAPI::UnitTypes::Protoss_Reaver) || (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge))
 			{

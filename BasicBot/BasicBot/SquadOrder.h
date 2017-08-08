@@ -5,87 +5,86 @@
 namespace MyBot
 {
 
-namespace SquadOrderTypes
-{
-    enum { None, Idle, Attack, Defend, Regroup, Drop, SquadOrderTypes };
-}
-
-class SquadOrder
-{
-    size_t              _type;
-    int                 _radius;
-    BWAPI::Position     _position;
-    std::string         _status;
-	BWAPI::Unit     _farUnit;
-	BWAPI::Unit     _closestUnit;	
-	BWAPI::Unitset	_organicUnits;
-public:
-
-	SquadOrder() 
-		: _type(SquadOrderTypes::None)
-        , _radius(0)
+	namespace SquadOrderTypes
 	{
+		enum { None, Idle, Attack, Defend, Regroup, Drop, SquadOrderTypes };
 	}
 
-	SquadOrder(int type, BWAPI::Position position, int radius, std::string status = "Default") 
-		: _type(type)
-		, _position(position)
-		, _radius(radius) 
-		, _status(status)
+	class SquadOrder
 	{
-		_farUnit = nullptr;
-		_closestUnit = nullptr;
-		_organicUnits.clear();
-	}
+		size_t              _type;
+		int                 _radius;
+		BWAPI::Position     _position;
+		std::string         _status;
+		BWAPI::Position     _centerPosition;
+		BWAPI::Unit     _closestUnit;
+		BWAPI::Unitset	_organicUnits;
+	public:
 
-	const std::string & getStatus() const 
-	{
-		return _status;
-	}
+		SquadOrder()
+			: _type(SquadOrderTypes::None)
+			, _radius(0)
+		{
+		}
 
-    const BWAPI::Position & getPosition() const
-    {
-        return _position;
-    }
+		SquadOrder(int type, BWAPI::Position position, int radius, std::string status = "Default")
+			: _type(type)
+			, _position(position)
+			, _radius(radius)
+			, _status(status)
+		{
+			_closestUnit = nullptr;
+			_organicUnits.clear();
+		}
 
-    const int & getRadius() const
-    {
-        return _radius;
-    }
+		const std::string & getStatus() const
+		{
+			return _status;
+		}
 
-    const size_t & getType() const
-    {
-        return _type;
-    }
-	
-	BWAPI::Unit getFarUnit()
-	{
-		return _farUnit;
-	}
-	
-	void setFarUnit(BWAPI::Unit in) 
-	{
-		_farUnit = in;
-	}
+		const BWAPI::Position & getPosition() const
+		{
+			return _position;
+		}
 
-	BWAPI::Unit getClosestUnit()
-	{
-		return _closestUnit;
-	}
+		const int & getRadius() const
+		{
+			return _radius;
+		}
 
-	void setClosestUnit(BWAPI::Unit in)
-	{
-		_closestUnit = in;
-	}
+		const size_t & getType() const
+		{
+			return _type;
+		}
 
-	BWAPI::Unitset  getOrganicUnits()
-	{
-		return _organicUnits;
-	}
+		BWAPI::Position getCenterPosition()
+		{
+			return _centerPosition;
+		}
 
-	void setOrganicUnits(BWAPI::Unitset  in)
-	{
-		_organicUnits = in;
-	}
-};
+		void setCenterPosition(BWAPI::Position in)
+		{
+			_centerPosition = in;
+		}
+
+		BWAPI::Unit getClosestUnit()
+		{
+			return _closestUnit;
+		}
+
+		void setClosestUnit(BWAPI::Unit in)
+		{
+			_closestUnit = in;
+		}
+
+		BWAPI::Unitset  getOrganicUnits()
+		{
+			return _organicUnits;
+		}
+
+		void setOrganicUnits(BWAPI::Unitset  in)
+		{
+			_organicUnits = in;
+		}
+	};
 }

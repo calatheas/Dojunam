@@ -6,7 +6,7 @@ using namespace MyBot;
 const size_t IdlePriority = 0;
 const size_t AttackPriority = 1;
 const size_t BaseDefensePriority = 2;
-const size_t ScoutDefensePriority = 3;
+//const size_t ScoutDefensePriority = 3;
 const size_t DropPriority = 4;
 
 CombatCommander & CombatCommander::Instance()
@@ -74,12 +74,8 @@ void CombatCommander::initializeSquads()
 
     BWAPI::Position ourBasePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
 
-    // add a drop squad if we are using a drop strategy
-    //if (Config::Strategy::StrategyName == "Protoss_Drop")
-    {
-		SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 900, "Wait for transport");
-        _squadData.addSquad("Drop", Squad("Drop", zealotDrop, DropPriority));
-    }
+	SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 900, "Wait for transport");
+    _squadData.addSquad("Drop", Squad("Drop", zealotDrop, DropPriority));    
 
     _initialized = true;
 }
@@ -870,27 +866,51 @@ BWAPI::Position CombatCommander::getPositionForDefenceChokePoint(BWTA::Chokepoin
 
 void CombatCommander::updateComBatStatusIndex()
 {
-	int tatalUnits = _combatUnits.size();
+	int totalUnits = _combatUnits.size();
 	Squad & idleSquad = _squadData.getSquad("Idle");
 	
 	int idleUnitSize = idleSquad.getUnits().size();
 	
-	if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
-		_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
-	else if (idleUnitSize < 25)
-		_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
-	else if (idleUnitSize < 40)
-		_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
-	else if (idleUnitSize < 45)
-		_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
-	else if (BWAPI::Broodwar->self()->supplyTotal() > 350)
+	if (StrategyManager::Instance().getMainStrategy() == Strategy::main_strategies::Bionic)
 	{
-		_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
+		if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
+			_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
+		else if (idleUnitSize < 25)
+			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
+		else if (idleUnitSize < 40)
+			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
+		else if (idleUnitSize < 45)
+			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
+		else if (BWAPI::Broodwar->self()->supplyTotal() > 320)
+		{
+			_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
+		}
+		else if (_combatStatus >= InformationManager::combatStatus::wFirstChokePoint && totalUnits > 40)
+			_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
+		else
+			_combatStatus = InformationManager::combatStatus::idle;
 	}
-	else if (_combatStatus >= InformationManager::combatStatus::wFirstChokePoint && _combatStatus != InformationManager::combatStatus::rMainAttack)
-		_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
 	else
-		_combatStatus = InformationManager::combatStatus::idle;
+	{
+		int countTank = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
+		if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
+			_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
+		else if (idleUnitSize >= 7 && countTank > 1)
+			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
+		else if (idleUnitSize >= 11 && countTank > 4)
+			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
+		else if (idleUnitSize >= 15 && countTank > 8)
+			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
+		else if (BWAPI::Broodwar->self()->supplyTotal() > 300)
+		{
+			_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
+		}
+		else if (_combatStatus >= InformationManager::combatStatus::wFirstChokePoint && BWAPI::Broodwar->self()->supplyTotal() > 240)
+			_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
+		else
+			_combatStatus = InformationManager::combatStatus::idle;
+	}
+
 
 	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) >0 
 		&& _combatStatus == InformationManager::combatStatus::rDefence)
@@ -928,7 +948,7 @@ BWAPI::Position CombatCommander::getFirstChokePoint_OrderPosition()
 		if (indexFirstChokePoint_OrderPosition < firstChokePoint_OrderPositionPath.size()-1)
 		{
 			if (firstChokePoint_OrderPositionPath[indexFirstChokePoint_OrderPosition].getDistance(idleSquad.calcCenter()) 
-				< idleSquad.getUnits().size() * 5)
+				< idleSquad.getUnits().size() * 8)
 				indexFirstChokePoint_OrderPosition++;
 			
 			return firstChokePoint_OrderPositionPath[indexFirstChokePoint_OrderPosition];

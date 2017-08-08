@@ -107,10 +107,11 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	std::copy_if(targets.begin(), targets.end(), std::inserter(vultureUnitTargets, vultureUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });	
 	if (miningUnit!=nullptr)
 	{
-		if (miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || MapTools::Instance().getGroundDistance(miningUnit->getPosition(), order.getPosition()) <= 0)
+		if (miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || miningUnit->isStuck())
 		{
 			miningUnit = nullptr;
 		}
+		BWAPI::Broodwar->drawCircleMap(miningUnit->getPosition(), 10, BWAPI::Colors::Red, false);
 	}
 	for (auto & vultureUnit : vultureUnits)
 	{
@@ -142,10 +143,10 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
 		{
 			if (vultureUnitTargets.empty())
-			{				
-				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0 && (miningUnit == nullptr || miningUnit == vultureUnit))
+			{
+				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0 && (miningUnit == nullptr || miningUnit == vultureUnit) && !vultureUnit->isStuck())
 				{
-					std::cout << "Unit Id vulture " << vultureUnit->getID() << std::endl;
+					
 					int minV = 999999;
 					int index = -1;
 					BWAPI::Position mineSetPosition = vultureUnit->getPosition();
