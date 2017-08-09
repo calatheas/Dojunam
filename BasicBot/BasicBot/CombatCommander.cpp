@@ -104,9 +104,9 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 	if (isSquadUpdateFrame())
 	{		
         updateIdleSquad();		
+		updateAttackSquads();
         updateDropSquads();
 		updateDefenseSquads();		
-		updateAttackSquads();
 		InformationManager::Instance().nowCombatStatus = _combatStatus;
 	}
 	
@@ -182,6 +182,9 @@ BWAPI::Position CombatCommander::getIdleSquadLastOrderLocation()
 		if ((_combatUnits.size() / fIndex) + 1 < mainAttackPath.size())
 			return mainAttackPath[(_combatUnits.size() / fIndex)];
 	}
+
+	if (mCenter.isValid())
+		return mCenter;
 
 	return mSec->getCenter();
 
@@ -661,7 +664,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 				{
 					curIndex = curIndex/2;
 				}
-				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*5)
+				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*8)
 					curIndex++;
 				if (curIndex >= mainAttackPath.size())
 					return mainAttackPath[mainAttackPath.size()-1];
