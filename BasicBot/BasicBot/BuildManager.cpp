@@ -853,7 +853,6 @@ void BuildManager::onUnitComplete(BWAPI::Unit unit){
 }
 
 //큐 제일 위에 있는 것을 서플라이제한으로 못만드는 경우
-//완전 빨간색이거나 값이 동일한 경우도 서플라이 만들어준다.
 bool BuildManager::detectSupplyDeadlock()
 {
 	// 빌드큐 비어 있으면 추가하지 않음, 보스에서 해결함
@@ -875,13 +874,11 @@ bool BuildManager::detectSupplyDeadlock()
 	}
 
 	// 큐 최상위 유닛판단
-	// 반드시 최상위 큐를 위한 서플라이 여유분만 고려하지 않고 서플라이가 완전히 막혀있는 상황도 고려
 	int supplyCost = buildQueue.getHighestPriorityItem().metaType.supplyRequired();
-	int supplyAvailable = BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed();
+	int supplyAvailable = std::max(0, BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed());
 
-	// 최상위 큐의 코스트보다 적으면 서플라이 건설
-	// 현재상태만으로 서플라이 막혀있으면 건설
-	if (supplyAvailable < supplyCost || supplyAvailable <= 0)
+	// 최상위 큐의 코스트보다 적으면 서플라이 건설(건물은 해당없음)
+	if (supplyAvailable < supplyCost)
 	{
 		return true;
 	}
@@ -1048,6 +1045,10 @@ bool BuildManager::hasUnitInQueue(BWAPI::UnitType ut){
 }
 
 void BuildManager::consumeRemainingResource(){
+	if (!StrategyManager::Instance().isInitialBuildOrderFinished){
+		return;
+	}
+
 	std::pair<int, int> queueResource = getQueueResource();
 	queueResource.first += marginResource.first; //약간의 마진을 준다. 너무 타이트하게 여유자원을 사용하지 않기 위해서
 	queueResource.second += marginResource.second;
@@ -1086,7 +1087,8 @@ void BuildManager::consumeRemainingResource(){
 		}
 		else{
 			//한번에 한개씩만 건설
-			if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Missile_Turret) == 0){
+			//큐에 없을때만 추가
+			if (hasUnitInQueue(BWAPI::UnitTypes::Terran_Missile_Turret) == 0){
 				MetaType mt(BWAPI::UnitTypes::Terran_Missile_Turret);
 				if (remainingResource.first >= mt.mineralPrice()){
 					int numTurret = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret);
@@ -1096,6 +1098,20 @@ void BuildManager::consumeRemainingResource(){
 						std::cout << "add turret(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
 					}
 				}
+			}
+		}
+	}
+
+	//서플라이가 막힌 경우
+	//빌드큐 또는 건설큐에 서플라이 없어야 한다.
+	if ((BWAPI::Broodwar->self()->supplyTotal() - BWAPI::Broodwar->self()->supplyUsed()) <= 0){
+		if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Supply_Depot) == 0 &&
+			buildQueue.getHighestPriorityItem().metaType.getUnitType() != BWAPI::UnitTypes::Terran_Supply_Depot){
+			MetaType sd(BWAPI::UnitTypes::Terran_Supply_Depot);
+			if (remainingResource.first >= sd.mineralPrice()){
+				addBuildOrderOneItem(sd, BWAPI::TilePositions::None, StrategyManager::Instance().getBuildSeedPositionStrategy(sd));
+				remainingResource.first -= sd.mineralPrice();
+				std::cout << "add supply depot(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
 			}
 		}
 	}

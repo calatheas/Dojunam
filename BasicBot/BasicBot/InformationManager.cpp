@@ -714,7 +714,8 @@ void InformationManager::enemyHasCloakedUnits(BWAPI::Unit u)
 }
 
 void InformationManager::enemyHasFlyingUnits(BWAPI::Unit u){
-	if (u->getType().isFlyer()){
+	if (u->getType().isFlyer() &&
+		u->getType() != BWAPI::UnitTypes::Zerg_Overlord){
 		hasFlyingUnits = true;
 		return;
 	}
