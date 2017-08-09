@@ -473,9 +473,10 @@ void CombatCommander::updateDefenseSquads()
             // if we don't have a squad assigned to this region already, create one
             if (!_squadData.squadExists(squadName.str()))
             {
-				std::cout << "Defend My Region!" << std::endl;
-				SquadOrder defendRegion(SquadOrderTypes::Defend, regionCenter, 500, "Defend Region!");
+				std::cout << "Defend My Region!" << std::endl;				
+				SquadOrder defendRegion(SquadOrderTypes::Defend, enemyUnitsInRegion.getPosition(), 500, "Defend Region!");
                 _squadData.addSquad(squadName.str(), Squad(squadName.str(), defendRegion, BaseDefensePriority));
+				std::cout << "enemyUnitsInRegion  " << enemyUnitsInRegion.getPosition().x << " " << enemyUnitsInRegion.getPosition().y << " )" << std::endl;
             }
         }
 
@@ -664,7 +665,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 				{
 					curIndex = curIndex/2;
 				}
-				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*8)
+				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*16)
 					curIndex++;
 				if (curIndex >= mainAttackPath.size())
 					return mainAttackPath[mainAttackPath.size()-1];

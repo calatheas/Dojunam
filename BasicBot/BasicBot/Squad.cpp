@@ -36,12 +36,12 @@ void Squad::update()
 	// determine whether or not we should regroup
 
 	// draw some debug info
-	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
-	{
-		BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
-
-		BWAPI::Unit closest = unitClosestToEnemy();
-	}
+	//if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
+	//{
+	//	BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
+	//
+	//	BWAPI::Unit closest = unitClosestToEnemy();
+	//}
 
 	// if we do need to regroup, do it
 	_meleeManager.execute(_order);
@@ -52,7 +52,7 @@ void Squad::update()
 	_transportManager.update();
 	_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
 	_detectorManager.execute(_order);
-
+	Micro::drawAPM(10, 80);
 }
 
 bool Squad::isEmpty() const
@@ -117,6 +117,13 @@ void Squad::setAllUnits()
 			}
 			else
 				BWAPI::Broodwar->drawCircleMap(unit->getPosition(), 5, BWAPI::Colors::Blue, true);
+			if (unit->getPosition().getDistance(_order.getPosition()) / 32 > _order.getRadius() - unit->getType().groundWeapon().maxRange())
+			{
+				unit->move(_order.getPosition());
+			}
+			if (!unit->isAttackFrame() && !unit->isMoving())
+				unit->move(_order.getPosition());
+			
 			goodUnits.insert(unit);
 
 			if (unit->getType().isOrganic() && unit->getType() != BWAPI::UnitTypes::Terran_Medic)
@@ -222,109 +229,109 @@ void Squad::addUnitsToMicroManagers()
 }
 
 // calculates whether or not to regroup
-bool Squad::needsToRegroup()
-{
-	if (!Config::Micro::UseSparcraftSimulation)
-	{
-		return false;
-	}
-
-	// if we are not attacking, never regroup
-	if (_units.empty() || (_order.getType() != SquadOrderTypes::Attack))
-	{
-		_regroupStatus = std::string("\x04 No combat units available");
-		return false;
-	}
-
-	BWAPI::Unit unitClosest = unitClosestToEnemy();
-
-	if (!unitClosest)
-	{
-		_regroupStatus = std::string("\x04 No closest unit");
-		return false;
-	}
-
-	// if none of our units are in attack range of any enemy units, don't retreat
-	std::vector<UnitInfo> enemyCombatUnits;
-	const auto & enemyUnitInfo = InformationManager::Instance().getUnitInfo(BWAPI::Broodwar->enemy());
-
-	bool anyInRange = false;
-	for (const auto & eui : enemyUnitInfo)
-	{
-		bool inRange = false;
-		for (const auto & u : _units)
-		{
-			int range = UnitUtil::GetAttackRange(eui.second.type, u->getType());
-
-			if (range + 128 >= eui.second.lastPosition.getDistance(u->getPosition()))
-			{
-				inRange = true;
-				break;
-			}
-		}
-
-		if (inRange)
-		{
-			anyInRange = true;
-			break;
-		}
-	}
-
-	if (!anyInRange)
-	{
-		_regroupStatus = std::string("\x04 No enemy units in attack range");
-		return false;
-	}
-
-	//SparCraft::ScoreType score = 0;
-	//kyj
-	int score = 100;
-
-	//do the SparCraft Simulation!
-	//kyj//CombatSimulation sim;
-
-
-	//kyj//sim.setCombatUnits(unitClosest->getPosition(), Config::Micro::CombatRegroupRadius);
-	//kyj//score = sim.simulateCombat();
-
-	// if we are DT rushing and we haven't lost a DT yet, no retreat!
-	if (Config::Strategy::StrategyName == "Protoss_DTRush" && (BWAPI::Broodwar->self()->deadUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar) == 0))
-	{
-		_regroupStatus = std::string("\x04 DARK TEMPLAR HOOOOO!");
-		return false;
-	}
-
-	bool retreat = score < 0;
-	int switchTime = 100;
-	bool waiting = false;
-
-	// we should not attack unless 5 seconds have passed since a retreat
-	if (retreat != _lastRetreatSwitchVal)
-	{
-		if (!retreat && (BWAPI::Broodwar->getFrameCount() - _lastRetreatSwitch < switchTime))
-		{
-			waiting = true;
-			retreat = _lastRetreatSwitchVal;
-		}
-		else
-		{
-			waiting = false;
-			_lastRetreatSwitch = BWAPI::Broodwar->getFrameCount();
-			_lastRetreatSwitchVal = retreat;
-		}
-	}
-
-	if (retreat)
-	{
-		_regroupStatus = std::string("\x04 Retreat - simulation predicts defeat");
-	}
-	else
-	{
-		_regroupStatus = std::string("\x04 Attack - simulation predicts success");
-	}
-
-	return retreat;
-}
+//bool Squad::needsToRegroup()
+//{
+//	if (!Config::Micro::UseSparcraftSimulation)
+//	{
+//		return false;
+//	}
+//
+//	// if we are not attacking, never regroup
+//	if (_units.empty() || (_order.getType() != SquadOrderTypes::Attack))
+//	{
+//		_regroupStatus = std::string("\x04 No combat units available");
+//		return false;
+//	}
+//
+//	BWAPI::Unit unitClosest = unitClosestToEnemy();
+//
+//	if (!unitClosest)
+//	{
+//		_regroupStatus = std::string("\x04 No closest unit");
+//		return false;
+//	}
+//
+//	// if none of our units are in attack range of any enemy units, don't retreat
+//	std::vector<UnitInfo> enemyCombatUnits;
+//	const auto & enemyUnitInfo = InformationManager::Instance().getUnitInfo(BWAPI::Broodwar->enemy());
+//
+//	bool anyInRange = false;
+//	for (const auto & eui : enemyUnitInfo)
+//	{
+//		bool inRange = false;
+//		for (const auto & u : _units)
+//		{
+//			int range = UnitUtil::GetAttackRange(eui.second.type, u->getType());
+//
+//			if (range + 128 >= eui.second.lastPosition.getDistance(u->getPosition()))
+//			{
+//				inRange = true;
+//				break;
+//			}
+//		}
+//
+//		if (inRange)
+//		{
+//			anyInRange = true;
+//			break;
+//		}
+//	}
+//
+//	if (!anyInRange)
+//	{
+//		_regroupStatus = std::string("\x04 No enemy units in attack range");
+//		return false;
+//	}
+//
+//	//SparCraft::ScoreType score = 0;
+//	//kyj
+//	int score = 100;
+//
+//	//do the SparCraft Simulation!
+//	//kyj//CombatSimulation sim;
+//
+//
+//	//kyj//sim.setCombatUnits(unitClosest->getPosition(), Config::Micro::CombatRegroupRadius);
+//	//kyj//score = sim.simulateCombat();
+//
+//	// if we are DT rushing and we haven't lost a DT yet, no retreat!
+//	if (Config::Strategy::StrategyName == "Protoss_DTRush" && (BWAPI::Broodwar->self()->deadUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar) == 0))
+//	{
+//		_regroupStatus = std::string("\x04 DARK TEMPLAR HOOOOO!");
+//		return false;
+//	}
+//
+//	bool retreat = score < 0;
+//	int switchTime = 100;
+//	bool waiting = false;
+//
+//	// we should not attack unless 5 seconds have passed since a retreat
+//	if (retreat != _lastRetreatSwitchVal)
+//	{
+//		if (!retreat && (BWAPI::Broodwar->getFrameCount() - _lastRetreatSwitch < switchTime))
+//		{
+//			waiting = true;
+//			retreat = _lastRetreatSwitchVal;
+//		}
+//		else
+//		{
+//			waiting = false;
+//			_lastRetreatSwitch = BWAPI::Broodwar->getFrameCount();
+//			_lastRetreatSwitchVal = retreat;
+//		}
+//	}
+//
+//	if (retreat)
+//	{
+//		_regroupStatus = std::string("\x04 Retreat - simulation predicts defeat");
+//	}
+//	else
+//	{
+//		_regroupStatus = std::string("\x04 Attack - simulation predicts success");
+//	}
+//
+//	return retreat;
+//}
 
 void Squad::setSquadOrder(const SquadOrder & so)
 {
@@ -381,34 +388,34 @@ BWAPI::Position Squad::calcCenter()
 	return BWAPI::Position(accum.x / _units.size(), accum.y / _units.size());
 }
 
-BWAPI::Position Squad::calcRegroupPosition()
-{
-	BWAPI::Position regroup(0, 0);
-
-	int minDist = 100000;
-
-	for (auto & unit : _units)
-	{
-		if (!_nearEnemy[unit])
-		{
-			int dist = unit->getDistance(_order.getPosition());
-			if (dist < minDist)
-			{
-				minDist = dist;
-				regroup = unit->getPosition();
-			}
-		}
-	}
-
-	if (regroup == BWAPI::Position(0, 0))
-	{
-		return BWTA::getRegion(BWTA::getStartLocation(BWAPI::Broodwar->self())->getTilePosition())->getCenter();
-	}
-	else
-	{
-		return regroup;
-	}
-}
+//BWAPI::Position Squad::calcRegroupPosition()
+//{
+//	BWAPI::Position regroup(0, 0);
+//
+//	int minDist = 100000;
+//
+//	for (auto & unit : _units)
+//	{
+//		if (!_nearEnemy[unit])
+//		{
+//			int dist = unit->getDistance(_order.getPosition());
+//			if (dist < minDist)
+//			{
+//				minDist = dist;
+//				regroup = unit->getPosition();
+//			}
+//		}
+//	}
+//
+//	if (regroup == BWAPI::Position(0, 0))
+//	{
+//		return BWTA::getRegion(BWTA::getStartLocation(BWAPI::Broodwar->self())->getTilePosition())->getCenter();
+//	}
+//	else
+//	{
+//		return regroup;
+//	}
+//}
 
 BWAPI::Unit Squad::unitClosestToEnemy()
 {

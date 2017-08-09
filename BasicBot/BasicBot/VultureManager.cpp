@@ -24,10 +24,12 @@ void VultureManager::miningPositionSetting()
 
 	std::list<BWTA::BaseLocation *> enemayBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->enemy());
 	std::list<BWTA::BaseLocation *> selfBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->self());
-
+	
 	for (BWTA::BaseLocation * startLocation : BWTA::getBaseLocations())
 	{
 		bool insertable = true;
+		if (InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->enemy()) == startLocation)
+			continue;
 		for (BWTA::BaseLocation * eBaseLocation : enemayBaseLocations)
 		{
 			if (startLocation == eBaseLocation)
@@ -105,9 +107,10 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	// figure out targets
 	BWAPI::Unitset vultureUnitTargets;
 	std::copy_if(targets.begin(), targets.end(), std::inserter(vultureUnitTargets, vultureUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });	
+	
 	if (miningUnit!=nullptr)
 	{
-		if (miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || miningUnit->isStuck())
+		if ((miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || miningUnit->isStuck() || !vultureUnits.contains(miningUnit)) && BWAPI::Broodwar->getFrameCount() % 500 ==0)
 		{
 			miningUnit = nullptr;
 		} 
@@ -143,11 +146,12 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		// if the order is to attack or defend
 		if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle)
 		{
-			if (vultureUnitTargets.empty())
+			
+			if (order.getType() == SquadOrderTypes::Idle)
 			{
 				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0 && (miningUnit == nullptr || miningUnit == vultureUnit) && !vultureUnit->isStuck())
 				{
-					
+					//std::cout << "spiderMineCount " << spiderMineCount << std::endl;
 					int minV = 999999;
 					int index = -1;
 					BWAPI::Position mineSetPosition = vultureUnit->getPosition();
@@ -159,7 +163,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 						mineSetPosition 
 						= chokePointForVulture[
 							((vultureUnit->getID() + vultureUnit->getSpiderMineCount()) 
-								% (chokePointForVulture.size() - spiderMineCount)) + spiderMineCount];
+								% (chokePointForVulture.size() - pathTileCount)) + pathTileCount];
 				
 					while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition) || BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)).size() > 1)
 					{						
@@ -180,11 +184,6 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					BWAPI::Broodwar->drawTextMap(mineSetPosition, "%s", "Mine Set Here");
 					Micro::SmartLaySpiderMine(vultureUnit, mineSetPosition);
 					
-					if (MapTools::Instance().getGroundDistance(vultureUnit->getPosition(), mineSetPosition) <= 0)
-					{
-						miningUnit = nullptr;
-						continue;	
-					}
 					miningUnit = vultureUnit;
 					continue;
 				}
@@ -196,6 +195,11 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(vultureUnit, vultureUnitTargets);
 
+				if (target->getDistance(order.getPosition()) / 32 > order.getRadius() - BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange())
+				{					
+					vultureUnit->move(order.getPosition());
+				}
+				else
 				{
 					Micro::MutaDanceTarget(vultureUnit, target);
 				}

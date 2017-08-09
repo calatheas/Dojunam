@@ -465,11 +465,13 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 				if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center || 
 					unit->getType() == BWAPI::UnitTypes::Terran_Factory ||
 					unit->getType() == BWAPI::UnitTypes::Terran_Starport ||
-					unit->getType() == BWAPI::UnitTypes::Terran_Science_Facility
+					unit->getType() == BWAPI::UnitTypes::Terran_Science_Facility ||
+					(isTilesToAvoid(position.x - 3, y) && b.type != BWAPI::UnitTypes::Terran_Command_Center)
 					)
 				{
 					return false;
 				}
+				
 			}
 		}
 

@@ -197,14 +197,15 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 				pos = pos + BWAPI::Position(-1, 0);
 			}
 			unit->useTech(BWAPI::TechTypes::Spider_Mines, pos);
+			TotalCommands++;
 		}
 
 		return;
 	}
 
-
 	{
 		unit->useTech(BWAPI::TechTypes::Spider_Mines, pos);
+		TotalCommands++;
 	}
 
 }
