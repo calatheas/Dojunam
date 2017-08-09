@@ -895,11 +895,11 @@ void CombatCommander::updateComBatStatusIndex()
 		int countTank = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
 		if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
 			_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
-		else if (idleUnitSize >= 7 && countTank > 1)
+		else if (idleUnitSize <= 11 && countTank > 1)
 			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
-		else if (idleUnitSize >= 11 && countTank > 4)
+		else if (idleUnitSize <= 18 && countTank > 4)
 			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
-		else if (idleUnitSize >= 15 && countTank > 8)
+		else if (idleUnitSize <= 22 && countTank > 8)
 			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
 		else if (BWAPI::Broodwar->self()->supplyTotal() > 300)
 		{
