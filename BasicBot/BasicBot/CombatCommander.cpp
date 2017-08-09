@@ -899,7 +899,7 @@ void CombatCommander::updateComBatStatusIndex()
 			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
 		else if (idleUnitSize <= 18 || countTank < 6)
 			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
-		else if (idleUnitSize <= 22 || countTank < 8)
+		else if (idleUnitSize > 18 || countTank < 8)
 			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
 		else if (BWAPI::Broodwar->self()->supplyTotal() > 300)
 		{
