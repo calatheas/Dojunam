@@ -110,8 +110,9 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		if (miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || miningUnit->isStuck())
 		{
 			miningUnit = nullptr;
-		}
-		BWAPI::Broodwar->drawCircleMap(miningUnit->getPosition(), 10, BWAPI::Colors::Red, false);
+		} 
+		else
+			BWAPI::Broodwar->drawCircleMap(miningUnit->getPosition(), 10, BWAPI::Colors::Red, false);
 	}
 	for (auto & vultureUnit : vultureUnits)
 	{
