@@ -939,7 +939,7 @@ BWAPI::Position CombatCommander::getFirstChokePoint_OrderPosition()
 		}
 		if (firstChokePoint_OrderPositionPath.size() > 0)
 		{
-			indexFirstChokePoint_OrderPosition = 0;
+			indexFirstChokePoint_OrderPosition = firstChokePoint_OrderPositionPath.size()/2;
 			return firstChokePoint_OrderPositionPath[indexFirstChokePoint_OrderPosition];
 		}
 	}
