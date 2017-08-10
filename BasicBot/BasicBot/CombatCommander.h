@@ -54,16 +54,20 @@ class CombatCommander
     int             numZerglingsInOurBase();
     bool            beingBuildingRushed();
 public:
-	void             updateComBatStatusIndex();
+	void            updateComBatStatus(const BWAPI::Unitset & combatUnits);
 	BWAPI::Position rDefence_OrderPosition;
 	BWAPI::Position wFirstChokePoint_OrderPosition;
 	static CombatCommander &	Instance();
 	CombatCommander();
 
-	void update(const BWAPI::Unitset & combatUnits);
+	void update();
     
 	void drawSquadInformation(int x, int y);
-	InformationManager::combatStatus	_combatStatus;
+
+	std::vector<BWTA::Region *> defenceRegions;
+	std::map<BWTA::Region *, std::pair<int, int>> unitNumInDefenceRegion;
+
+	void supplementSquad();
 
 	//에러위치 찾는 용도
 	std::ofstream log_file;

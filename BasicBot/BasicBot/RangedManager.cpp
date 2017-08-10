@@ -16,7 +16,7 @@ RangedManager & RangedManager::Instance()
 
 void RangedManager::executeMicro(const BWAPI::Unitset & targets)
 {
-	checkBunkerNum();
+	//checkBunkerNum();
 	assignTargetsOld(targets);
 }
 
@@ -109,16 +109,16 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				if (order.getClosestUnit() != nullptr)
 				{
 					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 30), "%s", "Go Near Medic");
-					//Micro::SmartAttackMove(rangedUnit, order.getClosestUnit()->getPosition());
-					Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getClosestUnit()->getPosition());
+					Micro::SmartAttackMove(rangedUnit, order.getClosestUnit()->getPosition());
+					//Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getClosestUnit()->getPosition());
 				}
 				else
 					// if we're not near the order position
 					if (rangedUnit->getDistance(order.getPosition()) > 100)
 					{
 						// move to it
-						//Micro::SmartAttackMove(rangedUnit, order.getPosition());
-						Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getPosition());
+						Micro::SmartAttackMove(rangedUnit, order.getPosition());
+						//Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getPosition());
 					}
 			}
 		}

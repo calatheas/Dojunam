@@ -260,8 +260,8 @@ void WorkerManager::handleMoveWorkers()
 void WorkerManager::handleCombatWorkers()
 {//ssh
 
-	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::nHelpDefence
-		|| InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wFirstChokePoint
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::WorkerCombat
+		|| InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON2
 		)
 	{
 		//질럿저글링 처리
@@ -275,7 +275,7 @@ void WorkerManager::handleCombatWorkers()
 					continue;
 				}
 				int maxCombatWorker = 7;
-				if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wFirstChokePoint)
+				if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON2)
 					maxCombatWorker = 5;
 				for (auto & worker : workerData.getWorkers())
 				{

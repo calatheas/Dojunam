@@ -39,6 +39,10 @@ InformationManager::InformationManager()
 	hasFlyingUnits = false;
 
 	mapName = 'N';
+
+	finishFirstRush = false;
+
+	baseNumFirstRush = 2;
 }
 
 //kyj
@@ -76,6 +80,7 @@ void InformationManager::update()
 void InformationManager::updateUnitsInfo() 
 {
 	// update units info
+	int numCombatUnitInSelfRegion = 0;
 	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
 		//한번만 체크!
@@ -83,7 +88,22 @@ void InformationManager::updateUnitsInfo()
 		if (!hasCloakedUnits) enemyHasCloakedUnits(unit);
 		if (!hasFlyingUnits) enemyHasFlyingUnits(unit);
 
+		//첫번째 러쉬가 안끝난 경우, 매 프레임 적 유닛 위치를 파악하여 우리 지역에 들어왔는지 판단
+		if (!finishFirstRush) {
+			if (UnitUtil::IsCombatUnit(unit)){
+				if (getMainBaseLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) ||
+					getFirstExpansionLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+					numCombatUnitInSelfRegion++;
+				}
+			}
+		}
+
 		updateUnitInfo(unit);
+	}
+
+	//첫번째 러쉬 종료
+	if (numCombatUnitInSelfRegion >= baseNumFirstRush){
+		finishFirstRush = true;
 	}
 
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
@@ -736,4 +756,37 @@ void InformationManager::enemyHasFlyingUnits(BWAPI::Unit u){
 
 char InformationManager::getMapName(){
 	return mapName;
+}
+
+int InformationManager::checkFirstRush(){
+	int numCombatUnit = 0;
+
+	// 적진 찾기 전에면 false
+	if (getMainBaseLocation(enemyPlayer) == nullptr){
+		return 0;
+	}
+	else{
+		//미리 러쉬 완료이면 false
+		if (finishFirstRush) return 0;
+		
+		for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
+			if (UnitUtil::IsCombatUnit(u.first)){
+				if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(u.second.lastPosition)){
+					numCombatUnit++;
+				}
+			}
+		}
+	}
+
+	//러쉬 종료되지 않았고, 적 메인베이스 밖에서 본 적 컴뱃유닛이 있는 경우, 러쉬로 간주
+	return numCombatUnit;
+}
+
+
+void InformationManager::setCombatStatus(combatStatus cs){
+	if (cs != nowCombatStatus){
+		changeConmgeStatusFrame = BWAPI::Broodwar->getFrameCount();
+		lastCombatStatus = nowCombatStatus;
+		nowCombatStatus = cs;
+	}
 }

@@ -28,31 +28,60 @@ Squad::~Squad()
 
 void Squad::update()
 {
+	InformationManager & im = InformationManager::Instance();
+	if (im.nowCombatStatus == InformationManager::combatStatus::DEFCON2 ||
+		im.nowCombatStatus == InformationManager::combatStatus::DEFCON3 ||
+		im.nowCombatStatus == InformationManager::combatStatus::DEFCON4
+		){
+		// update all necessary unit information within this squad
+		//_order.setCenterPosition(BWAPI::Position(0, 0)); ???
+		updateUnits();
 
-	// update all necessary unit information within this squad
-	_order.setCenterPosition(BWAPI::Position(0, 0));
-	updateUnits();
+		// determine whether or not we should regroup
 
-	// determine whether or not we should regroup
+		// draw some debug info
+		if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
+		{
+			BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
 
-	// draw some debug info
-	if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
-	{
-		BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
+			BWAPI::Unit closest = unitClosestToEnemy();
+		}
 
-		BWAPI::Unit closest = unitClosestToEnemy();
+		// if we do need to regroup, do it
+		_meleeManager.execute(_order);
+		_rangedManager.execute(_order);
+		_vultureManager.execute(_order);
+		_medicManager.execute(_order);
+		_tankManager.execute(_order);
+		_transportManager.update();
+		_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
+		_detectorManager.execute(_order);
 	}
+	else{
+		// update all necessary unit information within this squad
+		_order.setCenterPosition(BWAPI::Position(0, 0));
+		updateUnits();
 
-	// if we do need to regroup, do it
-	_meleeManager.execute(_order);
-	_rangedManager.execute(_order);
-	_vultureManager.execute(_order);
-	_medicManager.execute(_order);
-	_tankManager.execute(_order);
-	_transportManager.update();
-	_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
-	_detectorManager.execute(_order);
+		// determine whether or not we should regroup
 
+		// draw some debug info
+		if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
+		{
+			BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
+
+			BWAPI::Unit closest = unitClosestToEnemy();
+		}
+
+		// if we do need to regroup, do it
+		_meleeManager.execute(_order);
+		_rangedManager.execute(_order);
+		_vultureManager.execute(_order);
+		_medicManager.execute(_order);
+		_tankManager.execute(_order);
+		_transportManager.update();
+		_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
+		_detectorManager.execute(_order);
+	}
 }
 
 bool Squad::isEmpty() const
@@ -73,13 +102,13 @@ void Squad::setPriority(const size_t & priority)
 void Squad::updateUnits()
 {
 	setAllUnits();
-	if (_vultureManager.miningOn == false)
+	if (false)
 	{
 		_vultureManager.miningPositionSetting();
 	}
 	setNearEnemyUnits();
 	addUnitsToMicroManagers();
-	_order.setCenterPosition(calcCenter());
+	//_order.setCenterPosition(calcCenter()); ??
 }
 
 void Squad::setAllUnits()
@@ -329,7 +358,7 @@ bool Squad::needsToRegroup()
 void Squad::setSquadOrder(const SquadOrder & so)
 {
 	_order = so;
-	updateUnits();
+	//updateUnits(); ???
 }
 
 bool Squad::containsUnit(BWAPI::Unit u) const

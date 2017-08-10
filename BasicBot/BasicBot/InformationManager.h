@@ -118,17 +118,24 @@ namespace MyBot
 		BWTA::Chokepoint *      getSecondChokePoint(BWAPI::Player player);
 
 		enum combatStatus {
-			idle,
-			nHelpDefence,		// need to help for base Defence 1 
-			rDefence,		// ready for base Defence 2 
-			wFirstChokePoint,	// wait first choke point 3 
-			wSecondChokePoint,	// wait second choke point 4
-			rMainAttack,		// ready for Main Attack 5
-			gEnemybase,			// go Enemay base (Attack) 6
-			jMainAttack			// join to Main Attack 7
-			
+			Idle,
+			DEFCON1, //최초 방어
+			DEFCON2, //1st 쵸크 안		    
+			DEFCON3, //1st 쵸크 밖
+			DEFCON4, //2st 쵸크
+			DEFCON5, //메인 방어
+			CenterAttack, // 센터 공격
+			MainAttack, // 제일 약한 지역 공격
+			EnemyBaseAttack, // 적 본진 공격
+			WorkerCombat,
+			WorkerBlcock
 		};
 		combatStatus nowCombatStatus;
+		combatStatus lastCombatStatus;
+		int changeConmgeStatusFrame;
+		combatStatus workerCombatStatus;
+		void setCombatStatus(combatStatus cs);
+
 		/// 해당 Player (아군 or 적군) 의 모든 유닛 목록 (가장 최근값) UnitAndUnitInfoMap 을 리턴합니다		 
 		/// 파악된 정보만을 리턴하기 때문에 적군의 정보는 틀린 값일 수 있습니다
 		const UnitAndUnitInfoMap &           getUnitAndUnitInfoMap(BWAPI::Player player) const;
@@ -181,5 +188,9 @@ namespace MyBot
 		void                    enemyHasFlyingUnits(BWAPI::Unit u);
 
 		char getMapName();
+
+		bool finishFirstRush;
+		int baseNumFirstRush;
+		int checkFirstRush();
 	};
 }

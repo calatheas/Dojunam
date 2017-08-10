@@ -284,15 +284,15 @@ size_t UnitUtil::GetAllUnitCount(BWAPI::UnitType type)
 
 		// case where a building has started constructing a unit but it doesn't yet have a unit associated with it
 		// 트레이닝 중인 유닛모두 포함
-		if (unit->getRemainingTrainTime() > 0)
-		{
-			BWAPI::UnitType trainType = unit->getLastCommand().getUnitType();
+		//if (unit->getRemainingTrainTime() > 0)
+		//{
+		//	BWAPI::UnitType trainType = unit->getLastCommand().getUnitType();
 
-			if (trainType == type && unit->getRemainingTrainTime() == trainType.buildTime())
-			{
-				count++;
-			}
-		}
+		//	if (trainType == type && unit->getRemainingTrainTime() == trainType.buildTime())
+		//	{
+		//		count++;
+		//	}
+		//}
 	}
 
 	return count;

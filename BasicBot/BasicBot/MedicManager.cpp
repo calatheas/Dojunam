@@ -65,12 +65,13 @@ void MedicManager::executeMicro(const BWAPI::Unitset & targets)
 		//@도주남 김지훈 노는 메딕을 마린혹은 파벳 중심으로 보내준다.  아 안되겠다 싶으면 본진쪽 초크포인트로 돌아온다
 		if (order.getOrganicUnits().size() == 0)
 		{			
-			if (InformationManager::combatStatus::wSecondChokePoint <= InformationManager::Instance().nowCombatStatus)
-				Micro::SmartMove(medic, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
-			else if (InformationManager::combatStatus::wFirstChokePoint <= InformationManager::Instance().nowCombatStatus)
-				Micro::SmartMove(medic, InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
-			else
-				Micro::SmartMove(medic, InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+			//보류
+			//if (InformationManager::combatStatus::wSecondChokePoint <= InformationManager::Instance().nowCombatStatus)
+			//	Micro::SmartMove(medic, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+			//else if (InformationManager::combatStatus::wFirstChokePoint <= InformationManager::Instance().nowCombatStatus)
+			//	Micro::SmartMove(medic, InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
+			//else
+			//	Micro::SmartMove(medic, InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
 		}
 		else
 		{

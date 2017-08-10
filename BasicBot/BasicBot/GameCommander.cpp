@@ -116,7 +116,15 @@ void GameCommander::onFrame()
 
 	//@도주남 김지훈 전투유닛 셋팅
 	handleUnitAssignments();
-	CombatCommander::Instance().update(_combatUnits);
+	CombatCommander::Instance().updateComBatStatus(_combatUnits);
+	if (InformationManager::Instance().changeConmgeStatusFrame == BWAPI::Broodwar->getFrameCount()){
+		std::cout << "combat status:" << InformationManager::Instance().nowCombatStatus << "/" << InformationManager::Instance().lastCombatStatus
+			<< "/" << InformationManager::Instance().changeConmgeStatusFrame 
+			<< "(size:" << _combatUnits.size() << ")"
+			<< std::endl;
+	}
+	//std::cout << "first rush:" << InformationManager::Instance().checkFirstRush() << std::endl;
+	CombatCommander::Instance().update();
 
 	log_write("CombatCommander, ");
 

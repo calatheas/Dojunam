@@ -405,7 +405,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		//BWAPI::Broodwar->printf("Warning: No build order goal for Terran Strategy: %s", Config::Strategy::StrategyName.c_str());
 	}
 
-	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1 && InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wSecondChokePoint) {
+	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1 && InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4) {
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
 	}
 

@@ -159,7 +159,7 @@ bool ExpansionManager::shouldExpandNow()
 	}
 
 	//아군 유닛이 적당히 나가있는 경우에만 수행한다. 이때가 비교적 안전한 경우 이므로
-	if (InformationManager::Instance().nowCombatStatus >= InformationManager::combatStatus::wSecondChokePoint){
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4){
 		//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
 		if (expansions.size() < 3 && enemyResourceRegions.size() > expansions.size()){
 			std::cout << "add expansions(less than enemy expansions)" << std::endl;
@@ -203,8 +203,9 @@ void ExpansionManager::changeComplexity(BWAPI::Unit unit, bool isAdd){
 	Expansion *e = getExpansion(unit);
 	if (e != NULL){
 		BWTA::Region *expansion_r = BWTA::getRegion(e->cc->getPosition());
-
-		std::cout << "expansion " << e->cc->getID() << " compexity : " << e->complexity << " -> ";
+		
+		if (e->complexity > 0.2)
+			std::cout << "expansion " << e->cc->getID() << " compexity : " << e->complexity << " -> ";
 
 
 		if (isAdd)
@@ -212,7 +213,8 @@ void ExpansionManager::changeComplexity(BWAPI::Unit unit, bool isAdd){
 		else
 			e->complexity -= (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
 
-		std::cout << e->complexity << std::endl;
+		if (e->complexity > 0.2)
+			std::cout << e->complexity << std::endl;
 	}
 }
 

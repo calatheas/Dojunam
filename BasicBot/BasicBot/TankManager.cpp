@@ -105,12 +105,13 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			{
 				if (tank->isUnderAttack())
 				{
-					if (InformationManager::combatStatus::wSecondChokePoint >= InformationManager::Instance().nowCombatStatus)
-						tank->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
-					else if (InformationManager::combatStatus::wFirstChokePoint >= InformationManager::Instance().nowCombatStatus)
-						tank->move(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
-					else
-						tank->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+					//보류
+					//if (InformationManager::combatStatus::wSecondChokePoint >= InformationManager::Instance().nowCombatStatus)
+					//	tank->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+					//else if (InformationManager::combatStatus::wFirstChokePoint >= InformationManager::Instance().nowCombatStatus)
+					//	tank->move(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
+					//else
+					//	tank->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
 				}
 				else
 				// if we're not near the order position
