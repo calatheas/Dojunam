@@ -52,7 +52,7 @@ class CombatCommander
     int             defendWithWorkers();
 
     int             numZerglingsInOurBase();
-    bool            beingBuildingRushed();
+    bool            beingBuildingRushed();	
 public:
 	void             updateComBatStatusIndex();
 	BWAPI::Position rDefence_OrderPosition;

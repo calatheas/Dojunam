@@ -460,14 +460,16 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 		//}
 		for (int y = position.y; y < position.y + height; y++)
 		{
+			if ((isTilesToAvoid(position.x - 3, y) && b.type != BWAPI::UnitTypes::Terran_Command_Center))
+			{
+				return false;
+			}
 			for (auto & unit : BWAPI::Broodwar->getUnitsOnTile(position.x - 3, y))
 			{
 				if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center || 
 					unit->getType() == BWAPI::UnitTypes::Terran_Factory ||
 					unit->getType() == BWAPI::UnitTypes::Terran_Starport ||
-					unit->getType() == BWAPI::UnitTypes::Terran_Science_Facility ||
-					(isTilesToAvoid(position.x - 3, y) && b.type != BWAPI::UnitTypes::Terran_Command_Center)
-					)
+					unit->getType() == BWAPI::UnitTypes::Terran_Science_Facility)
 				{
 					return false;
 				}

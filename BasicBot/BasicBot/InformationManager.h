@@ -129,6 +129,8 @@ namespace MyBot
 			
 		};
 		combatStatus nowCombatStatus;
+		BWAPI::Position currentCombatOrderPosition;
+		BWAPI::Position getCurrentCombatOrderPosition();
 		/// 해당 Player (아군 or 적군) 의 모든 유닛 목록 (가장 최근값) UnitAndUnitInfoMap 을 리턴합니다		 
 		/// 파악된 정보만을 리턴하기 때문에 적군의 정보는 틀린 값일 수 있습니다
 		const UnitAndUnitInfoMap &           getUnitAndUnitInfoMap(BWAPI::Player player) const;

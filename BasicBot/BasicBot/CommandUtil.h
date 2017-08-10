@@ -58,5 +58,6 @@ namespace MyBot
 		
 		void getAllCloakUnits(BWAPI::Unitset &units);
 		double getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int radius = 300);
+		BWAPI::Unit canIFight(BWAPI::Unit attacker);
 	};
 }

@@ -349,3 +349,33 @@ double UnitUtil::getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int 
 	}
 	return totalLTD;
 }
+
+BWAPI::Unit UnitUtil::canIFight(BWAPI::Unit attacker)
+{
+	if (attacker == nullptr)
+		return nullptr;
+	int radius = attacker->getType().groundWeapon().maxRange();
+	int enemyHP = 9999999;
+	BWAPI::Unit attackedEnemy = nullptr;
+	for (auto & unit : attacker->getUnitsInRadius(radius))
+	{
+		if (unit->getPlayer() != attacker->getPlayer() && unit->getHitPoints() > 0)
+		{
+			if (enemyHP > unit->getHitPoints())
+			{
+				enemyHP = unit->getHitPoints();
+				attackedEnemy = unit;
+			}
+		}
+	}
+	
+	if (attackedEnemy == nullptr)
+		return attackedEnemy;
+	if (attacker->getHitPoints() - CalculateLTD(attackedEnemy, attacker) <
+		attackedEnemy->getHitPoints() - CalculateLTD(attacker, attackedEnemy))
+	{
+		return nullptr;
+	}	
+	else
+		return attackedEnemy;
+}

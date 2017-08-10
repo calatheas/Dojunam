@@ -8,6 +8,10 @@ namespace MyBot
 	class VultureManager : public MicroManager
 	{
 		BWAPI::Unit miningUnit;
+		BWAPI::Unit scountUnit;
+		BWAPI::Position getScoutRegions(BWAPI::Position unitPosition);
+		void setScoutRegions();
+		std::vector<BWAPI::Position> scoutRegions;
 	public:
 		//@도주남 김지훈
 		int startPointCount = 0;

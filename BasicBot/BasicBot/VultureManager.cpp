@@ -7,6 +7,7 @@ VultureManager::VultureManager()
 {
 	miningOn = false;
 	miningUnit = nullptr;
+	scountUnit = nullptr;
 }
 
 void VultureManager::miningPositionSetting()
@@ -108,6 +109,18 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	BWAPI::Unitset vultureUnitTargets;
 	std::copy_if(targets.begin(), targets.end(), std::inserter(vultureUnitTargets, vultureUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });	
 	
+	setScoutRegions();
+
+	if (scountUnit != nullptr)
+	{
+		if ((scountUnit->getHitPoints() <= 0 || scountUnit->isStuck() || !vultureUnits.contains(scountUnit)) && BWAPI::Broodwar->getFrameCount() % 750 == 0)
+		{
+			scountUnit = nullptr;
+		}
+		else
+			BWAPI::Broodwar->drawCircleMap(scountUnit->getPosition(), 7, BWAPI::Colors::White, true);
+	}
+
 	if (miningUnit!=nullptr)
 	{
 		if ((miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || miningUnit->isStuck() || !vultureUnits.contains(miningUnit)) && BWAPI::Broodwar->getFrameCount() % 500 ==0)
@@ -148,7 +161,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		{
 			
 			if (order.getType() == SquadOrderTypes::Idle)
-			{
+			{	
 				if (vultureUnit->getSpiderMineCount() > 0 && chokePointForVulture.size() > 0 && (miningUnit == nullptr || miningUnit == vultureUnit) && !vultureUnit->isStuck())
 				{
 					//std::cout << "spiderMineCount " << spiderMineCount << std::endl;
@@ -187,6 +200,20 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					miningUnit = vultureUnit;
 					continue;
 				}
+				//scountUnit
+				if ((scountUnit == nullptr || scountUnit == vultureUnit) && !vultureUnit->isStuck()
+					&& InformationManager::Instance().nowCombatStatus >= InformationManager::combatStatus::wSecondChokePoint)
+				{
+					BWAPI::Unit target = UnitUtil::canIFight(vultureUnit);
+					if (target == nullptr)
+						vultureUnit->move(getScoutRegions(vultureUnit->getPosition()));
+					else
+					{
+						vultureUnit->attack(target);
+					}
+					scountUnit = vultureUnit;
+				}
+
 			}
 			
 			// if there are targets
@@ -463,4 +490,68 @@ void VultureManager::assignTargetsNew(const BWAPI::Unitset & targets)
 			}
 		}
 	}
+}
+
+void VultureManager::setScoutRegions()
+{
+	if (scoutRegions.size() > 0)
+		return;
+	BWTA::Chokepoint * enemySecChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
+
+	if (enemySecChokePoint == nullptr)
+		return;
+
+	std::list<BWTA::BaseLocation *> enemayBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->enemy());
+	std::list<BWTA::BaseLocation *> selfBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->self());
+
+	for (BWTA::BaseLocation * startLocation : BWTA::getBaseLocations())
+	{
+		bool insertable = true;
+		//if (InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->enemy()) == startLocation)
+		//	continue;
+		if (BWTA::isConnected(startLocation->getTilePosition(), InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getTilePosition()) == false)
+		{
+			continue;
+		}
+		
+		for (BWTA::BaseLocation * eBaseLocation : enemayBaseLocations)
+		{
+			if (startLocation == eBaseLocation)
+			{
+				insertable = false;
+				break;
+			}
+		}
+		if (insertable)
+		{
+			for (BWTA::BaseLocation * sBaseLocation : selfBaseLocations)
+			{
+				if (startLocation == sBaseLocation)
+				{
+					insertable = false;
+					break;
+				}
+			}
+		}
+		
+		if (insertable)
+		{
+			scoutRegions.push_back(startLocation->getPosition());
+		}
+	}
+}
+
+BWAPI::Position VultureManager::getScoutRegions(BWAPI::Position unitPosition)
+{
+	if (scoutRegions.size() <= 0)
+	{
+		return InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
+	}
+
+	//if (BWTA::getRegion(BWAPI::TilePosition(unitPosition)) == BWTA::getRegion(BWAPI::TilePosition(scoutRegions[scoutRegions.size()-1])))
+	if (unitPosition.getDistance(scoutRegions[scoutRegions.size() - 1]) < 100)
+	{	
+		scoutRegions.pop_back();
+	}
+	return scoutRegions[scoutRegions.size() - 1];
 }

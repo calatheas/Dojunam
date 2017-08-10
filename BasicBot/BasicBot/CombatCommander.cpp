@@ -81,8 +81,7 @@ void CombatCommander::initializeSquads()
 }
 
 bool CombatCommander::isSquadUpdateFrame()
-{
-	updateComBatStatusIndex();
+{	
 	return BWAPI::Broodwar->getFrameCount() % 10 == 0;
 }
 
@@ -102,14 +101,14 @@ void CombatCommander::update(const BWAPI::Unitset & combatUnits)
 
 
 	if (isSquadUpdateFrame())
-	{		
+	{	
         updateIdleSquad();		
 		updateAttackSquads();
         updateDropSquads();
 		updateDefenseSquads();		
 		InformationManager::Instance().nowCombatStatus = _combatStatus;
 	}
-	
+
 	_squadData.update();
 	log_write("update END, ");
 	drawSquadInformation(20, 200);
@@ -120,54 +119,61 @@ void CombatCommander::updateIdleSquad()
 	int radi = 300;
 	if (InformationManager::Instance().getMapName() == 'H')
 	{
-		radi = 500;
+		radi = 450;
 	}
     Squad & idleSquad = _squadData.getSquad("Idle");
 		
 	//BWAPI::Position mineralPosition = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition();
 	for (auto & unit : _combatUnits)
-	{
-		
+	{	
 		if (_squadData.canAssignUnitToSquad(unit, idleSquad))
 		{
 			//idleSquad.addUnit(unit);
 			_squadData.assignUnitToSquad(unit, idleSquad);
 		}
-		
-
-
-		if (_combatStatus <= InformationManager::combatStatus::rDefence)
-		{
-			int tmp_radi = 200;
-			SquadOrder idleOrder(SquadOrderTypes::Idle, rDefence_OrderPosition
-				, rDefence_OrderPosition.getDistance(wFirstChokePoint_OrderPosition), "Move Out");
-			idleSquad.setSquadOrder(idleOrder);
-		}
-		else if (_combatStatus == InformationManager::combatStatus::wFirstChokePoint)
-		{
-			int addSquadRadi = 60;
-			if (InformationManager::Instance().getMapName() == 'H')
-			{
-				addSquadRadi += 100;
-			}
-			SquadOrder idleOrder(SquadOrderTypes::Idle, wFirstChokePoint_OrderPosition
-				, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + addSquadRadi, "Move Out");
-			idleSquad.setSquadOrder(idleOrder);
-		}
-		else if (_combatStatus == InformationManager::combatStatus::wSecondChokePoint)
-		{
-			SquadOrder idleOrder(SquadOrderTypes::Idle, getFirstChokePoint_OrderPosition()
-				, radi, "Move Out");
-			idleSquad.setSquadOrder(idleOrder);
-		}
-		else if (_combatStatus == InformationManager::combatStatus::rMainAttack){
-			SquadOrder idleOrder(SquadOrderTypes::Idle,
-				getIdleSquadLastOrderLocation()
-				, radi, "Move Out");
-			idleSquad.setSquadOrder(idleOrder);
-		}
-		log_write("Idlesquad END, ");
 	}
+
+	updateComBatStatusIndex();
+
+	if (_combatStatus <= InformationManager::combatStatus::rDefence)
+	{
+		int tmp_radi = 200;
+		InformationManager::Instance().currentCombatOrderPosition = rDefence_OrderPosition;
+		SquadOrder idleOrder(SquadOrderTypes::Idle, rDefence_OrderPosition
+			, rDefence_OrderPosition.getDistance(wFirstChokePoint_OrderPosition), "Move Out");
+		idleSquad.setSquadOrder(idleOrder);
+	}
+	else if (_combatStatus == InformationManager::combatStatus::wFirstChokePoint)
+	{
+		int addSquadRadi = 60;
+		if (InformationManager::Instance().getMapName() == 'H')
+		{
+			addSquadRadi += 80;
+		}
+		InformationManager::Instance().currentCombatOrderPosition = wFirstChokePoint_OrderPosition;
+		SquadOrder idleOrder(SquadOrderTypes::Idle, wFirstChokePoint_OrderPosition
+			, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + addSquadRadi, "Move Out");
+		idleSquad.setSquadOrder(idleOrder);
+	}
+	else if (_combatStatus == InformationManager::combatStatus::wSecondChokePoint)
+	{
+		InformationManager::Instance().currentCombatOrderPosition = getFirstChokePoint_OrderPosition();
+		SquadOrder idleOrder(SquadOrderTypes::Idle, getFirstChokePoint_OrderPosition()
+			, radi, "Move Out");
+		idleSquad.setSquadOrder(idleOrder);
+	}
+	else if (_combatStatus == InformationManager::combatStatus::rMainAttack){
+		InformationManager::Instance().currentCombatOrderPosition = getIdleSquadLastOrderLocation();
+		SquadOrder idleOrder(SquadOrderTypes::Idle,
+			getIdleSquadLastOrderLocation()
+			, radi, "Move Out");
+		idleSquad.setSquadOrder(idleOrder);
+	}
+	else
+	{
+		InformationManager::Instance().currentCombatOrderPosition = BWAPI::Position(0,0);
+	}
+	log_write("Idlesquad END, ");
     
 }
 
@@ -219,7 +225,7 @@ void CombatCommander::updateAttackSquads()
 			}
 		}
 	}
-
+	InformationManager::Instance().currentCombatOrderPosition = getMainAttackLocationForCombat(mainAttackSquad.calcCenter());
 	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(mainAttackSquad.calcCenter()), 410, "Attack Enemy ChokePoint");
 	mainAttackSquad.setSquadOrder(mainAttackOrder);
 }
@@ -469,7 +475,10 @@ void CombatCommander::updateDefenseSquads()
         else 
         {
 			if (_combatStatus == InformationManager::combatStatus::rDefence)
+			{
 				_combatStatus = InformationManager::combatStatus::nHelpDefence;
+				InformationManager::Instance().currentCombatOrderPosition = enemyUnitsInRegion.getPosition();
+			}
             // if we don't have a squad assigned to this region already, create one
             if (!_squadData.squadExists(squadName.str()))
             {
@@ -645,7 +654,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 				BWAPI::Position tp(t.x * 32, t.y * 32);
 				if (!tp.isValid())
 					continue;
-				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()) < 50)
+				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()) < 250)
 					continue;
 				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy())->getCenter()) < 200)
 					continue;
@@ -663,7 +672,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 				//@도주남 김지훈 만약 공격 중이다가 우리의 인원수가 줄었다면 뒤로 뺀다 ?
 				if (InformationManager::combatStatus::gEnemybase > InformationManager::Instance().nowCombatStatus)
 				{
-					curIndex = curIndex/2;
+					curIndex = curIndex-2;
 				}
 				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*16)
 					curIndex++;
@@ -879,45 +888,46 @@ void CombatCommander::updateComBatStatusIndex()
 	{
 		if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
 			_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
-		else if (idleUnitSize < 25)
+		if (idleUnitSize < 25)
 			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
-		else if (idleUnitSize < 40)
+		if (idleUnitSize < 40)
 			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
-		else if (idleUnitSize < 45)
+		if (idleUnitSize < 45)
 			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
-		else if (BWAPI::Broodwar->self()->supplyTotal() > 320)
-		{
-			_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
-		}
-		else if (_combatStatus >= InformationManager::combatStatus::wFirstChokePoint && totalUnits > 40)
-			_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
-		else
-			_combatStatus = InformationManager::combatStatus::idle;
-	}
-	else
-	{
-		int countTank = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
-		if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
-			_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence
-		else if (idleUnitSize <= 11 || countTank < 4)
-			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
-		else if (idleUnitSize <= 18 || countTank < 6)
-			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
-		else if (idleUnitSize > 18 || countTank < 8)
-			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
-		else if (BWAPI::Broodwar->self()->supplyTotal() > 300)
+		
+		if (BWAPI::Broodwar->self()->supplyTotal() > 320)
 		{
 			_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
 		}
 		else if (_combatStatus >= InformationManager::combatStatus::wFirstChokePoint && BWAPI::Broodwar->self()->supplyTotal() > 240)
 			_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
-		else
-			_combatStatus = InformationManager::combatStatus::idle;
+		//else
+		//	_combatStatus = InformationManager::combatStatus::idle;
+	}
+	else
+	{
+		int countTank = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
+		if (idleUnitSize < 7 && _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
+			_combatStatus = InformationManager::combatStatus::rDefence; // ready to Defence					
+		if (idleUnitSize >= 7 && idleUnitSize <= 11 || countTank < 4)
+			_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
+		if (idleUnitSize > 11 && idleUnitSize <= 18 || countTank < 7)
+			_combatStatus = InformationManager::combatStatus::wSecondChokePoint; // see second choke point
+		if (idleUnitSize > 18 || countTank >= 7)
+			_combatStatus = InformationManager::combatStatus::rMainAttack; // ready to Attack
+		if (BWAPI::Broodwar->self()->supplyTotal() > 300)
+		{
+			_combatStatus = InformationManager::combatStatus::gEnemybase; // MainAttack
+		}
+		else if (_combatStatus >= InformationManager::combatStatus::wFirstChokePoint && BWAPI::Broodwar->self()->supplyTotal() > 240)
+			_combatStatus = InformationManager::combatStatus::jMainAttack; // add More Combat Unit For MainAttack
+		//else
+		//	_combatStatus = InformationManager::combatStatus::idle;
 	}
 
 
 	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) >0 
-		&& _combatStatus == InformationManager::combatStatus::rDefence)
+		&& _combatStatus <= InformationManager::combatStatus::wFirstChokePoint)
 		_combatStatus = InformationManager::combatStatus::wFirstChokePoint; // see first choke point
 
 	//if (InformationManager::Instance().nowCombatStatus > _combatStatus && _combatStatus <= InformationManager::combatStatus::wSecondChokePoint)

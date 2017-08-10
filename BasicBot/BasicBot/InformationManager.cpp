@@ -737,3 +737,8 @@ void InformationManager::enemyHasFlyingUnits(BWAPI::Unit u){
 char InformationManager::getMapName(){
 	return mapName;
 }
+
+BWAPI::Position InformationManager::getCurrentCombatOrderPosition()
+{
+	return currentCombatOrderPosition;
+}
