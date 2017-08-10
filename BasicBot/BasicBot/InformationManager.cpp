@@ -738,6 +738,35 @@ char InformationManager::getMapName(){
 	return mapName;
 }
 
+int InformationManager::getPostionAtHunter(){
+	BWAPI::Position p_11 = BWAPI::Position(384, 240);
+	BWAPI::Position p_12 = BWAPI::Position(2304, 304);
+	BWAPI::Position p_1 = BWAPI::Position(3680, 304);
+    BWAPI::Position p_3 = BWAPI::Position(3712, 2608);	
+	BWAPI::Position p_5 = BWAPI::Position(3712, 3760);
+	BWAPI::Position p_6 = BWAPI::Position(2080, 3792);
+	BWAPI::Position p_7 = BWAPI::Position(384, 3728);
+	BWAPI::Position p_9 = BWAPI::Position(320, 1552);
+
+	BWAPI::Position home(BWTA::getStartLocation(InformationManager::Instance().selfPlayer)->getPosition());
+	if (p_11 == home)
+		return 11;
+	if (p_12 == home)
+		return 12;
+	if (p_1 == home)
+		return 1;
+	if (p_3 == home)
+		return 3;
+	if (p_5 == home)
+		return 5;
+	if (p_6 == home)
+		return 6;
+	if (p_7 == home)
+		return 7;
+	if (p_9 == home)
+		return 9;
+}
+
 BWAPI::Position InformationManager::getCurrentCombatOrderPosition()
 {
 	return currentCombatOrderPosition;

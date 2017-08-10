@@ -183,5 +183,6 @@ namespace MyBot
 		void                    enemyHasFlyingUnits(BWAPI::Unit u);
 
 		char getMapName();
+		int  getPostionAtHunter();
 	};
 }
