@@ -13,6 +13,7 @@ StrategyManager::StrategyManager()
 {
 	isFullScaleAttackStarted = false;
 	isInitialBuildOrderFinished = false;
+	firstChokeBunker = false;
 }
 
 void StrategyManager::onStart()
@@ -66,6 +67,15 @@ void StrategyManager::update()
 	//3. 초기빌드가 깨지거나 초기빌드를 다 사용하면 isInitialBuildOrderFinished 세팅하여 다이나믹 빌드오더 체제로 전환
 	if (BuildManager::Instance().buildQueue.isEmpty()) {
 		isInitialBuildOrderFinished = true;
+	}
+	int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON3 && !firstChokeBunker){
+		if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Bunker) == 0 &&
+			!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitTypes::Terran_Bunker)){
+			MetaType bunker(BWAPI::UnitTypes::Terran_Bunker);
+			BuildManager::Instance().addBuildOrderOneItem(bunker, BWAPI::TilePositions::None, getBuildSeedPositionStrategy(bunker));
+			firstChokeBunker = true;
+		}
 	}
 
 	//executeWorkerTraining();
@@ -282,10 +292,6 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		int goal_num_vultures = numUnits["Vultures"];
 		int goal_num_tanks = numUnits["Tanks"];
 
-		if (numUnits["Marines"] > 1 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 0) {
-			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
-		}
-
 		if (numUnits["Vultures"] > numUnits["Tanks"] && BWAPI::Broodwar->self()->gas() > 90) {
 			goal_num_tanks += 1;
 		}
@@ -405,10 +411,6 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		//BWAPI::Broodwar->printf("Warning: No build order goal for Terran Strategy: %s", Config::Strategy::StrategyName.c_str());
 	}
 
-	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1 && InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4) {
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
-	}
-
 	return goal;
 }
 
@@ -418,10 +420,10 @@ BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrate
 	BuildOrderItem::SeedPositionStrategy rst = BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
 
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Bunker) {
-		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 0) {
+		if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON3) {
 			return BuildOrderItem::SeedPositionStrategy::DefenceChokePoint;
 		}
-		else if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1) {
+		else if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4) {
 			return BuildOrderItem::SeedPositionStrategy::SecondChokePoint;
 		}
 	}

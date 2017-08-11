@@ -92,5 +92,6 @@ namespace MyBot
 		Strategy::main_strategies getMainStrategy();
 		BWAPI::Position getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint, BWAPI::UnitType unit);
 
+		bool firstChokeBunker;
 	};
 }
