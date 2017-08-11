@@ -28,34 +28,56 @@ Squad::~Squad()
 
 void Squad::update()
 {
-	InformationManager & im = InformationManager::Instance();
-	if (im.nowCombatStatus == InformationManager::combatStatus::DEFCON2 ||
-		im.nowCombatStatus == InformationManager::combatStatus::DEFCON3 ||
-		im.nowCombatStatus == InformationManager::combatStatus::DEFCON4
-		){
+	if (_name == "DEFCON2" || _name == "DEFCON4"){
+		if (_units.size() == 0){
+			return;
+		}
 		// update all necessary unit information within this squad
 		//_order.setCenterPosition(BWAPI::Position(0, 0)); ???
-		updateUnits();
 
-		// determine whether or not we should regroup
+		std::vector<BWAPI::Unitset> ud = _units_divided(2);
+		int tmpCnt = 0;
+		BWAPI::Unitset bak_units = _units;
+		for (auto u : ud){
+			_units = u;
 
-		// draw some debug info
-		if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
-		{
-			BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
+			if (tmpCnt == 0){
+				if (_order.getLine().first != BWAPI::Positions::None){
+					_order.setPosition(_order.getLine().first);
+				}
+			}
+			else{
+				if (_order.getLine().second != BWAPI::Positions::None){
+					_order.setPosition(_order.getLine().second);
+				}
+			}
 
-			BWAPI::Unit closest = unitClosestToEnemy();
+			tmpCnt++;
+
+			updateUnits();
+
+			// determine whether or not we should regroup
+
+			// draw some debug info
+			if (Config::Debug::DrawSquadInfo && _order.getType() == SquadOrderTypes::Attack)
+			{
+				BWAPI::Broodwar->drawTextScreen(200, 350, "%s", _regroupStatus.c_str());
+
+				BWAPI::Unit closest = unitClosestToEnemy();
+			}
+
+			// if we do need to regroup, do it
+			_meleeManager.execute(_order);
+			_rangedManager.execute(_order);
+			_vultureManager.execute(_order);
+			_medicManager.execute(_order);
+			_tankManager.execute(_order);
+			_transportManager.update();
+			_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
+			_detectorManager.execute(_order);
 		}
 
-		// if we do need to regroup, do it
-		_meleeManager.execute(_order);
-		_rangedManager.execute(_order);
-		_vultureManager.execute(_order);
-		_medicManager.execute(_order);
-		_tankManager.execute(_order);
-		_transportManager.update();
-		_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
-		_detectorManager.execute(_order);
+		_units = bak_units;
 	}
 	else{
 		// update all necessary unit information within this squad
@@ -188,6 +210,89 @@ void Squad::setNearEnemyUnits()
 			if (Config::Debug::DrawSquadInfo) BWAPI::Broodwar->drawBoxMap(x - left, y - top, x + right, y + bottom, Config::Debug::ColorUnitNotNearEnemy);
 		}
 	}
+}
+
+std::vector<BWAPI::Unitset> Squad::_units_divided(int num){
+	BWAPI::Unitset meleeUnits;
+	BWAPI::Unitset rangedUnits;
+	BWAPI::Unitset detectorUnits;
+	BWAPI::Unitset transportUnits;
+	BWAPI::Unitset tankUnits;
+	BWAPI::Unitset medicUnits;
+	BWAPI::Unitset vultureUnits;
+	// add _units to micro managers
+	for (auto & unit : _units)
+	{
+		if (unit->isCompleted() && unit->getHitPoints() > 0 && unit->exists())
+		{
+			// select dector _units
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Medic)
+			{
+				medicUnits.insert(unit);
+			}
+			else if (unit->getType() == BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode || unit->getType() == BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode)
+			{
+				tankUnits.insert(unit);
+			}
+			//@µµÁÖ³² ±èÁöÈÆ
+			else if (unit->getType() == BWAPI::UnitTypes::Terran_Vulture)
+			{
+				vultureUnits.insert(unit);
+			}
+			else if (unit->getType().isDetector() && !unit->getType().isBuilding())
+			{
+				detectorUnits.insert(unit);
+			}
+			// select transport _units
+			else if (unit->getType() == BWAPI::UnitTypes::Protoss_Shuttle || unit->getType() == BWAPI::UnitTypes::Terran_Dropship)
+			{
+				transportUnits.insert(unit);
+			}
+			// select ranged _units
+			else if ((unit->getType().groundWeapon().maxRange() > 32) || (unit->getType() == BWAPI::UnitTypes::Protoss_Reaver) || (unit->getType() == BWAPI::UnitTypes::Zerg_Scourge))
+			{
+				rangedUnits.insert(unit);
+			}
+			// select melee _units
+			else if (unit->getType().groundWeapon().maxRange() <= 32)
+			{
+				meleeUnits.insert(unit);
+			}
+		}
+	}
+
+	std::vector<BWAPI::Unitset> rst;
+	if (num == 2){
+		BWAPI::Unitset half_first;
+		BWAPI::Unitset half_second;
+
+		auto lamb_divide = [](BWAPI::Unitset &u, BWAPI::Unitset & half_first, BWAPI::Unitset &half_second){
+			int half_idx = u.size() / 2;
+			int cnt = 0;
+			for (auto tmpUnit : u){
+				if (cnt < half_idx){
+					half_first.insert(tmpUnit);
+				}
+				else{
+					half_second.insert(tmpUnit);
+				}
+				cnt++;
+			}
+		};
+
+		lamb_divide(meleeUnits, half_first, half_second);
+		lamb_divide(rangedUnits, half_first, half_second);
+		lamb_divide(detectorUnits, half_first, half_second);
+		lamb_divide(transportUnits, half_first, half_second);
+		lamb_divide(tankUnits, half_first, half_second);
+		lamb_divide(medicUnits, half_first, half_second);
+		lamb_divide(vultureUnits, half_first, half_second);
+
+		rst.push_back(half_first);
+		rst.push_back(half_second);
+	}
+
+	return rst;
 }
 
 void Squad::addUnitsToMicroManagers()

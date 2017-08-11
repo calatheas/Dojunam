@@ -19,6 +19,7 @@ namespace MyBot
 		BWAPI::Position     _centerPosition;
 		BWAPI::Unit     _closestUnit;
 		BWAPI::Unitset	_organicUnits;
+		std::pair<BWAPI::Position, BWAPI::Position> _line;
 	public:
 
 		SquadOrder()
@@ -35,6 +36,18 @@ namespace MyBot
 		{
 			_closestUnit = nullptr;
 			_organicUnits.clear();
+			_line = std::make_pair(BWAPI::Positions::None, BWAPI::Positions::None);
+		}
+
+		SquadOrder(int type, BWAPI::Position position, int radius, std::pair<BWAPI::Position, BWAPI::Position> line, std::string status = "Default")
+			: _type(type)
+			, _position(position)
+			, _radius(radius)
+			, _status(status)
+			, _line(line)
+		{
+			_closestUnit = nullptr;
+			_organicUnits.clear();
 		}
 
 		const std::string & getStatus() const
@@ -45,6 +58,11 @@ namespace MyBot
 		const BWAPI::Position & getPosition() const
 		{
 			return _position;
+		}
+
+		void setPosition(BWAPI::Position p)
+		{
+			_position = p;
 		}
 
 		const int & getRadius() const
@@ -85,6 +103,11 @@ namespace MyBot
 		void setOrganicUnits(BWAPI::Unitset  in)
 		{
 			_organicUnits = in;
+		}
+
+		std::pair<BWAPI::Position, BWAPI::Position> getLine()
+		{
+			return _line;
 		}
 	};
 }

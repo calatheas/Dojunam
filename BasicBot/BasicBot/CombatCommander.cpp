@@ -66,6 +66,29 @@ void CombatCommander::initializeSquads()
 	rDefence_OrderPosition = rDefence_OrderPosition + BWAPI::Position(dx, dy);// (mineralPosition + closestDepot->getPosition()) / 2;
 	wFirstChokePoint_OrderPosition = getPositionForDefenceChokePoint(im.getFirstChokePoint(BWAPI::Broodwar->self()));
 
+	/*
+	방어형 쵸크포인트 계산
+	첫번째쵸크 10% 뒤에 있고 우리 리젼으로 확장 
+	*/
+	BWAPI::Position tmpBase(BWAPI::Broodwar->self()->getStartLocation());
+	BWAPI::Position tmpChoke(im.getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
+	
+	double tmpRatio = 0.1;
+	std::pair<int, int> vecBase2Choke;
+	vecBase2Choke.first = tmpBase.x - tmpChoke.x;
+	vecBase2Choke.second = tmpBase.y - tmpChoke.y;
+	BWAPI::Position in_1st_chock_center(tmpChoke.x + (int)(vecBase2Choke.first*tmpRatio), tmpChoke.y + (int)(vecBase2Choke.second*tmpRatio));
+	std::pair<BWAPI::Position, BWAPI::Position> in_1st_chock_side;
+	in_1st_chock_side.first = BWAPI::Position(im.getFirstChokePoint(BWAPI::Broodwar->self())->getSides().first.x + (int)(vecBase2Choke.first*tmpRatio), im.getFirstChokePoint(BWAPI::Broodwar->self())->getSides().first.y + (int)(vecBase2Choke.second*tmpRatio));
+	in_1st_chock_side.second = BWAPI::Position(im.getFirstChokePoint(BWAPI::Broodwar->self())->getSides().second.x + (int)(vecBase2Choke.first*tmpRatio), im.getFirstChokePoint(BWAPI::Broodwar->self())->getSides().second.y + (int)(vecBase2Choke.second*tmpRatio));
+	
+	std::cout << "base:" << tmpBase << std::endl;
+	std::cout << "choke:" << tmpChoke << std::endl;
+	std::cout << "vecBase2Choke:" << vecBase2Choke.first << "," << vecBase2Choke.second << std::endl;
+	std::cout << "in_1st_chock_center:" << in_1st_chock_center.x / 32 << "," << in_1st_chock_center.y / 32 << std::endl;
+	std::cout << "in_1st_chock_side:" << in_1st_chock_side.first.x / 32 << "," << in_1st_chock_side.first.y / 32 << "/" << in_1st_chock_side.second.x / 32 << "," << in_1st_chock_side.second.y / 32 << std::endl;
+	
+
 	SquadOrder defcon1Order(SquadOrderTypes::Idle, rDefence_OrderPosition
 		, rDefence_OrderPosition.getDistance(wFirstChokePoint_OrderPosition), "DEFCON1");
 	_squadData.addSquad("DEFCON1", Squad("DEFCON1", defcon1Order, IdlePriority));
@@ -74,15 +97,15 @@ void CombatCommander::initializeSquads()
 	int radiusAttack = im.getMapName() == 'H' ? 500 : 300;
 	int radiusScout = 10;
 
-	SquadOrder defcon2Order(SquadOrderTypes::Idle, wFirstChokePoint_OrderPosition
-		, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + radiusAttack, "DEFCON2");
+	SquadOrder defcon2Order(SquadOrderTypes::Idle, in_1st_chock_center
+		, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + radiusAttack, in_1st_chock_side, "DEFCON2");
 	_squadData.addSquad("DEFCON2", Squad("DEFCON2", defcon2Order, IdlePriority));
 
 	//앞마당 중간에서 정찰만
 	SquadOrder defcon3Order(SquadOrderTypes::Idle, im.getFirstExpansionLocation(im.selfPlayer)->getRegion()->getCenter(), radiusScout, "DEFCON3");
 	_squadData.addSquad("DEFCON3", Squad("DEFCON3", defcon3Order, IdlePriority));
 
-	SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(), radiusAttack, "DEFCON4");
+	SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(), radiusAttack, im.getSecondChokePoint(im.selfPlayer)->getSides(), "DEFCON4");
 	_squadData.addSquad("DEFCON4", Squad("DEFCON4", defcon4Order, IdlePriority));
 
     // the main attack squad that will pressure the enemy's closest base location
@@ -182,7 +205,6 @@ void CombatCommander::updateIdleSquad()
 			if (_squadData.canAssignUnitToSquad(unit, defcon1Squad))
 			{
 				//idleSquad.addUnit(unit);
-				std::cout << "D1,";
 				_squadData.assignUnitToSquad(unit, defcon1Squad);
 			}
 		}
@@ -193,7 +215,6 @@ void CombatCommander::updateIdleSquad()
 			if (_squadData.canAssignUnitToSquad(unit, defcon2Squad))
 			{
 				//idleSquad.addUnit(unit);
-				std::cout << "D2,";
 				_squadData.assignUnitToSquad(unit, defcon2Squad);
 			}
 		}
@@ -205,7 +226,6 @@ void CombatCommander::updateIdleSquad()
 			if (_squadData.canAssignUnitToSquad(unit, defcon2Squad))
 			{
 				//idleSquad.addUnit(unit);
-				std::cout << "D2,";
 				_squadData.assignUnitToSquad(unit, defcon2Squad);
 			}
 
@@ -215,7 +235,6 @@ void CombatCommander::updateIdleSquad()
 				_squadData.canAssignUnitToSquad(unit, defcon3Squad))
 			{
 				//idleSquad.addUnit(unit);
-				std::cout << "D3,";
 				_squadData.assignUnitToSquad(unit, defcon3Squad);
 			}
 		}
@@ -226,7 +245,6 @@ void CombatCommander::updateIdleSquad()
 			if (_squadData.canAssignUnitToSquad(unit, defcon4Squad))
 			{
 				//idleSquad.addUnit(unit);
-				std::cout << "D4,";
 				_squadData.assignUnitToSquad(unit, defcon4Squad);
 			}
 		}
@@ -870,28 +888,21 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 	else
 	{
 		int countTank = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
-		if (totalUnits < 7)
+		if (totalUnits < 4)
 			_combatStatus = InformationManager::combatStatus::DEFCON1; // 방어준비
 		else{
-			_combatStatus = InformationManager::combatStatus::DEFCON1; // 방어준비
+			_combatStatus = InformationManager::combatStatus::DEFCON2; // 첫번째 쵸크 안쪽 이동
 
-			if (countTank > 1)
-				_combatStatus = InformationManager::combatStatus::DEFCON2; // 첫번째 쵸크 안쪽 이동
-
-			if (_combatStatus == InformationManager::combatStatus::DEFCON2 && im.checkFirstRush()){
-				_combatStatus = InformationManager::combatStatus::DEFCON3; // 첫번째 초크 밖 이동
-				
+			if (im.checkFirstRush()){
 				//적 발견시
 				//쵸크 안쪽에서 싸우기
 				//일꾼 동원하기
-				//for (auto u : BWAPI::Broodwar->enemy()->getUnits()){
-				//	if (!u->getType().isBuilding()){
-				//		if (BWTA::getRegion(im.getFirstExpansionLocation(im.selfPlayer)->getPosition())->getPolygon().isInside(u->getPosition())){
-				//			_combatStatus = InformationManager::combatStatus::DEFCON2; // 첫번째 쵸크 안쪽 이동
-				//			
-				//		}
-				//	}
-				//}
+				if (countTank == 0){
+					_combatStatus = InformationManager::combatStatus::DEFCON1; // 방어준비
+				}
+				else{
+					_combatStatus = InformationManager::combatStatus::DEFCON3; // 첫번째 초크 밖 이동
+				}
 			}
 
 			if (countTank > 4)
