@@ -112,7 +112,7 @@ void ConstructionManager::validateWorkersAndBuildings()
 			else if (b.buildingUnit->isConstructing() && b.buildingUnit->isUnderAttack()){
 				if (b.buildingUnit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
 					
-					double value_LTD = UnitUtil::getNearByLTD(InformationManager::Instance().enemyPlayer, b.buildingUnit);//공격력 / 쿨다운
+					double value_LTD = UnitUtils::getNearByLTD(InformationManager::Instance().enemyPlayer, b.buildingUnit);//공격력 / 쿨다운
 					if (value_LTD > (b.buildingUnit->getHitPoints() / 10.0)){
 						b.buildingUnit->cancelConstruction();
 						

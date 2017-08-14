@@ -515,8 +515,8 @@ void CombatCommander::updateDefenseSquads()
 void CombatCommander::updateDefenseSquadUnits(Squad & defenseSquad, const size_t & flyingDefendersNeeded, const size_t & groundDefendersNeeded)
 {
 	const BWAPI::Unitset & squadUnits = defenseSquad.getUnits();
-    size_t flyingDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackAir);
-    size_t groundDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtil::CanAttackGround);
+    size_t flyingDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtils::CanAttackAir);
+    size_t groundDefendersInSquad = std::count_if(squadUnits.begin(), squadUnits.end(), UnitUtils::CanAttackGround);
 	//std::cout << "flyingDefendersInSquad " << flyingDefendersInSquad << " groundDefendersInSquad " << groundDefendersInSquad << std::endl;
 
     // add flying defenders if we still need them
@@ -568,7 +568,7 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
 
 	for (auto & unit : _combatUnits) 
 	{
-		if (((flyingDefender && !UnitUtil::CanAttackAir(unit)) || (!flyingDefender && !UnitUtil::CanAttackGround(unit))) 
+		if (((flyingDefender && !UnitUtils::CanAttackAir(unit)) || (!flyingDefender && !UnitUtils::CanAttackGround(unit))) 
 			&& unit->getType() != BWAPI::UnitTypes::Terran_Medic )
         {
             continue;
@@ -711,7 +711,7 @@ BWAPI::Position CombatCommander::getMainAttackLocation()
             continue;
         }
 
-		if (UnitUtil::IsValidUnit(unit) && unit->isVisible())
+		if (UnitUtils::IsValidUnit(unit) && unit->isVisible())
 		{
 			return unit->getPosition();
 		}
@@ -890,7 +890,7 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 	}
 	else
 	{
-		int countTank = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
+		int countTank = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
 		int maxDEFCON1 = im.enemyRace == BWAPI::Races::Zerg ? 6 : 2;
 		if (totalUnits < maxDEFCON1)
 			_combatStatus = InformationManager::combatStatus::DEFCON1; // 방어준비
@@ -1101,7 +1101,7 @@ void CombatCommander::updateBunkertSquads()
 		return;
 	}
 	BWAPI::Unit bunker =
-		UnitUtil::GetFarUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+		UnitUtils::GetFarUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
 
 	SquadOrder bunkerOrder(SquadOrderTypes::Idle, bunker->getPosition(), 300, std::make_pair(bunker->getPosition(), bunker->getPosition()), "bunker");
 	if (!_squadData.squadExists("bunker"))

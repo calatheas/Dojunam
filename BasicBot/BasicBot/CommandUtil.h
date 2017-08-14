@@ -34,7 +34,7 @@ namespace MyBot
 		void repair(BWAPI::Unit unit, BWAPI::Unit target);
 	};
 
-	namespace UnitUtil
+	namespace UnitUtils
 	{
 		bool IsCombatUnit(BWAPI::Unit unit);
 		bool IsCombatUnit_rush(BWAPI::Unit unit);

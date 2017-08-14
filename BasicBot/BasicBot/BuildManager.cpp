@@ -1097,7 +1097,7 @@ void BuildManager::consumeRemainingResource(){
 			if (hasUnitInQueue(BWAPI::UnitTypes::Terran_Missile_Turret) == 0){
 				MetaType mt(BWAPI::UnitTypes::Terran_Missile_Turret);
 				if (remainingResource.first >= mt.mineralPrice()){
-					int numTurret = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret);
+					int numTurret = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret);
 					if (numTurret < StrategyManager::Instance().getUnitLimit(BWAPI::UnitTypes::Terran_Missile_Turret)){
 						addBuildOrderOneItem(mt);
 						remainingResource.first -= mt.mineralPrice();

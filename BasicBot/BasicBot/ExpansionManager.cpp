@@ -154,7 +154,7 @@ bool ExpansionManager::shouldExpandNow()
 	}
 
 	//일꾼이 너무 많으면 멀티 안까도록
-	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV) > 70){
+	if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV) > 70){
 		return false;
 	}
 

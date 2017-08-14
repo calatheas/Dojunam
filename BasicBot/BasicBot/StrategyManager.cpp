@@ -68,7 +68,7 @@ void StrategyManager::update()
 	if (BuildManager::Instance().buildQueue.isEmpty()) {
 		isInitialBuildOrderFinished = true;
 	}
-	int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+	int numBunkers = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
 	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON3 && !firstChokeBunker){
 		if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Bunker) == 0 &&
 			!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitTypes::Terran_Bunker)){
@@ -230,21 +230,21 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 
 	std::map<std::string, int> numUnits;
 
-	numUnits["Workers"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV);
-	numUnits["CC"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
-	numUnits["Marines"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Marine);
-	numUnits["Medics"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Medic);
-	numUnits["Firebats"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Firebat);
-	numUnits["Wraith"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Wraith);
-	numUnits["Vultures"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture);
-	numUnits["Goliath"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Goliath);
-	numUnits["Tanks"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
-	numUnits["Bay"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay);
-	numUnits["Barracks"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks);
-	numUnits["Factorys"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Factory);
-	numUnits["Academy"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Academy);
-	numUnits["Science_Facility"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Science_Facility);
-	numUnits["Dropships"] = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Dropship);
+	numUnits["Workers"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV);
+	numUnits["CC"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
+	numUnits["Marines"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Marine);
+	numUnits["Medics"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Medic);
+	numUnits["Firebats"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Firebat);
+	numUnits["Wraith"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Wraith);
+	numUnits["Vultures"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture);
+	numUnits["Goliath"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Goliath);
+	numUnits["Tanks"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) + UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
+	numUnits["Bay"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay);
+	numUnits["Barracks"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Barracks);
+	numUnits["Factorys"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Factory);
+	numUnits["Academy"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Academy);
+	numUnits["Science_Facility"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Science_Facility);
+	numUnits["Dropships"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Dropship);
 
 	std::cout << "changeMainStrategy : " << changeMainStrategy(numUnits) << " main strategy : " << _main_strategy << std::endl;
 
@@ -451,7 +451,7 @@ BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrate
 	//TODO : 큐 단위 이므로 큐에 있는것까지 고려는 잘 안됨.
 	//서플라이 2개까지만 본진커맨드 주변, 이후 본진과 쵸크포인트 둘다 먼곳
 	//if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
-	//	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 3){
+	//	if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 3){
 	//		std::cout << "build supply depot on MainBaseOppositeChock" << std::endl;
 	//		rst = BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
 	//	}

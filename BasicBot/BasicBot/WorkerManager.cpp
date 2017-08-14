@@ -471,7 +471,7 @@ void WorkerManager::handleBunkderRepairWorkers()
 		bool bunkerReapir = false;
 
 		for (auto & eunit : BWAPI::Broodwar->enemy()->getUnits()) {
-			if (UnitUtil::IsCombatUnit_rush(eunit)) {
+			if (UnitUtils::IsCombatUnit_rush(eunit)) {
 				if (InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()->getPolygon().isInside(eunit->getPosition()) || 
 					InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self()) ->getRegion()->getPolygon().isInside(eunit->getPosition())){
 					bunkerReapir = true;

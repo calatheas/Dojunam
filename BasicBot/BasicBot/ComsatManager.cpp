@@ -25,14 +25,14 @@ void ComsatManager::setNextEnableFrame(size_t delay_frame){
 void ComsatManager::setScanPosition(){
 	//1. 스캔 대상을 구함
 	BWAPI::Unitset cloakUnits;
-	UnitUtil::getAllCloakUnits(cloakUnits);
+	UnitUtils::getAllCloakUnits(cloakUnits);
 
 	//2. 대상 주위에 우리 유닛이 얼마나 있는지 체크
 	//디텍해야되는 적 주위에 유닛이 너무 적으면(마린 3개 미만) 스캔안함
 	//타겟을 공격할수 있어야 함(무기타입, 무기범위)
 	std::vector<std::pair<BWAPI::Position, double>> cloakUnitInfo;
 	for (auto &cu : cloakUnits){
-		double tmpLdt = UnitUtil::getNearByLTD(InformationManager::Instance().selfPlayer, cu, _scan_radius_offset);
+		double tmpLdt = UnitUtils::getNearByLTD(InformationManager::Instance().selfPlayer, cu, _scan_radius_offset);
 
 		if (tmpLdt > _scan_dps_offset){
 			cloakUnitInfo.push_back(std::make_pair(cu->getPosition(), tmpLdt));

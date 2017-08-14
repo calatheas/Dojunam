@@ -132,7 +132,7 @@ void CommandUtil::repair(BWAPI::Unit unit, BWAPI::Unit target)
 	unit->repair(target);
 }
 
-bool UnitUtil::IsCombatUnit(BWAPI::Unit unit)
+bool UnitUtils::IsCombatUnit(BWAPI::Unit unit)
 {
 	if (!unit)
 	{
@@ -158,7 +158,7 @@ bool UnitUtil::IsCombatUnit(BWAPI::Unit unit)
 	return false;
 }
 
-bool UnitUtil::IsCombatUnit_rush(BWAPI::Unit unit)
+bool UnitUtils::IsCombatUnit_rush(BWAPI::Unit unit)
 {
 	if (!unit)
 	{
@@ -180,7 +180,7 @@ bool UnitUtil::IsCombatUnit_rush(BWAPI::Unit unit)
 	return false;
 }
 
-bool UnitUtil::IsValidUnit(BWAPI::Unit unit)
+bool UnitUtils::IsValidUnit(BWAPI::Unit unit)
 {
 	if (!unit)
 	{
@@ -202,7 +202,7 @@ bool UnitUtil::IsValidUnit(BWAPI::Unit unit)
 	}
 }
 
-double UnitUtil::GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2)
+double UnitUtils::GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2)
 {
 	Rect & mostLeft = rect1.x < rect2.x ? rect1 : rect2;
 	Rect & mostRight = rect2.x < rect1.x ? rect1 : rect2;
@@ -215,22 +215,22 @@ double UnitUtil::GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2)
 	return std::sqrtf(static_cast<float>(diffX*diffX + diffY*diffY));
 }
 
-bool UnitUtil::CanAttack(BWAPI::Unit attacker, BWAPI::Unit target)
+bool UnitUtils::CanAttack(BWAPI::Unit attacker, BWAPI::Unit target)
 {
 	return GetWeapon(attacker, target) != BWAPI::UnitTypes::None; //반환타입 조심!!!! CanAttackAir과 다름
 }
 
-bool UnitUtil::CanAttackAir(BWAPI::Unit unit)
+bool UnitUtils::CanAttackAir(BWAPI::Unit unit)
 {
 	return unit->getType().airWeapon() != BWAPI::WeaponTypes::None;
 }
 
-bool UnitUtil::CanAttackGround(BWAPI::Unit unit)
+bool UnitUtils::CanAttackGround(BWAPI::Unit unit)
 {
 	return unit->getType().groundWeapon() != BWAPI::WeaponTypes::None;
 }
 
-double UnitUtil::CalculateLTD(BWAPI::Unit attacker, BWAPI::Unit target)
+double UnitUtils::CalculateLTD(BWAPI::Unit attacker, BWAPI::Unit target)
 {
 	BWAPI::WeaponType weapon = GetWeapon(attacker, target);
 
@@ -242,17 +242,17 @@ double UnitUtil::CalculateLTD(BWAPI::Unit attacker, BWAPI::Unit target)
 	return static_cast<double>(weapon.damageAmount()) / weapon.damageCooldown();
 }
 
-BWAPI::WeaponType UnitUtil::GetWeapon(BWAPI::Unit attacker, BWAPI::Unit target)
+BWAPI::WeaponType UnitUtils::GetWeapon(BWAPI::Unit attacker, BWAPI::Unit target)
 {
 	return target->isFlying() ? attacker->getType().airWeapon() : attacker->getType().groundWeapon();
 }
 
-BWAPI::WeaponType UnitUtil::GetWeapon(BWAPI::UnitType attacker, BWAPI::UnitType target)
+BWAPI::WeaponType UnitUtils::GetWeapon(BWAPI::UnitType attacker, BWAPI::UnitType target)
 {
 	return target.isFlyer() ? attacker.airWeapon() : attacker.groundWeapon();
 }
 
-int UnitUtil::GetAttackRange(BWAPI::Unit attacker, BWAPI::Unit target)
+int UnitUtils::GetAttackRange(BWAPI::Unit attacker, BWAPI::Unit target)
 {
 	BWAPI::WeaponType weapon = GetWeapon(attacker, target);
 
@@ -273,7 +273,7 @@ int UnitUtil::GetAttackRange(BWAPI::Unit attacker, BWAPI::Unit target)
 	return range;
 }
 
-int UnitUtil::GetAttackRange(BWAPI::UnitType attacker, BWAPI::UnitType target)
+int UnitUtils::GetAttackRange(BWAPI::UnitType attacker, BWAPI::UnitType target)
 {
 	BWAPI::WeaponType weapon = GetWeapon(attacker, target);
 
@@ -285,7 +285,7 @@ int UnitUtil::GetAttackRange(BWAPI::UnitType attacker, BWAPI::UnitType target)
 	return weapon.maxRange();
 }
 
-size_t UnitUtil::GetAllUnitCount(BWAPI::UnitType type)
+size_t UnitUtils::GetAllUnitCount(BWAPI::UnitType type)
 {
 	size_t count = 0;
 	for (const auto & unit : BWAPI::Broodwar->self()->getUnits())
@@ -321,7 +321,7 @@ size_t UnitUtil::GetAllUnitCount(BWAPI::UnitType type)
 }
 
 // 전체 순차탐색을 하기 때문에 느리다
-BWAPI::Unit UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target)
+BWAPI::Unit UnitUtils::GetClosestUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target)
 {
 	BWAPI::Unit closestUnit = nullptr;
 	double closestDist = 100000000;
@@ -343,7 +343,7 @@ BWAPI::Unit UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Po
 }
 
 
-void UnitUtil::getAllCloakUnits(BWAPI::Unitset &units){
+void UnitUtils::getAllCloakUnits(BWAPI::Unitset &units){
 	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits()){
 		if (unit->isVisible() && !unit->isDetected()){
 			units.insert(unit);
@@ -355,12 +355,12 @@ void UnitUtil::getAllCloakUnits(BWAPI::Unitset &units){
 // centerUnit : 측정에서 기준이 되는 유닛
 // radius : 측정범위
 // 데미지/쿨다운 : 마린(0.4), 시즈(0.81, 0.93)
-double UnitUtil::getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int radius){
+double UnitUtils::getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int radius){
 	double totalLTD = 0.0;
 	int distanceMargin = centerUnit->getType().width();
 	for (auto &attacker : centerUnit->getUnitsInRadius(radius)){
 		if (attacker->getPlayer() == player) {
-			BWAPI::WeaponType weapon = UnitUtil::GetWeapon(attacker, centerUnit); //공격가능 여부 판단 
+			BWAPI::WeaponType weapon = UnitUtils::GetWeapon(attacker, centerUnit); //공격가능 여부 판단 
 			int tmpDistance = attacker->getDistance(centerUnit); //거리 판단
 			if (weapon != BWAPI::WeaponTypes::None && weapon != BWAPI::WeaponTypes::Unknown &&
 				tmpDistance <= (weapon.maxRange() + distanceMargin))
@@ -372,7 +372,7 @@ double UnitUtil::getNearByLTD(BWAPI::Player player, BWAPI::Unit centerUnit, int 
 	return totalLTD;
 }
 
-BWAPI::Unit UnitUtil::canIFight(BWAPI::Unit attacker)
+BWAPI::Unit UnitUtils::canIFight(BWAPI::Unit attacker)
 {
 	if (attacker == nullptr)
 		return nullptr;
@@ -403,7 +403,7 @@ BWAPI::Unit UnitUtil::canIFight(BWAPI::Unit attacker)
 }
 
 
-BWAPI::Unit UnitUtil::GetFarUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target)
+BWAPI::Unit UnitUtils::GetFarUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target)
 {
 	BWAPI::Unit farUnit = nullptr;
 	double farDist = 0;

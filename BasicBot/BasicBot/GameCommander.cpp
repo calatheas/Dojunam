@@ -328,8 +328,8 @@ void GameCommander::setCombatUnits()
 		if (_scoutUnits.contains(unit) || unit->getType() == BWAPI::UnitTypes::Terran_Vulture_Spider_Mine)
 			continue;
 
-		if (UnitUtil::IsValidUnit(unit))
-			if (UnitUtil::IsCombatUnit(unit) && !unit->getType().isWorker())
+		if (UnitUtils::IsValidUnit(unit))
+			if (UnitUtils::IsCombatUnit(unit) && !unit->getType().isWorker())
 			{
 				//unit->getOrder
 				BWAPI::UnitCommand currentCommand(unit->getLastCommand());

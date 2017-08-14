@@ -156,7 +156,7 @@ BWAPI::Unit TankManager::getTarget(BWAPI::Unit tank, const BWAPI::Unitset & targ
     BWAPI::Unitset targetsInSiegeRange;
     for (auto & target : targets)
     {
-        if (target->getDistance(tank) < siegeTankRange && UnitUtil::CanAttack(tank, target))
+        if (target->getDistance(tank) < siegeTankRange && UnitUtils::CanAttack(tank, target))
         {
             targetsInSiegeRange.insert(target);
         }
@@ -168,13 +168,13 @@ BWAPI::Unit TankManager::getTarget(BWAPI::Unit tank, const BWAPI::Unitset & targ
     // choose the highest priority one from them at the lowest health
     for (const auto & target : newTargets)
     {
-        if (!UnitUtil::CanAttack(tank, target))
+        if (!UnitUtils::CanAttack(tank, target))
         {
             continue;
         }
 
         double distance         = tank->getDistance(target);
-        double LTD              = UnitUtil::CalculateLTD(target, tank);
+        double LTD              = UnitUtils::CalculateLTD(target, tank);
         int priority            = getAttackPriority(tank, target);
         bool targetIsThreat     = LTD > 0;
         BWAPI::Broodwar->drawTextMap(target->getPosition(), "%d", priority);

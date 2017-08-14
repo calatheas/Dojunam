@@ -22,10 +22,10 @@ void RangedManager::executeMicro(const BWAPI::Unitset & targets)
 
 void RangedManager::checkBunkerNum()
 {
-	bunkerNum = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+	bunkerNum = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
 	if (bunkerNum > 0)
 	{
-		bunkerUnit = UnitUtil::GetClosestUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
+		bunkerUnit = UnitUtils::GetClosestUnitTypeToTarget(BWAPI::UnitTypes::Terran_Bunker, BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
 	}
 }
 
@@ -161,7 +161,7 @@ BWAPI::Unit RangedManager::getTarget(BWAPI::Unit rangedUnit, const BWAPI::Unitse
 	for (const auto & target : targets)
 	{
 		double distance = rangedUnit->getDistance(target);
-		double LTD = UnitUtil::CalculateLTD(target, rangedUnit);
+		double LTD = UnitUtils::CalculateLTD(target, rangedUnit);
 		int priority = getAttackPriority(rangedUnit, target);
 		bool targetIsThreat = LTD > 0;
 

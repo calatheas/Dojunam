@@ -91,7 +91,7 @@ void InformationManager::updateUnitsInfo()
 
 		//첫번째 러쉬가 안끝난 경우, 매 프레임 적 유닛 위치를 파악하여 우리 지역에 들어왔는지 판단
 		if (!finishFirstRush) {
-			if (UnitUtil::IsCombatUnit_rush(unit)){
+			if (UnitUtils::IsCombatUnit_rush(unit)){
 				if (getMainBaseLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) ||
 					getFirstExpansionLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
 					numCombatUnitInSelfRegion++;
@@ -790,7 +790,7 @@ int InformationManager::checkFirstRush(){
 		if (finishFirstRush) return 0;
 		
 		for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
-			if (UnitUtil::IsCombatUnit_rush(u.first)){
+			if (UnitUtils::IsCombatUnit_rush(u.first)){
 				if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(u.second.lastPosition)){
 					numCombatUnit++;
 				}

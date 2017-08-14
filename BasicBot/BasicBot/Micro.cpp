@@ -279,7 +279,7 @@ void Micro::SmartKiteTarget(BWAPI::Unit rangedUnit, BWAPI::Unit target)
 
 
 	// if the unit can't attack back don't kite
-	if ((rangedUnit->isFlying() && !UnitUtil::CanAttackAir(target)) || (!rangedUnit->isFlying() && !UnitUtil::CanAttackGround(target)))
+	if ((rangedUnit->isFlying() && !UnitUtils::CanAttackAir(target)) || (!rangedUnit->isFlying() && !UnitUtils::CanAttackGround(target)))
 	{
 		//kite = false;
 	}

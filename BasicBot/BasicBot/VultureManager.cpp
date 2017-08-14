@@ -61,7 +61,7 @@ void VultureManager::executeMicro(const BWAPI::Unitset & targets)
 void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 {
 	const BWAPI::Unitset & vultureUnits = getUnits();
-	int spiderMineCount = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture_Spider_Mine);
+	int spiderMineCount = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Vulture_Spider_Mine);
 	// figure out targets
 	BWAPI::Unitset vultureUnitTargets;
 	std::copy_if(targets.begin(), targets.end(), std::inserter(vultureUnitTargets, vultureUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });	
@@ -70,7 +70,7 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	{
 		setScoutRegions();
 		for (auto & vultureUnit : vultureUnits){
-			BWAPI::Unit target = UnitUtil::canIFight(vultureUnit);
+			BWAPI::Unit target = UnitUtils::canIFight(vultureUnit);
 			if (target == nullptr)
 			{
 				getScoutRegions(vultureUnit);
@@ -219,7 +219,7 @@ BWAPI::Unit VultureManager::getTarget(BWAPI::Unit vultureUnit, const BWAPI::Unit
 	for (const auto & target : targets)
 	{
 		double distance = vultureUnit->getDistance(target);
-		double LTD = UnitUtil::CalculateLTD(target, vultureUnit);
+		double LTD = UnitUtils::CalculateLTD(target, vultureUnit);
 		int priority = getAttackPriority(vultureUnit, target);
 		bool targetIsThreat = LTD > 0;
 
