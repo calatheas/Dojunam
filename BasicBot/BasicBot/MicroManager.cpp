@@ -214,6 +214,7 @@ void MicroManager::drawOrderText()
 {
 	for (auto & unit : _units) 
     {
+		if (Config::Debug::DrawUnitTargetInfo) BWAPI::Broodwar->drawTextMap(unit->getPosition().x, unit->getPosition().y+10, "%s", unit->getOrder().c_str());
 		if (Config::Debug::DrawUnitTargetInfo) BWAPI::Broodwar->drawTextMap(unit->getPosition().x, unit->getPosition().y, "%s", order.getStatus().c_str());
 	}
 }

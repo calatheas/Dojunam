@@ -173,7 +173,7 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 
 	if (!unit->canUseTech(BWAPI::TechTypes::Spider_Mines, pos))
 	{
-		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I can't mining");
+		//BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I can't mining");
 		return;
 	}
 
@@ -187,8 +187,8 @@ void Micro::SmartLaySpiderMine(BWAPI::Unit unit, BWAPI::Position pos)
 	// if we've already told this unit to move to this position, ignore this command
 	if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Use_Tech_Position) && (currentCommand.getTargetPosition() == pos))// && unit->isMoving())
 	{
-		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I'm Going for mining");
-		BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 60), "%d", BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame());
+		//BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 50), "%s", "I'm Going for mining");
+		//BWAPI::Broodwar->drawTextMap(unit->getPosition() + BWAPI::Position(0, 60), "%d", BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame());
 		if ((BWAPI::Broodwar->getFrameCount() - unit->getLastCommandFrame() > 100) && !unit->isMoving())
 		{
 			pos = pos + BWAPI::Position(7, -1);

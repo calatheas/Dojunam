@@ -52,6 +52,8 @@ class Squad
 	//bool                        needsToRegroup();
 	int                         squadUnitsNear(BWAPI::Position p);
 
+	std::vector<BWAPI::Unitset> _units_divided(int num);
+
 public:
 
 	Squad(const std::string & name, SquadOrder order, size_t priority);

@@ -38,6 +38,7 @@ namespace MyBot
 		void        handleMoveWorkers();
 		void        handleCombatWorkers();
 		void        handleRepairWorkers();
+		void		handleBunkderRepairWorkers();
 		void		handleScoutCombatWorker();
 		void        rebalanceWorkers();
 
@@ -111,8 +112,10 @@ namespace MyBot
 		/// position 에서 가장 가까운 Mineral 혹은 Idle 혹은 Move 일꾼 유닛들 중에서 Repair 임무를 수행할 일꾼 유닛을 정해서 리턴합니다
 		BWAPI::Unit chooseRepairWorkerClosestTo(BWAPI::Position p, int maxRange = 100000000);
 		void        setRepairWorker(BWAPI::Unit worker, BWAPI::Unit unitToRepair);
+		void		setBunkerRepairWorker(BWAPI::Unit worker, BWAPI::Unit unitToRepair);
+		void		stopBunkerRepair();
 		void        stopRepairing(BWAPI::Unit worker);
-	
+		int			getNumBunkerRepairWorkers();
 		/// position 에서 가장 가까운 Mineral 혹은 Idle 일꾼 유닛들 중에서 Move 임무를 수행할 일꾼 유닛을 정해서 리턴합니다
 		void        setMoveWorker(BWAPI::Unit worker, int m, int g, BWAPI::Position p);
 		BWAPI::Unit chooseMoveWorkerClosestTo(BWAPI::Position p);
@@ -124,7 +127,7 @@ namespace MyBot
 		void        setCombatWorker(BWAPI::Unit worker);
 		/// 모든 Combat 일꾼 유닛에 대해 임무를 해제합니다
 		void        stopCombat();
-
+	
 		void		setScoutCombatWorker(BWAPI::Unit worker);
 
 	};

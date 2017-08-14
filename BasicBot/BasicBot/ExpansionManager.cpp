@@ -158,43 +158,41 @@ bool ExpansionManager::shouldExpandNow()
 		return false;
 	}
 
-	//아군 유닛이 적당히 나가있는 경우에만 수행한다. 이때가 비교적 안전한 경우 이므로
-	if (InformationManager::Instance().nowCombatStatus >= InformationManager::combatStatus::wSecondChokePoint){
-		//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
-		if (expansions.size() < 3 && enemyResourceRegions.size() > expansions.size()){
-			std::cout << "add expansions(less than enemy expansions)" << std::endl;
-			return true;
-		}
 
-		//일꾼이 남는경우
-		if (WorkerManager::Instance().getNumIdleWorkers() / (float)WorkerManager::Instance().getNumMineralWorkers() > 0.5)
-		{
-			std::cout << "add expansions(enough workers)" << std::endl;
-			return true;
-		}
-
-		// 현재 큐에 있는거 만들고도 남는 미네랄이 많다면... 빌드매니저에서 사용하는 여유자원소비기준(현재는 400)
-		BuildManager &tmpObj = BuildManager::Instance();
-		if ((tmpObj.getAvailableMinerals() - tmpObj.getQueueResource().first) > tmpObj.marginResource.first)
-		{
-			std::cout << "add expansions(enough minerals)" << std::endl;
-			return true;
-		}
-
-		/*
-		int minute = BWAPI::Broodwar->getFrameCount() / (24 * 60);
-		int numExpansions = ExpansionManager::Instance().expansions.size();
-
-		std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
-
-		for (size_t i(0); i < expansionTimes.size(); ++i){
-			if (numExpansions < (i + 2) && minute > expansionTimes[i]){
-				std::cout << "add expansions(time limit)" << std::endl;
-				return true;
-			}
-		}
-		*/
+	//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
+	if (expansions.size() < 3 && enemyResourceRegions.size() > expansions.size()){
+		//std::cout << "add expansions(less than enemy expansions)" << std::endl;
+		return true;
 	}
+
+	//일꾼이 남는경우
+	//if (WorkerManager::Instance().getNumIdleWorkers() / (float)WorkerManager::Instance().getNumMineralWorkers() > 0.5)
+	//{
+	//	std::cout << "add expansions(enough workers)" << std::endl;
+	//	return true;
+	//}
+
+	// 현재 큐에 있는거 만들고도 남는 미네랄이 많다면... 빌드매니저에서 사용하는 여유자원소비기준(현재는 400)
+	BuildManager &tmpObj = BuildManager::Instance();
+	if ((tmpObj.getAvailableMinerals() - tmpObj.getQueueResource().first) > tmpObj.marginResource.first)
+	{
+		//std::cout << "add expansions(enough minerals)" << std::endl;
+		return true;
+	}
+
+	/*
+	int minute = BWAPI::Broodwar->getFrameCount() / (24 * 60);
+	int numExpansions = ExpansionManager::Instance().expansions.size();
+
+	std::vector<int> expansionTimes = { 5, 7, 13, 20, 40, 50 };
+
+	for (size_t i(0); i < expansionTimes.size(); ++i){
+		if (numExpansions < (i + 2) && minute > expansionTimes[i]){
+			std::cout << "add expansions(time limit)" << std::endl;
+			return true;
+		}
+	}
+	*/
 
 	return false;
 }
@@ -203,8 +201,9 @@ void ExpansionManager::changeComplexity(BWAPI::Unit unit, bool isAdd){
 	Expansion *e = getExpansion(unit);
 	if (e != NULL){
 		BWTA::Region *expansion_r = BWTA::getRegion(e->cc->getPosition());
-
-		std::cout << "expansion " << e->cc->getID() << " compexity : " << e->complexity << " -> ";
+		
+		if (e->complexity > 0.2)
+			std::cout << "expansion " << e->cc->getID() << " compexity : " << e->complexity << " -> ";
 
 
 		if (isAdd)
@@ -212,7 +211,8 @@ void ExpansionManager::changeComplexity(BWAPI::Unit unit, bool isAdd){
 		else
 			e->complexity -= (unit->getType().width() * unit->getType().height()) / expansion_r->getPolygon().getArea();
 
-		std::cout << e->complexity << std::endl;
+		if (e->complexity > 0.2)
+			std::cout << e->complexity << std::endl;
 	}
 }
 

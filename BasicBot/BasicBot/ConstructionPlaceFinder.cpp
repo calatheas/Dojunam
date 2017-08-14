@@ -327,8 +327,8 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationNear(BWAPI::UnitTyp
 		int spiralDirectionY = 1;
 		while (spiralMaxLength < maxRange)
 		{
-			if (currentX >= 0 && currentX < BWAPI::Broodwar->mapWidth() && currentY >= 0 && currentY <BWAPI::Broodwar->mapHeight() && 
-				seedRegion->getPolygon().isInside(BWAPI::Position(currentX * 32, currentY * 32))) //같은 리젼에만 짓도록
+			if (currentX >= 0 && currentX < BWAPI::Broodwar->mapWidth() && currentY >= 0 && currentY <BWAPI::Broodwar->mapHeight())
+				//&& seedRegion->getPolygon().isInside(BWAPI::Position(currentX * 32, currentY * 32))) //같은 리젼에만 짓도록
 			{
 
 				isPossiblePlace = canBuildHereWithSpace(BWAPI::TilePosition(currentX, currentY), b, buildingGapSpace);

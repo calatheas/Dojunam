@@ -36,7 +36,7 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			if (choke->getCenter().getDistance(tank->getPosition()) < 80)
 			{
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
-				BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");
+				//BWAPI::Broodwar->drawTextMap(tank->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");
 				tankNearChokepoint = true;
 				break;
 			}
@@ -103,16 +103,16 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			// if there are no targets
 			else
 			{
-				if (tank->isUnderAttack())
-				{
-					if (InformationManager::combatStatus::wSecondChokePoint >= InformationManager::Instance().nowCombatStatus)
-						tank->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
-					else if (InformationManager::combatStatus::wFirstChokePoint >= InformationManager::Instance().nowCombatStatus)
-						tank->move(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
-					else
-						tank->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
-				}
-				else
+//				if (tank->isUnderAttack())
+//				{
+//					if (InformationManager::combatStatus::wSecondChokePoint >= InformationManager::Instance().nowCombatStatus)
+//						tank->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+//					else if (InformationManager::combatStatus::wFirstChokePoint >= InformationManager::Instance().nowCombatStatus)
+//						tank->move(InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
+//					else
+//						tank->move(InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getPosition());
+//				}
+//				else
 				// if we're not near the order position
 				if (tank->getDistance(order.getPosition()) > 120)
 				{

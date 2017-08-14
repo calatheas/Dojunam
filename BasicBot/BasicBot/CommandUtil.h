@@ -37,6 +37,7 @@ namespace MyBot
 	namespace UnitUtil
 	{
 		bool IsCombatUnit(BWAPI::Unit unit);
+		bool IsCombatUnit_rush(BWAPI::Unit unit);
 		bool IsValidUnit(BWAPI::Unit unit);
 		bool CanAttackAir(BWAPI::Unit unit);
 		bool CanAttackGround(BWAPI::Unit unit);
@@ -54,6 +55,7 @@ namespace MyBot
 		size_t GetAllUnitCount(BWAPI::UnitType type);
 		
 		BWAPI::Unit GetClosestUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target);
+		BWAPI::Unit GetFarUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target);
 		double GetDistanceBetweenTwoRectangles(Rect & rect1, Rect & rect2);
 		
 		void getAllCloakUnits(BWAPI::Unitset &units);

@@ -9,7 +9,7 @@ namespace MyBot
 	{
 		BWAPI::Unit miningUnit;
 		BWAPI::Unit scountUnit;
-		BWAPI::Position getScoutRegions(BWAPI::Position unitPosition);
+		void getScoutRegions(BWAPI::Unit unit);
 		void setScoutRegions();
 		std::vector<BWAPI::Position> scoutRegions;
 	public:

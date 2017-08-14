@@ -158,6 +158,28 @@ bool UnitUtil::IsCombatUnit(BWAPI::Unit unit)
 	return false;
 }
 
+bool UnitUtil::IsCombatUnit_rush(BWAPI::Unit unit)
+{
+	if (!unit)
+	{
+		return false;
+	}
+
+	// no workers or buildings allowed
+	if (unit->getType().isWorker() || unit->getType().isBuilding())
+	{
+		return false;
+	}
+
+	// check for various types of combat units
+	if (unit->getType().canAttack())
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool UnitUtil::IsValidUnit(BWAPI::Unit unit)
 {
 	if (!unit)
@@ -284,15 +306,15 @@ size_t UnitUtil::GetAllUnitCount(BWAPI::UnitType type)
 
 		// case where a building has started constructing a unit but it doesn't yet have a unit associated with it
 		// 트레이닝 중인 유닛모두 포함
-		if (unit->getRemainingTrainTime() > 0)
-		{
-			BWAPI::UnitType trainType = unit->getLastCommand().getUnitType();
+		//if (unit->getRemainingTrainTime() > 0)
+		//{
+		//	BWAPI::UnitType trainType = unit->getLastCommand().getUnitType();
 
-			if (trainType == type && unit->getRemainingTrainTime() == trainType.buildTime())
-			{
-				count++;
-			}
-		}
+		//	if (trainType == type && unit->getRemainingTrainTime() == trainType.buildTime())
+		//	{
+		//		count++;
+		//	}
+		//}
 	}
 
 	return count;
@@ -378,4 +400,26 @@ BWAPI::Unit UnitUtil::canIFight(BWAPI::Unit attacker)
 	}	
 	else
 		return attackedEnemy;
+}
+
+
+BWAPI::Unit UnitUtil::GetFarUnitTypeToTarget(BWAPI::UnitType type, BWAPI::Position target)
+{
+	BWAPI::Unit farUnit = nullptr;
+	double farDist = 0;
+
+	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+	{
+		if (unit->getType() == type)
+		{
+			double dist = unit->getDistance(target);
+			if (!farUnit || dist > farDist)
+			{
+				farUnit = unit;
+				farDist = dist;
+			}
+		}
+	}
+
+	return farUnit;
 }

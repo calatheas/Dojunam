@@ -62,15 +62,18 @@ WorkerManager & WorkerManager::Instance()
 
 void WorkerManager::update()
 {
-	if (BWAPI::Broodwar->getFrameCount() % 24 == 1){
+//	if (BWAPI::Broodwar->getFrameCount() % 24 == 1)
+	{
 		updateWorkerStatus();
 		handleGasWorkers();
 		handleIdleWorkers();
 		handleMoveWorkers();
 		handleScoutCombatWorker();
+		handleRepairWorkers();
 	}
 	handleCombatWorkers();
-	handleRepairWorkers();
+	handleBunkderRepairWorkers();
+	
 }
 void WorkerManager::updateWorkerStatus() 
 {
@@ -108,7 +111,8 @@ void WorkerManager::updateWorkerStatus()
 			// workerData 에서 Build / Move / Scout 로 임무지정한 경우, worker 는 즉 임무 수행 도중 (임무 완료 전) 에 일시적으로 isIdle 상태가 될 수 있다 
 			if ((workerData.getWorkerJob(worker) != WorkerData::Build)
 				&& (workerData.getWorkerJob(worker) != WorkerData::Move)
-				&& (workerData.getWorkerJob(worker) != WorkerData::Scout))  
+				&& (workerData.getWorkerJob(worker) != WorkerData::Scout)
+				&& (workerData.getWorkerJob(worker) != WorkerData::BunkerReapir))
 			{
 				workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
 			}
@@ -180,7 +184,7 @@ void WorkerManager::handleGasWorkers()
 
 					if (mineralWorker)
 					{
-						workerData.setWorkerJob(mineralWorker, WorkerData::Idle, nullptr);
+						setMineralWorker(mineralWorker);
 					}
 				}
 			}
@@ -260,22 +264,23 @@ void WorkerManager::handleMoveWorkers()
 void WorkerManager::handleCombatWorkers()
 {//ssh
 
-	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::nHelpDefence
-		|| InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wFirstChokePoint
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON5
+		&& (InformationManager::Instance().lastCombatStatus == InformationManager::combatStatus::DEFCON1 || InformationManager::Instance().lastCombatStatus == InformationManager::combatStatus::DEFCON2)
 		)
 	{
+		bool findEnemy = false;
 		//질럿저글링 처리
 		for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 		{
 
 			if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling || unit->getType() == BWAPI::UnitTypes::Protoss_Zealot || unit->getType() == BWAPI::UnitTypes::Protoss_Dragoon || unit->getType() == BWAPI::UnitTypes::Terran_Marine)
 			{
-
+				findEnemy = true;
 				if (BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()) {
 					continue;
 				}
 				int maxCombatWorker = 7;
-				if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wFirstChokePoint)
+				if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON2)
 					maxCombatWorker = 5;
 				for (auto & worker : workerData.getWorkers())
 				{
@@ -314,6 +319,10 @@ void WorkerManager::handleCombatWorkers()
 				}
 			}
 		}
+		if (!findEnemy) {
+			stopCombat();
+		}
+
 	}
 }
 
@@ -396,7 +405,14 @@ void WorkerManager::handleRepairWorkers()
 
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
 	{
-		if (unit->getType().isMechanical() && unit->isCompleted() == true && unit->getHitPoints() < unit->getType().maxHitPoints())
+		// 건물의 경우 아무리 멀어도 무조건 수리. 일꾼 한명이 순서대로 수리
+		if (unit->getType().isBuilding() && unit->isCompleted() == true && unit->getType() != BWAPI::UnitTypes::Terran_Bunker && unit->getHitPoints() < unit->getType().maxHitPoints() - 400)
+		{
+			BWAPI::Unit repairWorker = chooseRepairWorkerClosestTo(unit->getPosition());
+			setRepairWorker(repairWorker, unit);
+			break;
+		}
+		else if (unit->getType().isMechanical() && unit->isCompleted() == true && unit->getHitPoints() < unit->getType().maxHitPoints())
 		{
 			// SCV 는 수리 대상에서 제외. 전투 유닛만 수리하도록 한다
 			if (unit->getType() != BWAPI::UnitTypes::Terran_SCV) {
@@ -405,16 +421,6 @@ void WorkerManager::handleRepairWorkers()
 				break;
 			}
 		}
-		// 건물의 경우 아무리 멀어도 무조건 수리. 일꾼 한명이 순서대로 수리
-		else if (unit->getType().isBuilding() && unit->isCompleted() == true && unit->getHitPoints() < unit->getType().maxHitPoints() - 400)
-		{
-			BWAPI::Unit repairWorker = chooseRepairWorkerClosestTo(unit->getPosition());
-			setRepairWorker(repairWorker, unit);
-			break;
-		}
-		// 메카닉 유닛 (SCV, 시즈탱크, 레이쓰 등)의 경우 근처에 SCV가 있는 경우 수리. 일꾼 한명이 순서대로 수리
-
-
 	}
 }
 
@@ -457,6 +463,89 @@ BWAPI::Unit WorkerManager::chooseRepairWorkerClosestTo(BWAPI::Position p, int ma
 
 	return closestWorker;
 }
+
+void WorkerManager::handleBunkderRepairWorkers()
+{
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::DEFCON2 || InformationManager::Instance().nowCombatStatus == InformationManager::DEFCON3 || InformationManager::Instance().nowCombatStatus == InformationManager::DEFCON5) {
+		
+		bool bunkerReapir = false;
+
+		for (auto & eunit : BWAPI::Broodwar->enemy()->getUnits()) {
+			if (UnitUtil::IsCombatUnit_rush(eunit)) {
+				if (InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()->getPolygon().isInside(eunit->getPosition()) || 
+					InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self()) ->getRegion()->getPolygon().isInside(eunit->getPosition())){
+					bunkerReapir = true;
+				}
+			}
+		}
+
+		if (bunkerReapir) 
+		{
+			for (auto & unit : BWAPI::Broodwar->self()->getUnits())
+			{
+				// 건물의 경우 아무리 멀어도 무조건 수리. 일꾼 한명이 순서대로 수리
+				if (unit->getType() == BWAPI::UnitTypes::Terran_Bunker && unit->isCompleted())
+				{
+					int maxBunkerRepairWorker = 5;
+					for (auto & worker : workerData.getWorkers())
+					{
+						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::BunkerReapir) {
+
+							if (worker->getHitPoints() <= _freeHP) {
+								setMineralWorker(worker);
+							}
+							else {
+								maxBunkerRepairWorker--;
+
+								setBunkerRepairWorker(worker, unit);
+								std::cout << "worker : " << worker->getID() << "bunker : " << unit->getID() << std::endl;
+								//CommandUtil::attackUnit(worker, unit);
+							}
+						}
+
+						if (maxBunkerRepairWorker <= 0) {
+							return;
+						}
+					}
+
+					for (auto & worker : workerData.getWorkers())
+					{
+						if (WorkerManager::Instance().getWorkerData().getWorkerJob(worker) == WorkerData::Minerals){
+							if (worker->getHitPoints() > _freeHP) {
+								maxBunkerRepairWorker--;
+								setBunkerRepairWorker(worker, unit);
+
+								std::cout << "worker : " << worker->getID() << "bunker : " << unit->getID() << std::endl;
+							}
+						}
+
+						if (maxBunkerRepairWorker <= 0) {
+							return;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			stopBunkerRepair();
+		}
+	}
+}
+
+void WorkerManager::stopBunkerRepair()
+{
+	for (auto & worker : workerData.getWorkers())
+	{
+		if (!worker) continue;
+
+		if (workerData.getWorkerJob(worker) == WorkerData::BunkerReapir)
+		{
+			setMineralWorker(worker);
+		}
+	}
+}
+
 
 BWAPI::Unit WorkerManager::getScoutWorker()
 {
@@ -632,7 +721,7 @@ BWAPI::Unit WorkerManager::chooseConstuctionWorkerClosestTo(BWAPI::UnitType buil
 		}
 
 		// Move / Idle Worker 가 없을때, 다른 Worker 중에서 차출한다 
-		if (unit->isCompleted() && !unit->isCarryingGas() && !unit->isCarryingMinerals() && workerData.getWorkerJob(unit) != WorkerData::Move && workerData.getWorkerJob(unit) != WorkerData::Idle && workerData.getWorkerJob(unit) != WorkerData::Build && workerData.getWorkerJob(unit) != WorkerData::Repair)
+		if (unit->isCompleted() && !unit->isCarryingGas() && !unit->isCarryingMinerals() && workerData.getWorkerJob(unit) != WorkerData::Move && workerData.getWorkerJob(unit) != WorkerData::Idle && workerData.getWorkerJob(unit) != WorkerData::Build && workerData.getWorkerJob(unit) != WorkerData::Repair && workerData.getWorkerJob(unit) != WorkerData::Scout)
 		{
 			// if it is a new closest distance, set the pointer
 			double distance = unit->getDistance(BWAPI::Position(buildingPosition));
@@ -753,6 +842,11 @@ void WorkerManager::setScoutCombatWorker(BWAPI::Unit worker)
 void WorkerManager::setRepairWorker(BWAPI::Unit worker, BWAPI::Unit unitToRepair)
 {
 	workerData.setWorkerJob(worker, WorkerData::Repair, unitToRepair);
+}
+
+void WorkerManager::setBunkerRepairWorker(BWAPI::Unit worker, BWAPI::Unit unitToRepair)
+{
+	workerData.setWorkerJob(worker, WorkerData::BunkerReapir, unitToRepair);
 }
 
 void WorkerManager::stopRepairing(BWAPI::Unit worker)
@@ -884,6 +978,11 @@ int WorkerManager::getNumIdleWorkers()
 int WorkerManager::getNumGasWorkers() 
 {
 	return workerData.getNumGasWorkers();
+}
+
+int WorkerManager::getNumBunkerRepairWorkers()
+{
+	return workerData.getNumBunkerRepairWorkers();
 }
 
 WorkerData  WorkerManager::getWorkerData()

@@ -33,12 +33,17 @@ InformationManager::InformationManager()
 	_secondChokePoint[selfPlayer] = nullptr;
 	_secondChokePoint[enemyPlayer] = nullptr;
 
+	mapName = 'N';
+	onStart();
 	updateChokePointAndExpansionLocation();
 
 	hasCloakedUnits = false;
 	hasFlyingUnits = false;
 
-	mapName = 'N';
+
+	finishFirstRush = false;
+
+	baseNumFirstRush = 2;
 }
 
 //kyj
@@ -76,6 +81,7 @@ void InformationManager::update()
 void InformationManager::updateUnitsInfo() 
 {
 	// update units info
+	int numCombatUnitInSelfRegion = 0;
 	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
 		//한번만 체크!
@@ -83,7 +89,22 @@ void InformationManager::updateUnitsInfo()
 		if (!hasCloakedUnits) enemyHasCloakedUnits(unit);
 		if (!hasFlyingUnits) enemyHasFlyingUnits(unit);
 
+		//첫번째 러쉬가 안끝난 경우, 매 프레임 적 유닛 위치를 파악하여 우리 지역에 들어왔는지 판단
+		if (!finishFirstRush) {
+			if (UnitUtil::IsCombatUnit_rush(unit)){
+				if (getMainBaseLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) ||
+					getFirstExpansionLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+					numCombatUnitInSelfRegion++;
+				}
+			}
+		}
+
 		updateUnitInfo(unit);
+	}
+
+	//첫번째 러쉬 종료
+	if (numCombatUnitInSelfRegion >= baseNumFirstRush){
+		finishFirstRush = true;
 	}
 
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
@@ -343,6 +364,25 @@ void InformationManager::updateChokePointAndExpansionLocation()
 					closestDistance = tempDistance;
 					_secondChokePoint[selfPlayer] = chokepoint;
 				}
+			}
+			if (getMapName() == 'H' && 3 == getPostionAtHunter())
+			{
+				closestDistance = 1000000000;
+				BWTA::Chokepoint *temp;
+				for (BWTA::Chokepoint * chokepoint : BWTA::getChokepoints())
+				{
+					if (chokepoint == _firstChokePoint[selfPlayer]) continue;
+					if (chokepoint == _secondChokePoint[selfPlayer]) continue;
+
+					tempDistance = BWTA::getGroundDistance(sourceBaseLocation->getTilePosition(), BWAPI::TilePosition(chokepoint->getCenter()));
+					if (tempDistance < closestDistance && tempDistance > 0) {
+						closestDistance = tempDistance;
+						temp = chokepoint;
+					}
+				}
+				_firstChokePoint[selfPlayer] = _secondChokePoint[selfPlayer];
+				_secondChokePoint[selfPlayer] = temp;
+
 			}
 		}
 		_mainBaseLocationChanged[selfPlayer] = false;
@@ -738,6 +778,44 @@ char InformationManager::getMapName(){
 	return mapName;
 }
 
+int InformationManager::checkFirstRush(){
+	int numCombatUnit = 0;
+
+	// 적진 찾기 전에면 false
+	if (getMainBaseLocation(enemyPlayer) == nullptr){
+		return 0;
+	}
+	else{
+		//미리 러쉬 완료이면 false
+		if (finishFirstRush) return 0;
+		
+		for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
+			if (UnitUtil::IsCombatUnit_rush(u.first)){
+				if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(u.second.lastPosition)){
+					numCombatUnit++;
+				}
+			}
+		}
+	}
+
+	//러쉬 종료되지 않았고, 적 메인베이스 밖에서 본 적 컴뱃유닛이 있는 경우, 러쉬로 간주
+	return numCombatUnit;
+}
+
+
+void InformationManager::setCombatStatus(combatStatus cs){
+	if (cs != nowCombatStatus){
+		changeConmgeStatusFrame = BWAPI::Broodwar->getFrameCount();
+		lastCombatStatus = nowCombatStatus;
+		nowCombatStatus = cs;
+	}
+}
+
+BWAPI::Position InformationManager::getCurrentCombatOrderPosition()
+{
+	return currentCombatOrderPosition;
+}
+
 int InformationManager::getPostionAtHunter(){
 	BWAPI::Position p_11 = BWAPI::Position(384, 240);
 	BWAPI::Position p_12 = BWAPI::Position(2304, 304);
@@ -767,7 +845,44 @@ int InformationManager::getPostionAtHunter(){
 		return 9;
 }
 
-BWAPI::Position InformationManager::getCurrentCombatOrderPosition()
-{
-	return currentCombatOrderPosition;
+BWAPI::Position InformationManager::getPostionAtHuntersecond(){
+
+	int pos_t = getPostionAtHunter();
+	if (11 == pos_t)
+		return  BWAPI::Position(52 * 32, 28 * 32);
+	else if (12 == pos_t)
+		return BWAPI::Position(52 * 32, 28 * 32);
+	else if (1 == pos_t)
+		return BWAPI::Position(94 * 32, 32 * 32);
+	else if (3 == pos_t)
+		return BWAPI::Position(85 * 32, 60 * 32);
+	else if (5 == pos_t)
+		return BWAPI::Position(84 * 32, 83 * 32);
+	else if (6 == pos_t)
+		return BWAPI::Position(44 * 32, 82 * 32);
+	else if (7 == pos_t)
+		return BWAPI::Position(34 * 32, 77 * 32);
+	else if (9 == pos_t)
+		return BWAPI::Position(43 * 32, 54 * 32);
+}
+
+BWAPI::Position InformationManager::getPostionAtHunterfirst(){
+
+	int pos_t = getPostionAtHunter();
+	if (11 == pos_t)
+		return  BWAPI::Position(29 * 32, 20 * 32);
+	else if (12 == pos_t)
+		return BWAPI::Position(56 * 32, 21 * 32);
+	else if (1 == pos_t)
+		return BWAPI::Position(98 * 32, 23 * 32);
+	else if (3 == pos_t)
+		return BWAPI::Position(104 * 32, 62 * 32);
+	else if (5 == pos_t)
+		return BWAPI::Position(99 * 32, 102 * 32);
+	else if (6 == pos_t)
+		return BWAPI::Position(57 * 32, 102 * 32);
+	else if (7 == pos_t)
+		return BWAPI::Position(15 * 32, 98 * 32);
+	else if (9 == pos_t)
+		return BWAPI::Position(23 * 32, 56 * 32);
 }

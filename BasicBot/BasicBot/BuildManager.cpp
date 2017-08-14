@@ -496,6 +496,7 @@ BWAPI::TilePosition BuildManager::getDesiredPosition(BWAPI::UnitType unitType, B
 		case BuildOrderItem::SeedPositionStrategy::SecondExpansionLocation:
 		case BuildOrderItem::SeedPositionStrategy::SeedPositionSpecified:
 		case BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock:
+		case BuildOrderItem::SeedPositionStrategy::LowComplexityExpansionLocation:
 			seedPositionStrategy = BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
 			break;
 		default:
@@ -929,6 +930,7 @@ void BuildManager::executeWorkerTraining(){
 }
 
 void BuildManager::executeCombatUnitTraining(std::pair<int, int> availableResource){
+	return;
 	if (!StrategyManager::Instance().isInitialBuildOrderFinished){
 		return;
 	}
@@ -1066,10 +1068,14 @@ void BuildManager::consumeRemainingResource(){
 
 	if (ExpansionManager::Instance().shouldExpandNow())
 	{
-		MetaType cc(BWAPI::UnitTypes::Terran_Command_Center);
-		addBuildOrderOneItem(cc);
-		remainingResource.first -= cc.mineralPrice();
-		std::cout << "add command center(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
+		//아군 유닛이 적당히 나가있는 경우에만 수행한다. 이때가 비교적 안전한 경우 이므로
+		if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4 ||
+			InformationManager::Instance().nowCombatStatus >= InformationManager::combatStatus::CenterAttack){
+			MetaType cc(BWAPI::UnitTypes::Terran_Command_Center);
+			addBuildOrderOneItem(cc);
+			remainingResource.first -= cc.mineralPrice();
+			std::cout << "add command center(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
+		}
 	}
 
 	//멀티를 제외하고는 자원부족하면 그냥 리턴

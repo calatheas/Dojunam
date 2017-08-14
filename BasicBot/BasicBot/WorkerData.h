@@ -33,6 +33,7 @@ namespace MyBot
 			Combat, 		///< 전투
 			Idle,			///< 하는 일 없음. 대기 상태. 
 			Repair,			///< 수리. Terran_SCV 만 가능
+			BunkerReapir,
 			Move,			///< 이동
 			Scout, 			///< 정찰. Move와 다름. Mineral / Gas / Build 등의 다른 임무로 차출되지 않게 됨.
 			Block,                  /// for enemy blocking
@@ -53,6 +54,7 @@ namespace MyBot
 		std::map<BWAPI::Unit, BWAPI::Unit>			  workerDepotMap;
 		std::map<BWAPI::Unit, BWAPI::Unit>			  workerRefineryMap;
 		std::map<BWAPI::Unit, BWAPI::Unit>			  workerRepairMap;
+		std::map<BWAPI::Unit, BWAPI::Unit>			  workerBunkerRepairMap;
 		std::map<BWAPI::Unit, WorkerMoveData>         workerMoveMap;
 		std::map<BWAPI::Unit, BWAPI::UnitType>        workerBuildingTypeMap;
 
@@ -90,6 +92,7 @@ namespace MyBot
 		int						getNumGasWorkers() const;
 		int						getNumIdleWorkers() const;
 		int						getNumCombatWorkers() const;
+		int						getNumBunkerRepairWorkers() const;
 
 		char					getJobCode(BWAPI::Unit unit);
 
@@ -98,6 +101,8 @@ namespace MyBot
 		void					getBuildingWorkers(std::set<BWAPI::Unit> & mw);
 		void					getRepairWorkers(std::set<BWAPI::Unit> & mw);
 	
+		double					mineralAndMineralWorkerRatio;
+
 		bool					depotHasEnoughMineralWorkers(BWAPI::Unit depot);
 		int						getMineralsNearDepot(BWAPI::Unit depot);
 

@@ -16,7 +16,7 @@ RangedManager & RangedManager::Instance()
 
 void RangedManager::executeMicro(const BWAPI::Unitset & targets)
 {
-	checkBunkerNum();
+	//checkBunkerNum();
 	assignTargetsOld(targets);
 }
 
@@ -32,28 +32,28 @@ void RangedManager::checkBunkerNum()
 void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 {
 	const BWAPI::Unitset & rangedUnits = getUnits();
-
+	
 	// figure out targets
 	BWAPI::Unitset rangedUnitTargets;
 	std::copy_if(targets.begin(), targets.end(), std::inserter(rangedUnitTargets, rangedUnitTargets.end()), [](BWAPI::Unit u){ return u->isVisible(); });
-
+	
 	for (auto & rangedUnit : rangedUnits)
 	{
-		if ((order.getType() == SquadOrderTypes::Idle || order.getType() == SquadOrderTypes::Defend)
-			&& rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
-			&& rangedUnit->getHitPoints() > 0)
-		{
-			if (bunkerNum > 0)
-			{
-				if (bunkerUnit->getLoadedUnits().size() < 4)
-				{
-					rangedUnit->load(bunkerUnit);
-					continue;
-				}
-				else
-					bunkerNum = 0;
-			}
-		}
+		//if ((order.getType() == SquadOrderTypes::Idle || order.getType() == SquadOrderTypes::Defend)
+		//	&& rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine
+		//	&& rangedUnit->getHitPoints() > 0)
+		//{
+		//	if (bunkerNum > 0)
+		//	{
+		//		if (bunkerUnit->getLoadedUnits().size() < 4)
+		//		{
+		//			rangedUnit->load(bunkerUnit);
+		//			continue;
+		//		}
+		//		else
+		//			bunkerNum = 0;
+		//	}
+		//}
 		// train sub units such as scarabs or interceptors
 		//trainSubUnits(rangedUnit);
 		bool nearChokepoint = false;
@@ -66,7 +66,7 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				&& choke->getCenter().getDistance(rangedUnit->getPosition()) < 64)
 			{
 				//std::cout << "choke->getWidth() Tank In Choke Point half " << std::endl;
-				BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");
+				//BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 50), "%s", "In Choke Point");
 				nearChokepoint = true;
 				break;
 			}
@@ -94,11 +94,11 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				{
 					rangedUnit->useTech(BWAPI::TechTypes::Stim_Packs);
 				}
-				else if (rangedUnit->getStimTimer() > 0 && rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine)
-				{
-					std::string stimPacksUsed = "stimPacks On";
-					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x, rangedUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
-				}
+				//else if (rangedUnit->getStimTimer() > 0 && rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine)
+				//{
+				//	//std::string stimPacksUsed = "stimPacks On";
+				//	//BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x, rangedUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
+				//}
 
 				// attack it
 				Micro::SmartKiteTarget(rangedUnit, target);
@@ -108,17 +108,17 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			{
 				if (order.getClosestUnit() != nullptr)
 				{
-					BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 30), "%s", "Go Near Medic");
-					//Micro::SmartAttackMove(rangedUnit, order.getClosestUnit()->getPosition());
-					Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getClosestUnit()->getPosition());
+					//BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition() + BWAPI::Position(0, 30), "%s", "Go Near Medic");
+					Micro::SmartAttackMove(rangedUnit, order.getClosestUnit()->getPosition());
+					//Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getClosestUnit()->getPosition());
 				}
 				else
 					// if we're not near the order position
-					if (rangedUnit->getDistance(order.getPosition()) > 100)
+					if (rangedUnit->getDistance(order.getPosition()) > 50)
 					{
 						// move to it
-						//Micro::SmartAttackMove(rangedUnit, order.getPosition());
-						Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getPosition());
+						Micro::SmartAttackMove(rangedUnit, order.getPosition());
+						//Micro::SmartAttackMove2(rangedUnit, order.getCenterPosition(), order.getPosition());
 					}
 			}
 		}

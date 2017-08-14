@@ -13,6 +13,7 @@ StrategyManager::StrategyManager()
 {
 	isFullScaleAttackStarted = false;
 	isInitialBuildOrderFinished = false;
+	firstChokeBunker = false;
 }
 
 void StrategyManager::onStart()
@@ -66,6 +67,15 @@ void StrategyManager::update()
 	//3. 초기빌드가 깨지거나 초기빌드를 다 사용하면 isInitialBuildOrderFinished 세팅하여 다이나믹 빌드오더 체제로 전환
 	if (BuildManager::Instance().buildQueue.isEmpty()) {
 		isInitialBuildOrderFinished = true;
+	}
+	int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON3 && !firstChokeBunker){
+		if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Bunker) == 0 &&
+			!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitTypes::Terran_Bunker)){
+			MetaType bunker(BWAPI::UnitTypes::Terran_Bunker);
+			BuildManager::Instance().addBuildOrderOneItem(bunker, BWAPI::TilePositions::None, getBuildSeedPositionStrategy(bunker));
+			firstChokeBunker = true;
+		}
 	}
 
 	//executeWorkerTraining();
@@ -282,24 +292,27 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		int goal_num_vultures = numUnits["Vultures"];
 		int goal_num_tanks = numUnits["Tanks"];
 
-		if (numUnits["Marines"] > 1 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 0) {
-			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
-		}
 
-		if (numUnits["Vultures"] > numUnits["Tanks"] && BWAPI::Broodwar->self()->gas() > 90) {
-			goal_num_tanks += 1;
+		if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss && InformationManager::Instance().getNumUnits(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->enemy()) == 0) {
+			goal_num_vultures += 1;
 		}
 		else {
-			goal_num_vultures += 1;
+			if (numUnits["Tanks"] > 0 && !hasTech(BWAPI::TechTypes::Tank_Siege_Mode)) {
+				goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
+			}
+
+			if (numUnits["Vultures"] > numUnits["Tanks"] && BWAPI::Broodwar->self()->gas() > 90) {
+				goal_num_tanks += 1;
+			}
+			else {
+				goal_num_vultures += 1;
+			}
 		}
 		
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, goal_num_marines));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Vulture, goal_num_vultures));
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode, goal_num_tanks));
-
-		if (!hasTech(BWAPI::TechTypes::Tank_Siege_Mode)) {
-			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
-		}
+		
 	}
 	else if (_main_strategy == Strategy::main_strategies::Two_Fac)
 	{
@@ -405,8 +418,17 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		//BWAPI::Broodwar->printf("Warning: No build order goal for Terran Strategy: %s", Config::Strategy::StrategyName.c_str());
 	}
 
-	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1 && InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::wSecondChokePoint) {
-		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
+	if (_main_strategy == Strategy::main_strategies::One_Fac || _main_strategy == Strategy::main_strategies::Mechanic || _main_strategy == Strategy::main_strategies::Two_Fac || _main_strategy == Strategy::main_strategies::Mechanic_Goliath) {
+		
+		std::pair<int, int> queueResource = BuildManager::Instance().getQueueResource();
+		queueResource.first += BuildManager::Instance().marginResource.first; //약간의 마진을 준다. 너무 타이트하게 여유자원을 사용하지 않기 위해서
+		queueResource.second += BuildManager::Instance().marginResource.second;
+
+		std::pair<int, int> remainingResource(BuildManager::Instance().getAvailableMinerals() - queueResource.first, BuildManager::Instance().getAvailableGas() - queueResource.second);
+
+		if (remainingResource.first > 0 && remainingResource.second > 0) {
+			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Factory, numUnits["Factorys"] + 1));
+		}
 	}
 
 	return goal;
@@ -418,22 +440,22 @@ BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrate
 	BuildOrderItem::SeedPositionStrategy rst = BuildOrderItem::SeedPositionStrategy::MainBaseLocation;
 
 	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Bunker) {
-		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 0) {
+		if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON3) {
 			return BuildOrderItem::SeedPositionStrategy::DefenceChokePoint;
 		}
-		else if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) == 1) {
+		else if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4) {
 			return BuildOrderItem::SeedPositionStrategy::SecondChokePoint;
 		}
 	}
 
 	//TODO : 큐 단위 이므로 큐에 있는것까지 고려는 잘 안됨.
 	//서플라이 2개까지만 본진커맨드 주변, 이후 본진과 쵸크포인트 둘다 먼곳
-	if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
-		if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 3){
-			std::cout << "build supply depot on MainBaseOppositeChock" << std::endl;
-			rst = BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
-		}
-	}
+	//if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
+	//	if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) > 3){
+	//		std::cout << "build supply depot on MainBaseOppositeChock" << std::endl;
+	//		rst = BuildOrderItem::SeedPositionStrategy::MainBaseOppositeChock;
+	//	}
+	//}
 
 	//본진 포화되면 다른데가서 짓도록
 	if (!ExpansionManager::Instance().getExpansions().empty() && ExpansionManager::Instance().getExpansions()[0].complexity > 0.25){
@@ -522,7 +544,7 @@ void StrategyManager::initStrategies(){
 	_strategies[Strategy::main_strategies::One_Fac].next_strategy = Strategy::main_strategies::Two_Fac;
 	_strategies[Strategy::main_strategies::One_Fac].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV Marine SCV Marine Factory Supply_Depot";
 	//_strategies[Strategy::main_strategies::One_Fac].opening_build_order = "SCV SCV SCV SCV SCV Barracks SCV Refinery Supply_Depot SCV Marine Factory SCV Marine Supply_Depot";
-	_strategies[Strategy::main_strategies::One_Fac].num_unit_limit["Tanks"] = 2;
+	_strategies[Strategy::main_strategies::One_Fac].num_unit_limit["Vultures"] = 4;
 
 	_strategies[Strategy::main_strategies::Two_Fac] = Strategy();
 	_strategies[Strategy::main_strategies::Two_Fac].pre_strategy = Strategy::main_strategies::None;
