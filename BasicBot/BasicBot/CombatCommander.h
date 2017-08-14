@@ -71,6 +71,8 @@ public:
 
 	void supplementSquad();
 
+	bool notDraw;
+
 	//에러위치 찾는 용도
 	std::ofstream log_file;
 	std::string log_file_path;

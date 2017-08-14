@@ -18,7 +18,8 @@ CombatCommander & CombatCommander::Instance()
 }
 
 CombatCommander::CombatCommander() 
-    : _initialized(false)
+    : _initialized(false),
+	notDraw(false)
 {
 
 	time_t     now = time(0);
@@ -1011,6 +1012,11 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 	}
 
 	InformationManager::Instance().setCombatStatus(_combatStatus);
+
+	if (BWAPI::Broodwar->getFrameCount() >= 16800 && InformationManager::Instance().getUnitAndUnitInfoMap(InformationManager::Instance().enemyPlayer).size() == 0){
+		notDraw = true;
+		std::cout << "notDraw:" << notDraw << std::endl;
+	}
 }
 
 
