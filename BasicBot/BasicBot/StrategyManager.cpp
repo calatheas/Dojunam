@@ -74,10 +74,15 @@ void StrategyManager::update()
 			!BuildManager::Instance().hasUnitInQueue(BWAPI::UnitTypes::Terran_Bunker)){
 			MetaType bunker(BWAPI::UnitTypes::Terran_Bunker);
 			BuildManager::Instance().addBuildOrderOneItem(bunker, BWAPI::TilePositions::None, getBuildSeedPositionStrategy(bunker));
+			if (ExpansionManager::Instance().getExpansions()[0].cc->isTraining() &&
+				ExpansionManager::Instance().getExpansions()[0].cc->getLastCommand().getUnitType() == BWAPI::UnitTypes::Terran_SCV &&
+				ExpansionManager::Instance().getExpansions()[0].cc->canCancelTrain()
+				){
+				ExpansionManager::Instance().getExpansions()[0].cc->cancelTrain();
+			}
 			firstChokeBunker = true;
 		}
 	}
-
 	//executeWorkerTraining();
 
 	//executeSupplyManagement();

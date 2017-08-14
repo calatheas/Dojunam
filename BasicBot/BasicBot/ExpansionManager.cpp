@@ -52,6 +52,8 @@ void ExpansionManager::onUnitDestroy(BWAPI::Unit unit)
 }
 
 void ExpansionManager::onUnitComplete(BWAPI::Unit unit){
+	if (!unit->isVisible()) return;
+
 	if (unit->getPlayer() == BWAPI::Broodwar->self()){
 		if(unit->getType() == BWAPI::UnitTypes::Terran_Command_Center){
 			//numExpansion는 본진 포함개수
@@ -154,9 +156,9 @@ int ExpansionManager::shouldExpandNow()
 	}
 
 	//일꾼이 너무 많으면 멀티 안까도록
-	if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV) > 70){
-		return 0;
-	}
+	//if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV) > 70){
+	//	return 0;
+	//}
 
 
 	//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)

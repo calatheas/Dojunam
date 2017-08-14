@@ -96,7 +96,7 @@ void CombatCommander::initializeSquads()
 	_squadData.addSquad("DEFCON1", Squad("DEFCON1", defcon1Order, IdlePriority));
 
 
-	int radiusAttack = im.getMapName() == 'H' ? 500 : 300;
+	int radiusAttack = im.getMapName() == 'H' ? 50 : 30;
 	int radiusScout = 10;
 
 	SquadOrder defcon2Order(SquadOrderTypes::Idle, in_1st_chock_center
@@ -104,10 +104,11 @@ void CombatCommander::initializeSquads()
 	_squadData.addSquad("DEFCON2", Squad("DEFCON2", defcon2Order, IdlePriority));
 
 	//앞마당 중간에서 정찰만
-	SquadOrder defcon3Order(SquadOrderTypes::Idle, im.getFirstExpansionLocation(im.selfPlayer)->getRegion()->getCenter(), radiusScout, "DEFCON3");
+	std::vector<BWAPI::TilePosition> expansion2choke = BWTA::getShortestPath(BWAPI::TilePosition(im.getFirstChokePoint(im.selfPlayer)->getCenter()), BWAPI::TilePosition(im.getSecondChokePoint(im.selfPlayer)->getCenter()));
+	SquadOrder defcon3Order(SquadOrderTypes::Idle, BWAPI::Position(expansion2choke[expansion2choke.size() / 2]), radiusScout, "DEFCON3");
 	_squadData.addSquad("DEFCON3", Squad("DEFCON3", defcon3Order, IdlePriority));
 
-	SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(), radiusAttack, im.getSecondChokePoint(im.selfPlayer)->getSides(), "DEFCON4");
+	SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(), BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + radiusAttack, im.getSecondChokePoint(im.selfPlayer)->getSides(), "DEFCON4");
 	_squadData.addSquad("DEFCON4", Squad("DEFCON4", defcon4Order, IdlePriority));
 	
 	SquadOrder scoutOrder(SquadOrderTypes::Idle, im.getFirstChokePoint(im.selfPlayer)->getSides().first, 70, "scout");
