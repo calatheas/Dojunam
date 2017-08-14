@@ -83,7 +83,7 @@ void BuildManager::update()
 	checkBuildOrderQueueDeadlockAndRemove();
 
 	//커맨드센터는 작업이 없으면 일꾼을 만든다.
-	executeWorkerTraining();
+	if (BWAPI::Broodwar->getFrameCount() % 2 == 0) executeWorkerTraining();
 
 	//여유자원 소비 - 너무 짧은 주기로 하면 미네랄이 적은 친구들만 들어갈것이므로 적당한 주기로 한다.
 	if(BWAPI::Broodwar->getFrameCount() % 48 == 0) consumeRemainingResource();
@@ -479,7 +479,7 @@ BWAPI::TilePosition BuildManager::getDesiredPosition(BWAPI::UnitType unitType, B
 
 		switch (seedPositionStrategy) {
 		case BuildOrderItem::SeedPositionStrategy::MainBaseLocation:
-			seedPositionStrategy = BuildOrderItem::SeedPositionStrategy::MainBaseBackYard;
+			seedPositionStrategy = BuildOrderItem::SeedPositionStrategy::FirstChokePoint;
 			break;
 		case BuildOrderItem::SeedPositionStrategy::MainBaseBackYard:
 			seedPositionStrategy = BuildOrderItem::SeedPositionStrategy::FirstChokePoint;
@@ -930,7 +930,6 @@ void BuildManager::executeWorkerTraining(){
 }
 
 void BuildManager::executeCombatUnitTraining(std::pair<int, int> availableResource){
-	return;
 	if (!StrategyManager::Instance().isInitialBuildOrderFinished){
 		return;
 	}
@@ -973,6 +972,8 @@ void BuildManager::executeCombatUnitTraining(std::pair<int, int> availableResour
 			break;
 		}
 	}
+
+	return; //벌쳐는 생산하지 않음
 	
 	BWAPI::UnitType vulture(BWAPI::UnitTypes::Terran_Vulture);
 	for (auto b : idle_Factory){
@@ -1078,9 +1079,21 @@ void BuildManager::consumeRemainingResource(){
 		}
 	}
 
-	//멀티를 제외하고는 자원부족하면 그냥 리턴
-	if (remainingResource.first < 50)
-		return;
+	//완전 초반 밀릴때
+	//미네랄 조금 남으면 마린뽑기
+	if (InformationManager::Instance().rushState == 1 && InformationManager::Instance().getRushSquad().size() > 0){
+		int numCombat = 0;
+		for (auto u : BWAPI::Broodwar->self()->getUnits()){
+			if (UnitUtils::IsCombatUnit_rush(u)){
+				numCombat++;
+			}
+		}
+
+		if (numCombat <= InformationManager::Instance().getRushSquad().size()){
+			remainingResource.first -= marginResource.first/2;
+			executeCombatUnitTraining(remainingResource);
+		}
+	}
 
 	if (InformationManager::Instance().hasFlyingUnits){
 		if (!isProducerWillExist(BWAPI::UnitTypes::Terran_Engineering_Bay)){
@@ -1121,8 +1134,6 @@ void BuildManager::consumeRemainingResource(){
 			}
 		}
 	}
-
-	executeCombatUnitTraining(remainingResource);
 }
 
 void BuildManager::checkErrorBuildOrderAndRemove(){

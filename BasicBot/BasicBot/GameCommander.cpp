@@ -123,7 +123,7 @@ void GameCommander::onFrame()
 			<< "(size:" << _combatUnits.size() << ")"
 			<< std::endl;
 	}
-	//std::cout << "first rush:" << InformationManager::Instance().checkFirstRush() << std::endl;
+
 	CombatCommander::Instance().update();
 
 	log_write("CombatCommander, ");

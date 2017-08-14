@@ -187,6 +187,7 @@ void CombatCommander::update()
         updateDropSquads();
 		updateScoutSquads();
 
+		//어택포지션 변경
 		if (im.nowCombatStatus == InformationManager::combatStatus::EnemyBaseAttack){
 			Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
 			SquadOrder _order(SquadOrderTypes::Attack, getMainAttackLocation(), mainAttackSquad.getSquadOrder().getRadius(), "Attack Enemy base");
@@ -207,6 +208,9 @@ void CombatCommander::updateIdleSquad()
 	Squad & defcon2Squad = _squadData.getSquad("DEFCON2");
 	Squad & defcon3Squad = _squadData.getSquad("DEFCON3");
 	Squad & defcon4Squad = _squadData.getSquad("DEFCON4");
+
+	std::pair<int, BWAPI::Unit> shortDistanceUnitForDEFCON3;
+	shortDistanceUnitForDEFCON3.first = 1000000;
 
 	std::cout << "updateIdleSquad:" << im.nowCombatStatus << std::endl;
     
@@ -242,15 +246,15 @@ void CombatCommander::updateIdleSquad()
 			{
 				//idleSquad.addUnit(unit);
 				_squadData.assignUnitToSquad(unit, defcon2Squad);
-			}
 
-			//1마리만 밖에서 정찰 (탱크는 제외)
-			if (defcon3Squad.getUnits().size() == 0 && 
-				(unit->getType() != BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode || unit->getType() != BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode) &&
-				_squadData.canAssignUnitToSquad(unit, defcon3Squad))
-			{
-				//idleSquad.addUnit(unit);
-				_squadData.assignUnitToSquad(unit, defcon3Squad);
+				if ((unit->getType() != BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode || unit->getType() != BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode)){
+					int tmpDistance = unit->getPosition().getDistance(im.getFirstExpansionLocation(im.selfPlayer)->getPosition());
+					if (tmpDistance < shortDistanceUnitForDEFCON3.first){
+						std::cout << "min:" << shortDistanceUnitForDEFCON3.first << std::endl;
+						shortDistanceUnitForDEFCON3.first = tmpDistance;
+						shortDistanceUnitForDEFCON3.second = unit;
+					}
+				}
 			}
 		}
 
@@ -272,6 +276,17 @@ void CombatCommander::updateIdleSquad()
 
 		log_write("Idlesquad END, ");
 	}
+
+	//1마리만 밖에서 정찰 (탱크는 제외)
+	if (im.nowCombatStatus == InformationManager::combatStatus::DEFCON3){
+		if (shortDistanceUnitForDEFCON3.first < 1000000)
+		{
+			std::cout << "set D3" << std::endl;
+			_squadData.assignUnitToSquad(shortDistanceUnitForDEFCON3.second, defcon3Squad);
+		}
+	}
+
+
 	std::cout << std::endl;
 }
 
@@ -309,8 +324,8 @@ void CombatCommander::updateAttackSquads()
 	int radi = 400;
 	if (im.nowCombatStatus == InformationManager::combatStatus::CenterAttack)
 	{
-		BWAPI::Position mCenter((BWAPI::Broodwar->mapWidth() * 16), BWAPI::Broodwar->mapHeight() * 16);
-		SquadOrder _order(SquadOrderTypes::Attack, mCenter, radi, "Attack Center");
+		std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(im.getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()), BWAPI::TilePosition(im.getSecondChokePoint(im.enemyPlayer)->getCenter()));
+		SquadOrder _order(SquadOrderTypes::Attack, BWAPI::Position(tileList[tileList.size() / 2]), radi, "Attack Center");
 		mainAttackSquad.setSquadOrder(_order);
 	}
 	else if (im.nowCombatStatus == InformationManager::combatStatus::EnemyBaseAttack)
@@ -859,7 +874,7 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 		else{
 			_combatStatus = InformationManager::combatStatus::DEFCON2; //첫번째 쵸크 안쪽 이동
 
-			if (_combatStatus == InformationManager::combatStatus::DEFCON2 && im.checkFirstRush()){
+			if (_combatStatus == InformationManager::combatStatus::DEFCON2 && (im.rushState == 0 && im.getRushSquad().size() > 0)){
 				_combatStatus = InformationManager::combatStatus::DEFCON3; // 첫번째 초크 밖 이동
 
 				//적 발견시
@@ -897,7 +912,7 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 		else{
 			_combatStatus = InformationManager::combatStatus::DEFCON2; // 첫번째 쵸크 안쪽 이동
 
-			if (im.checkFirstRush()){
+			if (im.rushState == 0 && im.getRushSquad().size() > 0){
 				//적 발견시
 				//쵸크 안쪽에서 싸우기
 				//일꾼 동원하기
@@ -1059,9 +1074,25 @@ void CombatCommander::supplementSquad(){
 				_squadData.assignUnitToSquad(unit, defcon4Squad);
 			}
 			else if (im.nowCombatStatus == InformationManager::combatStatus::DEFCON5){
-				for (auto  s : _squadData.getSquads()){
-					if (s.first.find("DEFCON5") >= 0 && s.second.getUnits().size() > 0){
-						_squadData.assignUnitToSquad(unit, s.second);
+				//디펜스지역 중 가장 가까운 지역으로 이동
+				std::pair<int, BWAPI::Position> minDistRegion;
+				minDistRegion.first = 100000000;
+				for (auto r : defenceRegions)
+				{
+					int tmpDist = unit->getPosition().getDistance(r->getCenter());
+					if (tmpDist < minDistRegion.first){
+						minDistRegion.first = tmpDist;
+						minDistRegion.second = BWAPI::Position(r->getCenter());
+					}
+				}
+
+				if (minDistRegion.first < 100000000){
+					std::stringstream squadName;
+					squadName << "DEFCON5" << minDistRegion.second.x << "_" << minDistRegion.second.y;
+
+					if (_squadData.squadExists(squadName.str()))
+					{
+						_squadData.assignUnitToSquad(unit, _squadData.getSquad(squadName.str()));
 					}
 				}
 			}

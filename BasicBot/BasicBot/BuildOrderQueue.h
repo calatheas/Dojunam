@@ -26,7 +26,8 @@ namespace MyBot
 			SeedPositionSpecified,		///< 별도 지정 위치
 			MainBaseOppositeChock, //베이스와 쵸크포인트에서 가장 먼 포인트
 			LowComplexityExpansionLocation, //적은 혼잡도 가진 멀티.. 근데 앞마당은 좀 제외해야 될것 같긴함
-			DefenceChokePoint
+			DefenceChokePoint,
+			MissileTurret
 		};
 		SeedPositionStrategy		seedLocationStrategy;	///< 건설위치 초안 결정 정책
 

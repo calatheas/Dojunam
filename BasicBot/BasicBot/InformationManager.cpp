@@ -46,7 +46,7 @@ InformationManager::InformationManager()
 }
 
 //kyj
-const UIMap & InformationManager::getUnitInfo(BWAPI::Player player) const
+UIMap & InformationManager::getUnitInfo(BWAPI::Player player)
 {
 	return getUnitData(player).getUnitAndUnitInfoMap();
 }
@@ -89,28 +89,22 @@ void InformationManager::updateUnitsInfo()
 		if (!hasCloakedUnits) enemyHasCloakedUnits(unit);
 		if (!hasFlyingUnits) enemyHasFlyingUnits(unit);
 
-		//첫번째 러쉬가 안끝난 경우, 매 프레임 적 유닛 위치를 파악하여 우리 지역에 들어왔는지 판단
-		if (!rushSquad.empty()) {
-			if (UnitUtils::IsCombatUnit_rush(unit) && rushSquad.find(unit) != rushSquad.end()){
-				if (getMainBaseLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) ||
-					getFirstExpansionLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
-					numCombatUnitInSelfRegion++;
-				}
+		//매 프레임 적 유닛 위치를 파악하여 우리 지역에 들어왔는지 판단
+		if (UnitUtils::IsCombatUnit_rush(unit)){
+			if (getMainBaseLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) ||
+				getFirstExpansionLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+				numCombatUnitInSelfRegion++;
 			}
 		}
 
 		updateUnitInfo(unit);
 	}
 
-	//러쉬스쿼드에 있는 유닛이 본진+앞마당에 들어오면 러쉬공격받음 으로 세팅
-	//러쉬스쿼드에 없는 유닛이라도 디펜스상황이 되면 러쉬공격받음으로 세팅
+	//적 유닛이 본진+앞마당에 들어오면 러쉬공격받음 으로 세팅
 	if (numCombatUnitInSelfRegion > 0){
 		rushState = 1;
 	}
 	else{
-		if (nowCombatStatus == combatStatus::DEFCON5){
-			rushState = 1;
-		}
 		rushState = 0;
 	}
 
@@ -122,6 +116,14 @@ void InformationManager::updateUnitsInfo()
 	// remove bad enemy units
 	_unitData[enemyPlayer].removeBadUnits();
 	_unitData[selfPlayer].removeBadUnits();
+
+	//러쉬 스쿼드 세팅
+	rushSquad.clear();
+	for (auto & ui : getUnitAndUnitInfoMap(enemyPlayer)){
+		if (ui.second.isRushSquad){
+			rushSquad.insert(ui.first);
+		}
+	}
 }
 
 // 해당 unit 의 정보를 업데이트 한다 (UnitType, lastPosition, HitPoint 등)
@@ -136,20 +138,24 @@ void InformationManager::updateUnitInfo(BWAPI::Unit unit)
 		enemyResourceDepotType = getBasicResourceDepotBuildingType(enemyRace);
 	}
 
+	//적 유닛에 대해서만 판단
 	bool isRushSquad = false;
-	// 적진 찾기 전에면 false
-	if (getMainBaseLocation(enemyPlayer) != nullptr){
-		if (ExpansionManager::Instance().enemyResourceRegions.size() > 1 || getFirstExpansionLocation(enemyPlayer) != nullptr){
-			if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
-				isRushSquad = true;
+	if (unit->getPlayer() == enemyPlayer && UnitUtils::IsCombatUnit_rush(unit)){
+		// 적진 찾기 전에면 false
+		// 적 앞마당 이후에는 본진과 앞마당을 제외한 곳에서 발견된 유닛이 러쉬스쿼드에 들어간다.
+		if (getMainBaseLocation(enemyPlayer) != nullptr){
+			if (ExpansionManager::Instance().enemyResourceRegions.size() > 1 || getFirstExpansionLocation(enemyPlayer) != nullptr){
+				if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) &&
+					!getFirstExpansionLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+					isRushSquad = true;
+				}
+			}
+			else{
+				if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+					isRushSquad = true;
+				}
 			}
 		}
-		else{
-			if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
-				isRushSquad = true;
-			}
-		}
-
 	}
 
     _unitData[unit->getPlayer()].updateUnitInfo(unit, isRushSquad);
@@ -225,7 +231,7 @@ int InformationManager::getNumUnits(BWAPI::UnitType t, BWAPI::Player player)
 }
 
 
-const UnitData & InformationManager::getUnitData(BWAPI::Player player) const
+UnitData & InformationManager::getUnitData(BWAPI::Player player)
 {
     return _unitData.find(player)->second;
 }
@@ -473,7 +479,7 @@ bool InformationManager::hasBuildingAroundBaseLocation(BWTA::BaseLocation * base
 		if (ui.type.isBuilding())
 		{
 			BWAPI::TilePosition buildingPosition(ui.lastPosition);
-
+			if (BWTA::getRegion(buildingPosition) != BWTA::getRegion(baseLocation->getTilePosition())) continue;
 			if (buildingPosition.x >= baseLocation->getTilePosition().x - radius && buildingPosition.x <= baseLocation->getTilePosition().x + radius
 				&& buildingPosition.y >= baseLocation->getTilePosition().y - radius && buildingPosition.y <= baseLocation->getTilePosition().y + radius)
 			{
@@ -508,7 +514,7 @@ bool InformationManager::existsPlayerBuildingInRegion(BWTA::Region * region, BWA
 }
 
 // 해당 Player 의 UnitAndUnitInfoMap 을 갖고온다
-const UnitAndUnitInfoMap & InformationManager::getUnitAndUnitInfoMap(BWAPI::Player player) const
+UnitAndUnitInfoMap & InformationManager::getUnitAndUnitInfoMap(BWAPI::Player player)
 {
 	return getUnitData(player).getUnitAndUnitInfoMap();
 }
@@ -801,28 +807,8 @@ char InformationManager::getMapName(){
 	return mapName;
 }
 
-int InformationManager::checkFirstRush(){
-	int numCombatUnit = 0;
-
-	// 적진 찾기 전에면 false
-	if (getMainBaseLocation(enemyPlayer) == nullptr){
-		return 0;
-	}
-	else{
-		//미리 러쉬 완료이면 false
-		if (rushState==1) return 0;
-		
-		for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
-			if (UnitUtils::IsCombatUnit_rush(u.first)){
-				if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(u.second.lastPosition)){
-					numCombatUnit++;
-				}
-			}
-		}
-	}
-
-	//러쉬 종료되지 않았고, 적 메인베이스 밖에서 본 적 컴뱃유닛이 있는 경우, 러쉬로 간주
-	return numCombatUnit;
+BWAPI::Unitset & InformationManager::getRushSquad(){
+	return rushSquad;
 }
 
 
@@ -932,10 +918,10 @@ bool InformationManager::isBlockedEnemyChoke(){
 				for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
 					if (u.first->getType().isBuilding()){
 						if (u.first->getType() == BWAPI::UnitTypes::Protoss_Photon_Cannon){
-							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 120){
+							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 160){
 								num1stChokeUnit++;
 							}
-							else if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 120){
+							else if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 160){
 								num2stChokeUnit++;
 							}
 							else{
@@ -943,18 +929,18 @@ bool InformationManager::isBlockedEnemyChoke(){
 							}
 						}
 						else if (u.first->getType() == BWAPI::UnitTypes::Protoss_Forge){
-							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 120){
+							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 160){
 								num1stChokeUnit+=2;
 							}
-							if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 120){
+							if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 160){
 								num2stChokeUnit+=2;
 							}
 						}
 						else if (u.first->getType() == BWAPI::UnitTypes::Protoss_Gateway){
-							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 120){
+							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 160){
 								num1stChokeUnit_gateway++;
 							}
-							if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 120){
+							if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 160){
 								num2stChokeUnit_gateway++;
 							}
 						}

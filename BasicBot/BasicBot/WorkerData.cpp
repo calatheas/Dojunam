@@ -451,6 +451,7 @@ BWAPI::Unitset WorkerData::getMineralPatchesNearDepot(BWAPI::Unit depot)
 	{
 		if ((unit->getType() == BWAPI::UnitTypes::Resource_Mineral_Field) && unit->getDistance(depot) < radius)
 		{
+			if (unit->isVisible() == false) { continue; }
             mineralsNearDepot.insert(unit);
 		}
 	}

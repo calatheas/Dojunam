@@ -498,7 +498,7 @@ void WorkerManager::handleBunkderRepairWorkers()
 								maxBunkerRepairWorker--;
 
 								setBunkerRepairWorker(worker, unit);
-								std::cout << "worker : " << worker->getID() << "bunker : " << unit->getID() << std::endl;
+								//std::cout << "worker : " << worker->getID() << "bunker : " << unit->getID() << std::endl;
 								//CommandUtil::attackUnit(worker, unit);
 							}
 						}
@@ -515,7 +515,7 @@ void WorkerManager::handleBunkderRepairWorkers()
 								maxBunkerRepairWorker--;
 								setBunkerRepairWorker(worker, unit);
 
-								std::cout << "worker : " << worker->getID() << "bunker : " << unit->getID() << std::endl;
+								//std::cout << "worker : " << worker->getID() << "bunker : " << unit->getID() << std::endl;
 							}
 						}
 
