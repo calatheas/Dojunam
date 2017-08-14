@@ -16,6 +16,7 @@ namespace MyBot
 		BWAPI::Position lastPosition;
 		BWAPI::UnitType type;
 		bool            completed;
+		bool            isRushSquad;
 
 		UnitInfo()
 			: unitID(0)
@@ -25,6 +26,7 @@ namespace MyBot
 			, lastPosition(BWAPI::Positions::None)
 			, type(BWAPI::UnitTypes::None)
 			, completed(false)
+			, isRushSquad(false)
 		{
 		}
 
@@ -83,7 +85,7 @@ namespace MyBot
 		UnitData();
 		
 		/// 유닛의 상태정보를 업데이트합니다
-		void	updateUnitInfo(BWAPI::Unit unit);
+		void	updateUnitInfo(BWAPI::Unit unit, bool isRushSquad = false);
 
 		/// 파괴/사망한 유닛을 자료구조에서 제거합니다
 		void	removeUnit(BWAPI::Unit unit);

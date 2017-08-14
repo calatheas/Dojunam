@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "UnitData.h"
+#include "ExpansionManager.h"
 
 namespace MyBot
 {
@@ -192,12 +193,15 @@ namespace MyBot
 
 		char getMapName();
 
-		bool finishFirstRush;
-		int baseNumFirstRush;
+		int rushState;
+		BWAPI::Unitset rushSquad;
 		int checkFirstRush();
 
 		int getPostionAtHunter();
 		BWAPI::Position  getPostionAtHunterfirst();
 		BWAPI::Position  getPostionAtHuntersecond();
+
+		BWTA::Chokepoint * enemyBlockChoke;
+		bool isBlockedEnemyChoke();
 	};
 }

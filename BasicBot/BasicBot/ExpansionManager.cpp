@@ -145,24 +145,31 @@ void ExpansionManager::update(){
 }
 
 
-bool ExpansionManager::shouldExpandNow()
+int ExpansionManager::shouldExpandNow()
 {
 	//@도주남 김유진 현재 커맨드센터 지어지고 있으면 그 때동안은 멀티 추가 안함
 	if (BuildManager::Instance().hasUnitInQueue(BWAPI::UnitTypes::Terran_Command_Center) ||
 		ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Command_Center) > 0){
-		return false;
+		return 0;
 	}
 
 	//일꾼이 너무 많으면 멀티 안까도록
 	if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_SCV) > 70){
-		return false;
+		return 0;
 	}
 
 
 	//상대방이 멀티 숫자가 더 많은 경우(우리 멀티 숫자가 적은 경우에만 적용한다.)
-	if (expansions.size() < 3 && enemyResourceRegions.size() > expansions.size()){
+	//적이 입구 막은 경우
+	if (expansions.size() < 3){
+		if (enemyResourceRegions.size() > expansions.size()){
+			return 2;
+		}
+
+		if (InformationManager::Instance().isBlockedEnemyChoke()){
+			return 2;
+		}
 		//std::cout << "add expansions(less than enemy expansions)" << std::endl;
-		return true;
 	}
 
 	//일꾼이 남는경우
@@ -177,7 +184,7 @@ bool ExpansionManager::shouldExpandNow()
 	if ((tmpObj.getAvailableMinerals() - tmpObj.getQueueResource().first) > tmpObj.marginResource.first)
 	{
 		//std::cout << "add expansions(enough minerals)" << std::endl;
-		return true;
+		return 1;
 	}
 
 	/*
@@ -194,7 +201,7 @@ bool ExpansionManager::shouldExpandNow()
 	}
 	*/
 
-	return false;
+	return 0;
 }
 
 void ExpansionManager::changeComplexity(BWAPI::Unit unit, bool isAdd){

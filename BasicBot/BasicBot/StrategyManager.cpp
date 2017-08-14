@@ -593,9 +593,7 @@ bool StrategyManager::obtainNextUpgrade(BWAPI::UpgradeType upgType)
 	return false;
 }
 
-double StrategyManager::weightByFrame(double max_weight){
-	int early = 7200; //초반은 7200까지
-
+double StrategyManager::weightByFrame(double max_weight, int early){
 	return BWAPI::Broodwar->getFrameCount() > early ? 1.0 : ((1 - max_weight) * BWAPI::Broodwar->getFrameCount() / early) + max_weight;
 }
 

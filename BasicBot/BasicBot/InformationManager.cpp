@@ -40,10 +40,9 @@ InformationManager::InformationManager()
 	hasCloakedUnits = false;
 	hasFlyingUnits = false;
 
-
-	finishFirstRush = false;
-
-	baseNumFirstRush = 2;
+	//0 러쉬예상, 1 러쉬공격받음
+	rushState = 0;
+	enemyBlockChoke = nullptr;
 }
 
 //kyj
@@ -82,6 +81,7 @@ void InformationManager::updateUnitsInfo()
 {
 	// update units info
 	int numCombatUnitInSelfRegion = 0;
+
 	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
 	{
 		//한번만 체크!
@@ -90,8 +90,8 @@ void InformationManager::updateUnitsInfo()
 		if (!hasFlyingUnits) enemyHasFlyingUnits(unit);
 
 		//첫번째 러쉬가 안끝난 경우, 매 프레임 적 유닛 위치를 파악하여 우리 지역에 들어왔는지 판단
-		if (!finishFirstRush) {
-			if (UnitUtils::IsCombatUnit_rush(unit)){
+		if (!rushSquad.empty()) {
+			if (UnitUtils::IsCombatUnit_rush(unit) && rushSquad.find(unit) != rushSquad.end()){
 				if (getMainBaseLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition()) ||
 					getFirstExpansionLocation(selfPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
 					numCombatUnitInSelfRegion++;
@@ -102,9 +102,16 @@ void InformationManager::updateUnitsInfo()
 		updateUnitInfo(unit);
 	}
 
-	//첫번째 러쉬 종료
-	if (numCombatUnitInSelfRegion >= baseNumFirstRush){
-		finishFirstRush = true;
+	//러쉬스쿼드에 있는 유닛이 본진+앞마당에 들어오면 러쉬공격받음 으로 세팅
+	//러쉬스쿼드에 없는 유닛이라도 디펜스상황이 되면 러쉬공격받음으로 세팅
+	if (numCombatUnitInSelfRegion > 0){
+		rushState = 1;
+	}
+	else{
+		if (nowCombatStatus == combatStatus::DEFCON5){
+			rushState = 1;
+		}
+		rushState = 0;
 	}
 
 	for (auto & unit : BWAPI::Broodwar->self()->getUnits())
@@ -129,7 +136,23 @@ void InformationManager::updateUnitInfo(BWAPI::Unit unit)
 		enemyResourceDepotType = getBasicResourceDepotBuildingType(enemyRace);
 	}
 
-    _unitData[unit->getPlayer()].updateUnitInfo(unit);
+	bool isRushSquad = false;
+	// 적진 찾기 전에면 false
+	if (getMainBaseLocation(enemyPlayer) != nullptr){
+		if (ExpansionManager::Instance().enemyResourceRegions.size() > 1 || getFirstExpansionLocation(enemyPlayer) != nullptr){
+			if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+				isRushSquad = true;
+			}
+		}
+		else{
+			if (!getMainBaseLocation(enemyPlayer)->getRegion()->getPolygon().isInside(unit->getPosition())){
+				isRushSquad = true;
+			}
+		}
+
+	}
+
+    _unitData[unit->getPlayer()].updateUnitInfo(unit, isRushSquad);
 }
 
 // 유닛이 파괴/사망한 경우, 해당 유닛 정보를 삭제한다
@@ -787,7 +810,7 @@ int InformationManager::checkFirstRush(){
 	}
 	else{
 		//미리 러쉬 완료이면 false
-		if (finishFirstRush) return 0;
+		if (rushState==1) return 0;
 		
 		for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
 			if (UnitUtils::IsCombatUnit_rush(u.first)){
@@ -885,4 +908,81 @@ BWAPI::Position InformationManager::getPostionAtHunterfirst(){
 		return BWAPI::Position(15 * 32, 98 * 32);
 	else if (9 == pos_t)
 		return BWAPI::Position(23 * 32, 56 * 32);
+}
+
+bool InformationManager::isBlockedEnemyChoke(){
+	if (getMainBaseLocation(enemyPlayer) == nullptr){
+		enemyBlockChoke = nullptr;
+	}
+	else{
+		if (enemyBlockChoke == nullptr){
+			if (BWAPI::Broodwar->enemy()->getRace() == BWAPI::Races::Terran){
+
+			}
+			else if (BWAPI::Broodwar->enemy()->getRace() == BWAPI::Races::Zerg){
+
+			}
+			else if (BWAPI::Broodwar->enemy()->getRace() == BWAPI::Races::Protoss){
+				int num1stChokeUnit = 0;
+				int num2stChokeUnit = 0;
+				int num1stChokeUnit_gateway = 0;
+				int num2stChokeUnit_gateway = 0;
+				int numOther = 0;
+
+				for (auto u : getUnitAndUnitInfoMap(enemyPlayer)){
+					if (u.first->getType().isBuilding()){
+						if (u.first->getType() == BWAPI::UnitTypes::Protoss_Photon_Cannon){
+							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 120){
+								num1stChokeUnit++;
+							}
+							else if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 120){
+								num2stChokeUnit++;
+							}
+							else{
+								numOther++;
+							}
+						}
+						else if (u.first->getType() == BWAPI::UnitTypes::Protoss_Forge){
+							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 120){
+								num1stChokeUnit+=2;
+							}
+							if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 120){
+								num2stChokeUnit+=2;
+							}
+						}
+						else if (u.first->getType() == BWAPI::UnitTypes::Protoss_Gateway){
+							if (u.second.lastPosition.getDistance(getFirstChokePoint(enemyPlayer)->getCenter()) < 120){
+								num1stChokeUnit_gateway++;
+							}
+							if (u.second.lastPosition.getDistance(getSecondChokePoint(enemyPlayer)->getCenter()) < 120){
+								num2stChokeUnit_gateway++;
+							}
+						}
+
+						//포지1+캐논1 || 캐논3 || 캐논1+게이트1
+						if (num2stChokeUnit > 2 || (num2stChokeUnit > 0 && num2stChokeUnit_gateway > 0)){
+							enemyBlockChoke = getFirstChokePoint(enemyPlayer);
+						}
+						else if (num1stChokeUnit > 2 || (num1stChokeUnit > 0 && num1stChokeUnit_gateway > 0)){
+							enemyBlockChoke = getSecondChokePoint(enemyPlayer);
+						}
+						//포지1+캐논3 || 캐논5 -> 너무 많으면.. 방어적인 전략으로 판단
+						else if(numOther > 4){
+							enemyBlockChoke = getFirstChokePoint(enemyPlayer);
+						}
+					}
+				}
+			}
+			else{
+				enemyBlockChoke = nullptr;
+			}
+		}
+	}
+
+	if (enemyBlockChoke == nullptr){
+		return false;
+	}
+	else{
+		return true;
+	}
 }

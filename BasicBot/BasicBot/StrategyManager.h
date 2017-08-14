@@ -86,7 +86,7 @@ namespace MyBot
 		const MetaPairVector getBuildOrderGoal();
 		BuildOrderItem::SeedPositionStrategy getBuildSeedPositionStrategy(MetaType type);
 		int getUnitLimit(MetaType type);
-		double weightByFrame(double max_weight);
+		double weightByFrame(double max_weight, int early = 7200); //7200 = 5분
 
 		bool hasTech(BWAPI::TechType tech);
 		Strategy::main_strategies getMainStrategy();

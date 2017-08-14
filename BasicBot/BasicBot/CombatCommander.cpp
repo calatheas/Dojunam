@@ -905,8 +905,15 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 
 			}
 			else{
-				if (countTank > 0 && StrategyManager::Instance().hasTech(BWAPI::TechTypes::Tank_Siege_Mode)){
-					if (ExpansionManager::Instance().shouldExpandNow()){
+				int expansionStatus = ExpansionManager::Instance().shouldExpandNow();
+				
+				//적 멀티 발견시, 적 입구 막을때는 무조건 멀티 시작
+				//그렇지 않으면 시즈는 완성되고 간다.
+				if (expansionStatus == 2){
+					_combatStatus = InformationManager::combatStatus::DEFCON4; // 두번째 초크 이동
+				}
+				else if (expansionStatus > 0){
+					if (countTank > 0 && StrategyManager::Instance().hasTech(BWAPI::TechTypes::Tank_Siege_Mode)){
 						_combatStatus = InformationManager::combatStatus::DEFCON4; // 두번째 초크 이동
 					}
 				}

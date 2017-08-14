@@ -18,7 +18,7 @@ UnitData::UnitData()
 	numUnits = std::vector<int>(maxTypeID + 1, 0);
 }
 
-void UnitData::updateUnitInfo(BWAPI::Unit unit)
+void UnitData::updateUnitInfo(BWAPI::Unit unit, bool isRushSquad)
 {
 	if (!unit) { return; }
 
@@ -39,6 +39,7 @@ void UnitData::updateUnitInfo(BWAPI::Unit unit)
 	ui.unitID       = unit->getID();
 	ui.type         = unit->getType();
     ui.completed    = unit->isCompleted();
+	ui.isRushSquad = isRushSquad;
 
     if (firstSeen)
     {

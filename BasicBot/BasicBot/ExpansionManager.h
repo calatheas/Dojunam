@@ -19,9 +19,6 @@ namespace MyBot
 		void changeComplexity(BWAPI::Unit unit, bool isAdd=true);
 		bool startPositionDestroyed;
 
-		std::set<BWTA::Region *> enemyResourceRegions;
-
-
 	public:
 		static ExpansionManager & Instance();
 		void onSendText(std::string text);
@@ -31,6 +28,8 @@ namespace MyBot
 		Expansion * getExpansion(BWAPI::Unit u);
 		void ExpansionManager::onUnitDestroy(BWAPI::Unit unit);
 		void ExpansionManager::onUnitComplete(BWAPI::Unit unit);
-		bool shouldExpandNow();
+		int shouldExpandNow();
+
+		std::set<BWTA::Region *> enemyResourceRegions;
 	};
 }
