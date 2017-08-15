@@ -521,6 +521,7 @@ BWAPI::TilePosition BuildManager::getDesiredPosition(BWAPI::UnitType unitType, B
 		}
 	}
 
+	std::cout << "desiredPosition : " << desiredPosition.x << ", " << desiredPosition.y << std::endl;
 	return desiredPosition;
 }
 

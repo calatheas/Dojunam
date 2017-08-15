@@ -930,15 +930,15 @@ void CombatCommander::updateComBatStatus(const BWAPI::Unitset & combatUnits)
 					_combatStatus = InformationManager::combatStatus::DEFCON4; // 두번째 초크 이동
 				}
 				else if (expansionStatus > 0){
-					if (countTank > 0 && StrategyManager::Instance().hasTech(BWAPI::TechTypes::Tank_Siege_Mode)){
+					if (countTank > 3 && StrategyManager::Instance().hasTech(BWAPI::TechTypes::Spider_Mines)){
 						_combatStatus = InformationManager::combatStatus::DEFCON4; // 두번째 초크 이동
 					}
 				}
 			}
 
-			if (countTank > 3)
+			if (countTank > 5)
 				_combatStatus = InformationManager::combatStatus::DEFCON4; // 두번째 초크 이동
-			if (countTank > 7)
+			if (countTank > 9)
 				_combatStatus = InformationManager::combatStatus::CenterAttack; // 취약 지역 공격
 		}
 

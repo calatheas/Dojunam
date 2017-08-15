@@ -93,5 +93,6 @@ namespace MyBot
 		BWAPI::Position getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint, BWAPI::UnitType unit);
 
 		bool firstChokeBunker;
+		void liftAndMoveBarrackFromWall();
 	};
 }

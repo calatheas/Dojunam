@@ -43,6 +43,9 @@ InformationManager::InformationManager()
 	//0 러쉬예상, 1 러쉬공격받음
 	rushState = 0;
 	enemyBlockChoke = nullptr;
+
+	// wall position
+	initPositionsForWall();
 }
 
 //kyj
@@ -970,5 +973,103 @@ bool InformationManager::isBlockedEnemyChoke(){
 	}
 	else{
 		return true;
+	}
+}
+
+std::vector<BWAPI::TilePosition>& InformationManager::getSupPostionsForWall(){
+	return _supPositionsForWall;
+}
+
+BWAPI::TilePosition InformationManager::getBarPostionsForWall() {
+	return _barPositionForWall;
+}
+
+void InformationManager::initPositionsForWall() {
+
+	BWTA::BaseLocation *base = getMainBaseLocation(BWAPI::Broodwar->self());
+	
+	// lost temple
+	if (getMapName() == 'L') {
+		if (base->getTilePosition().x == 27 && base->getTilePosition().y == 118) {
+			// 6
+			// 58, 106
+			// 55, 106
+			
+			_supPositionsForWall.push_back(BWAPI::TilePosition(57, 106));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(54, 106));
+
+			_barPositionForWall = BWAPI::TilePosition(52, 108);
+		}
+		else if (base->getTilePosition().x == 7 && base->getTilePosition().y == 87) {
+			// 9
+			// 20, 62
+			_supPositionsForWall.push_back(BWAPI::TilePosition(19, 62));
+
+			_barPositionForWall =  BWAPI::TilePosition(17, 64);
+
+		}
+		else if (base->getTilePosition().x == 57 && base->getTilePosition().y == 6) {
+			// 12
+			// 82, 6
+			// 79, 7
+			_supPositionsForWall.push_back(BWAPI::TilePosition(81, 6));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(78, 6));
+
+			_barPositionForWall = BWAPI::TilePosition(76, 8);
+
+		}
+		else {
+			// 2
+			// 114, 52
+			// 117, 52
+			_supPositionsForWall.push_back(BWAPI::TilePosition(113, 51));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(116, 51));
+
+			_barPositionForWall = BWAPI::TilePosition(118, 53);
+		}
+	}
+	// fighting
+	// 7, 116 - 7
+	// 7, 6 - 11
+	// 117, 117 - 5
+	// 117, 7 - 1
+	else if (getMapName() == 'F') {
+		if (base->getTilePosition().x == 7 && base->getTilePosition().y == 116) {
+			// 7
+			// 23, 119
+			// 28, 121
+			_supPositionsForWall.push_back(BWAPI::TilePosition(22, 118));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(27, 121));
+			_barPositionForWall = BWAPI::TilePosition(23, 120);
+		}
+		else if (base->getTilePosition().x == 7 && base->getTilePosition().y == 6) {
+			// 11
+			// 11, 27
+			// 8, 27
+			_supPositionsForWall.push_back(BWAPI::TilePosition(10, 26));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(7, 26));
+
+			_barPositionForWall = BWAPI::TilePosition(4, 28);
+		}
+		else if (base->getTilePosition().x == 117 && base->getTilePosition().y == 117) {
+			// 5
+			// 119, 99
+			// 119, 101
+			_supPositionsForWall.push_back(BWAPI::TilePosition(118, 98));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(118, 100));
+			_barPositionForWall = BWAPI::TilePosition(114, 101);
+		}
+		else {
+			// 1
+			// 98, 6
+			// 101, 8
+			_supPositionsForWall.push_back(BWAPI::TilePosition(97, 5));
+			_supPositionsForWall.push_back(BWAPI::TilePosition(100, 7));
+
+			_barPositionForWall = BWAPI::TilePosition(102, 9);
+		}
+	}
+	else if (getMapName() == 'H') {
+
 	}
 }

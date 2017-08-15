@@ -148,8 +148,8 @@ void ConstructionManager::assignWorkersToUnassignedBuildings()
 		//std::cout << "find build place near desiredPosition " << b.desiredPosition.x << "," << b.desiredPosition.y << std::endl;
 
 		// 건설 일꾼이 Unassigned 인 상태에서 getBuildLocationNear 로 건설할 위치를 다시 정한다. -> Assigned 
-		BWAPI::TilePosition testLocation = ConstructionPlaceFinder::Instance().getBuildLocationNear(b.type, b.desiredPosition);
-
+		//BWAPI::TilePosition testLocation = ConstructionPlaceFinder::Instance().getBuildLocationNear(b.type, b.desiredPosition);
+		BWAPI::TilePosition testLocation = b.desiredPosition;
 		// std::cout << "ConstructionPlaceFinder Selected Location : " << testLocation.x << "," << testLocation.y << std::endl;
 
 		if (testLocation == BWAPI::TilePositions::None || testLocation == BWAPI::TilePositions::Invalid || testLocation.isValid() == false) {
@@ -254,7 +254,7 @@ void ConstructionManager::constructAssignedBuildings()
             }
 			else if (b.buildCommandGiven == false)
             {
-				//std::cout << b.type.c_str() << " build commanded to " << b.constructionWorker->getID() << ", buildCommandGiven true " << std::endl;
+				std::cout << b.type.c_str() << " build commanded to " << b.constructionWorker->getID() << ", position : " << b.finalPosition.x << ", " << b.finalPosition.y << std::endl;
 
 				// build command 
 				b.constructionWorker->build(b.type, b.finalPosition);

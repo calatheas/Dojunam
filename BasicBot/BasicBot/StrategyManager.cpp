@@ -68,6 +68,7 @@ void StrategyManager::update()
 	if (BuildManager::Instance().buildQueue.isEmpty()) {
 		isInitialBuildOrderFinished = true;
 	}
+	/*
 	int numBunkers = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
 	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON3 && !firstChokeBunker){
 		if (ConstructionManager::Instance().getConstructionQueueItemCount(BWAPI::UnitTypes::Terran_Bunker) == 0 &&
@@ -83,6 +84,7 @@ void StrategyManager::update()
 			firstChokeBunker = true;
 		}
 	}
+	*/
 	//executeWorkerTraining();
 
 	//executeSupplyManagement();
@@ -90,6 +92,9 @@ void StrategyManager::update()
 	//executeBasicCombatUnitTraining();
 
 	//executeCombat();
+	if (BWAPI::Broodwar->getFrameCount() % 24 == 0) {
+		liftAndMoveBarrackFromWall();
+	}
 }
 
 const BuildOrder & StrategyManager::getOpeningBookBuildOrder() const
@@ -250,6 +255,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 	numUnits["Academy"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Academy);
 	numUnits["Science_Facility"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Science_Facility);
 	numUnits["Dropships"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Dropship);
+	numUnits["Armorys"] = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Armory);
 
 	std::cout << "changeMainStrategy : " << changeMainStrategy(numUnits) << " main strategy : " << _main_strategy << std::endl;
 
@@ -293,25 +299,23 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		}
 	}
 	else if (_main_strategy == Strategy::main_strategies::One_Fac) {
-		int goal_num_marines = numUnits["Marines"] + 1;
+		int goal_num_marines = numUnits["Marines"];
 		int goal_num_vultures = numUnits["Vultures"];
 		int goal_num_tanks = numUnits["Tanks"];
 
+		if (numUnits["Marines"] < 2) {
+			goal_num_marines += 1;
+		}
 
-		if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss && InformationManager::Instance().getNumUnits(BWAPI::UnitTypes::Protoss_Dragoon, BWAPI::Broodwar->enemy()) == 0) {
-			goal_num_vultures += 1;
+		if (numUnits["Tanks"] > 0 && !hasTech(BWAPI::TechTypes::Tank_Siege_Mode)) {
+			goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
+		}
+
+		if (BWAPI::Broodwar->self()->gas() > 90) {
+			goal_num_tanks += 1;
 		}
 		else {
-			if (numUnits["Tanks"] > 0 && !hasTech(BWAPI::TechTypes::Tank_Siege_Mode)) {
-				goal.push_back(std::pair<MetaType, int>(BWAPI::TechTypes::Tank_Siege_Mode, 1));
-			}
-
-			if (numUnits["Vultures"] > numUnits["Tanks"] && BWAPI::Broodwar->self()->gas() > 90) {
-				goal_num_tanks += 1;
-			}
-			else {
-				goal_num_vultures += 1;
-			}
+			goal_num_vultures += 1;
 		}
 		
 		goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, goal_num_marines));
@@ -352,6 +356,12 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal()
 		{
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Academy, 1));
 		}
+
+		if (numUnits["Factorys"] > 1 && numUnits["Armorys"] == 0 && (InformationManager::Instance().enemyRace == BWAPI::Races::Terran || InformationManager::Instance().enemyRace == BWAPI::Races::Zerg))
+		{
+			goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Armory, 1));
+		}
+
 		if (numUnits["Factorys"] > 3)
 		{
 			goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Terran_Vehicle_Weapons, BWAPI::Broodwar->self()->getUpgradeLevel(BWAPI::UpgradeTypes::Terran_Vehicle_Weapons) + 1));
@@ -453,6 +463,23 @@ BuildOrderItem::SeedPositionStrategy StrategyManager::getBuildSeedPositionStrate
 		}
 	}
 
+	if (InformationManager::Instance().enemyRace == BWAPI::Races::Protoss){
+		
+		// if building is destroyed?
+		if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot) {
+
+			if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) < InformationManager::Instance().getSupPostionsForWall().size()) {
+				return BuildOrderItem::SeedPositionStrategy::SupForWall;
+			}
+		}
+		else if (type.getUnitType() == BWAPI::UnitTypes::Terran_Barracks) {
+			
+			if (UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot) == 0) {
+				return BuildOrderItem::SeedPositionStrategy::BarForWall;
+			}
+		}
+	}
+
 	//TODO : 큐 단위 이므로 큐에 있는것까지 고려는 잘 안됨.
 	//서플라이 2개까지만 본진커맨드 주변, 이후 본진과 쵸크포인트 둘다 먼곳
 	//if (type.getUnitType() == BWAPI::UnitTypes::Terran_Supply_Depot){
@@ -549,7 +576,7 @@ void StrategyManager::initStrategies(){
 	_strategies[Strategy::main_strategies::One_Fac].next_strategy = Strategy::main_strategies::Two_Fac;
 	_strategies[Strategy::main_strategies::One_Fac].opening_build_order = "SCV SCV SCV SCV SCV Supply_Depot SCV SCV Barracks Refinery SCV Marine SCV Marine Factory Supply_Depot";
 	//_strategies[Strategy::main_strategies::One_Fac].opening_build_order = "SCV SCV SCV SCV SCV Barracks SCV Refinery Supply_Depot SCV Marine Factory SCV Marine Supply_Depot";
-	_strategies[Strategy::main_strategies::One_Fac].num_unit_limit["Vultures"] = 4;
+	_strategies[Strategy::main_strategies::One_Fac].num_unit_limit["Tanks"] = 2;
 
 	_strategies[Strategy::main_strategies::Two_Fac] = Strategy();
 	_strategies[Strategy::main_strategies::Two_Fac].pre_strategy = Strategy::main_strategies::None;
@@ -623,4 +650,25 @@ BWAPI::Position StrategyManager::getPositionForDefenceChokePoint(BWTA::Chokepoin
 		}
 	}
 	return resultPosition;
+}
+
+void StrategyManager::liftAndMoveBarrackFromWall() {
+	if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON4) {
+		for (auto & unit : BWAPI::Broodwar->self()->getUnits()) {
+			BWAPI::TilePosition position = unit->getTilePosition();
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Barracks && position == InformationManager::Instance().getBarPostionsForWall()) {
+				if (unit->canLift()) {
+					unit->lift();
+				}
+			}				
+		}
+	}
+	else if (InformationManager::Instance().nowCombatStatus == InformationManager::combatStatus::DEFCON5) {
+		for (auto & unit : BWAPI::Broodwar->self()->getUnits()) {
+			BWAPI::TilePosition position = unit->getTilePosition();
+			if (unit->getType() == BWAPI::UnitTypes::Terran_Barracks && unit->isLifted()) {
+				CommandUtil::move(unit, InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter());
+			}
+		}
+	}
 }

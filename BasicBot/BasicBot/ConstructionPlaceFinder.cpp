@@ -212,6 +212,18 @@ BWAPI::TilePosition	ConstructionPlaceFinder::getBuildLocationWithSeedPositionAnd
 				desiredPosition = getBuildLocationNear(buildingType, BWAPI::TilePosition(StrategyManager::Instance().getPositionForDefenceChokePoint(tempChokePoint, BWAPI::UnitTypes::Terran_Marine)));
 			}
 			break;
+		case BuildOrderItem::SeedPositionStrategy::SupForWall:
+			{
+				int count = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Supply_Depot);
+				std::vector<BWAPI::TilePosition> positions = InformationManager::Instance().getSupPostionsForWall();
+				desiredPosition = positions[count];
+			}
+			break;
+		case BuildOrderItem::SeedPositionStrategy::BarForWall:
+			{
+				desiredPosition = InformationManager::Instance().getBarPostionsForWall();
+			}
+			break;
 		}
 	}
 

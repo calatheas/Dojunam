@@ -40,8 +40,9 @@ namespace MyBot
 		/// 게임 맵에 따라서, secondChokePoint 는 일반 상식과 다른 지점이 될 수도 있습니다
 		std::map<BWAPI::Player, BWTA::Chokepoint *>					_secondChokePoint;
 
-		
-	
+		std::vector<BWAPI::TilePosition> _supPositionsForWall;
+		BWAPI::TilePosition _barPositionForWall;
+
 		/// 전체 unit 의 정보를 업데이트 합니다 (UnitType, lastPosition, HitPoint 등)
 		void                    updateUnitsInfo();
 
@@ -204,5 +205,11 @@ namespace MyBot
 
 		BWTA::Chokepoint * enemyBlockChoke;
 		bool isBlockedEnemyChoke();
+
+		std::vector<BWAPI::TilePosition>& getSupPostionsForWall();
+		BWAPI::TilePosition getBarPostionsForWall();
+		void initPositionsForWall();
+
+
 	};
 }

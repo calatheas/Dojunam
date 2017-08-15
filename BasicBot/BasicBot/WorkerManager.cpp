@@ -71,7 +71,7 @@ void WorkerManager::update()
 		handleScoutCombatWorker();
 		handleRepairWorkers();
 	}
-	handleCombatWorkers();
+	//handleCombatWorkers();
 	handleBunkderRepairWorkers();
 	
 }
@@ -721,7 +721,7 @@ BWAPI::Unit WorkerManager::chooseConstuctionWorkerClosestTo(BWAPI::UnitType buil
 		}
 
 		// Move / Idle Worker 가 없을때, 다른 Worker 중에서 차출한다 
-		if (unit->isCompleted() && !unit->isCarryingGas() && !unit->isCarryingMinerals() && workerData.getWorkerJob(unit) != WorkerData::Move && workerData.getWorkerJob(unit) != WorkerData::Idle && workerData.getWorkerJob(unit) != WorkerData::Build && workerData.getWorkerJob(unit) != WorkerData::Repair && workerData.getWorkerJob(unit) != WorkerData::Scout)
+		if (unit->isCompleted() && !unit->isCarryingGas() && !unit->isCarryingMinerals() && workerData.getWorkerJob(unit) == WorkerData::Minerals)
 		{
 			// if it is a new closest distance, set the pointer
 			double distance = unit->getDistance(BWAPI::Position(buildingPosition));
@@ -895,6 +895,10 @@ void WorkerManager::onUnitShow(BWAPI::Unit unit)
 	{
 		rebalanceWorkers();
 	}
+
+}
+
+void WorkerManager::handleBlockWorkers() {
 
 }
 

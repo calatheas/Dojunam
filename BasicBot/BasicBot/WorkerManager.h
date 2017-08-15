@@ -41,7 +41,7 @@ namespace MyBot
 		void		handleBunkderRepairWorkers();
 		void		handleScoutCombatWorker();
 		void        rebalanceWorkers();
-
+		void		handleBlockWorkers();
 		WorkerManager();
 
 
