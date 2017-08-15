@@ -338,11 +338,7 @@ void WorkerManager::handleScoutCombatWorker() {
 			if (_enemyworkerUnits.contains(unit))
 				continue;
 
-			int enemyworkerdistance = unit->getPosition().getDistance(selfBaseLocation->getPosition());
-			//std::cout << "enemyworkerdistance " << enemyworkerdistance << std::endl;
-			bool scoutInRangeOfenemy = enemyworkerdistance <= 300;
-
-			if (scoutInRangeOfenemy)
+			if (BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
 			{
 				for (auto & worker : workerData.getWorkers())
 				{
