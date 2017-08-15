@@ -987,14 +987,14 @@ BWAPI::TilePosition InformationManager::getBarPostionsForWall() {
 void InformationManager::initPositionsForWall() {
 
 	BWTA::BaseLocation *base = getMainBaseLocation(BWAPI::Broodwar->self());
-	
+
 	// lost temple
 	if (getMapName() == 'L') {
 		if (base->getTilePosition().x == 27 && base->getTilePosition().y == 118) {
 			// 6
 			// 58, 106
 			// 55, 106
-			
+
 			_supPositionsForWall.push_back(BWAPI::TilePosition(57, 106));
 			_supPositionsForWall.push_back(BWAPI::TilePosition(54, 106));
 
@@ -1005,7 +1005,7 @@ void InformationManager::initPositionsForWall() {
 			// 20, 62
 			_supPositionsForWall.push_back(BWAPI::TilePosition(19, 62));
 
-			_barPositionForWall =  BWAPI::TilePosition(17, 64);
+			_barPositionForWall = BWAPI::TilePosition(17, 64);
 
 		}
 		else if (base->getTilePosition().x == 57 && base->getTilePosition().y == 6) {
@@ -1072,4 +1072,12 @@ void InformationManager::initPositionsForWall() {
 	else if (getMapName() == 'H') {
 
 	}
+}
+
+BWAPI::Position InformationManager::getDropPosition()
+{
+	if (dropTo.isValid())
+		return dropTo;
+	else
+		return BWAPI::Position(BWAPI::Broodwar->mapWidth()/16 ,BWAPI::Broodwar->mapHeight()/16);
 }

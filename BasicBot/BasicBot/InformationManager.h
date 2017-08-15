@@ -209,7 +209,7 @@ namespace MyBot
 		std::vector<BWAPI::TilePosition>& getSupPostionsForWall();
 		BWAPI::TilePosition getBarPostionsForWall();
 		void initPositionsForWall();
-
-
+		BWAPI::Position dropTo;
+		BWAPI::Position getDropPosition();
 	};
 }
