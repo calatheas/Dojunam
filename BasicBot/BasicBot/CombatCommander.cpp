@@ -6,8 +6,8 @@ using namespace MyBot;
 const size_t IdlePriority = 0;
 const size_t AttackPriority = 0;
 const size_t BaseDefensePriority = 0;
-const size_t ScoutPriority = 2;
 const size_t BunkerPriority = 1;
+const size_t ScoutPriority = 2;
 //const size_t ScoutDefensePriority = 3;
 const size_t DropPriority = 4;
 
@@ -318,7 +318,7 @@ BWAPI::Position CombatCommander::getIdleSquadLastOrderLocation()
 void CombatCommander::updateAttackSquads()
 {
 	Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
-
+	
 	for (auto & unit : _combatUnits)
 	{
 		//if (_dropUnits.contains(unit))
@@ -1126,6 +1126,9 @@ void CombatCommander::updateScoutSquads()
 		return;
 
 	Squad & scoutSquad = _squadData.getSquad("scout");
+	if (BWAPI::Broodwar->getFrameCount() % 14000 == 0)
+		scoutSquad.clear();
+
 	if (scoutSquad.getUnits().size() >= 1)
 		return;
 	else
