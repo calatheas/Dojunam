@@ -45,12 +45,12 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 		if (order.getType() == SquadOrderTypes::Drop)
 		{
 			if ( tank->canSiege()
-				&& BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
+				&& order.getPosition().getDistance(tank->getPosition()) < order.getRadius())
 			{
 				if (!tankNearChokepoint)
 					tank->siege();
 			}
-			else if (BWTA::getRegion(BWAPI::TilePosition(tank->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
+			else 
 			{
 				if (tank->isSieged())
 					tank->unsiege();
@@ -67,6 +67,13 @@ void TankManager::executeMicro(const BWAPI::Unitset & targets)
 			{
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(tank, tankTargets);
+
+				if (target->getDistance(order.getPosition()) > order.getRadius())
+				{
+					tank->move(order.getPosition());
+					continue;
+				}
+
 				BWAPI::Unit target_unSiege_Unit = closestrangedUnit_kjh(tank, tankTargets);
                 if (target && Config::Debug::DrawUnitTargetInfo) 
 	            {

@@ -648,10 +648,18 @@ BWAPI::TilePosition MapTools::_selectNextExpansion(std::vector<BWAPI::TilePositi
 				}
 			}
 		}
+		if (rst == BWAPI::TilePosition(25, 89) && InformationManager::Instance().getMapName() == 'H')
+			rst = BWAPI::TilePosition(24, 89);
 
 		//일반적인 경우는 제일 가까운 멀티선정
 		if (rst == BWAPI::TilePositions::None){
-			return positions.front();
+			if (positions.front() == BWAPI::TilePosition(25, 89) && InformationManager::Instance().getMapName() == 'H')
+			{
+				std::cout << "TilePosition(24, 89)" << std::endl;
+				return BWAPI::TilePosition(24, 89);
+			}
+			else
+				return positions.front();
 		}
 		else{
 			return rst;

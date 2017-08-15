@@ -22,19 +22,6 @@ void VultureManager::miningPositionSetting()
 		return;
 
 	std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(mysecChokePoint->getCenter()), BWAPI::TilePosition(enemySecChokePoint->getCenter()));
-	
-	for (auto & t : tileList) {
-		BWAPI::Position tp(t.x*32, t.y*32);
-		if (!tp.isValid())
-			continue;
-		if (tp.getDistance(enemySecChokePoint->getCenter()) < 300)
-			continue;
-		if (tp.getDistance(mysecChokePoint->getCenter()) < 300)
-			continue;		
-		chokePointForVulture.push_back(tp);
-	}
-	pathTileCount = chokePointForVulture.size();
-
 	for (BWTA::Chokepoint * chokepoint : BWTA::getChokepoints())
 	{
 		if (chokepoint == InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->self()))
@@ -46,6 +33,18 @@ void VultureManager::miningPositionSetting()
 		if (chokepoint == enemySecChokePoint)
 			continue;
 		chokePointForVulture.push_back(chokepoint->getCenter());
+	}
+	chokePointCount = chokePointForVulture.size();
+	
+	for (auto & t : tileList) {
+		BWAPI::Position tp(t.x*32, t.y*32);
+		if (!tp.isValid())
+			continue;
+		if (tp.getDistance(enemySecChokePoint->getCenter()) < 300)
+			continue;
+		if (tp.getDistance(mysecChokePoint->getCenter()) < 300)
+			continue;		
+		chokePointForVulture.push_back(tp);
 	}
 
 	miningOn = true;
@@ -70,30 +69,28 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 	{
 		setScoutRegions();
 		for (auto & vultureUnit : vultureUnits){
-			BWAPI::Unit target = UnitUtils::canIFight(vultureUnit);
-			if (target == nullptr)
+			//BWAPI::Unit target = UnitUtils::canIFight(vultureUnit);
+			//if (target == nullptr)
+			//{
+			if (vultureUnit->isUnderAttack())
 			{
-				getScoutRegions(vultureUnit);
+				scoutRegions.clear();
+			}
+			if (vultureUnit->getHitPoints() < vultureUnit->getType().maxHitPoints())
+			{
+				vultureUnit->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getSides().first);
 			}
 			else
-			{
-				vultureUnit->attack(target);
-			}
+				getScoutRegions(vultureUnit);
+			//}
+			//else
+			//{
+			//	vultureUnit->attack(target);
+			//}
 		}
 		return;
 	}
 
-	//if (miningUnit!=nullptr)
-	//{
-	//	if ((miningUnit->getSpiderMineCount() == 0 || miningUnit->getHitPoints() <= 0 || miningUnit->isStuck() || !vultureUnits.contains(miningUnit)) && BWAPI::Broodwar->getFrameCount() % 500 ==0)
-	//	{
-	//		miningUnit = nullptr;
-	//		chokePointForVulture.clear();
-	//		miningPositionSetting();
-	//	} 
-	//	else
-	//		BWAPI::Broodwar->drawCircleMap(miningUnit->getPosition(), 10, BWAPI::Colors::Red, false);
-	//}
 	for (auto & vultureUnit : vultureUnits)
 	{
 		// train sub units such as scarabs or interceptors
@@ -102,7 +99,8 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 		// 만들까 말까 고민됨 
 		if (order.getType() == SquadOrderTypes::Drop)
 		{
-			if (BWTA::getRegion(BWAPI::TilePosition(vultureUnit->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
+			//if (BWTA::getRegion(BWAPI::TilePosition(vultureUnit->getPosition())) != InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion())
+			if (order.getPosition().getDistance(vultureUnit->getPosition()) < order.getRadius())
 			{
 				if (vultureUnit->getSpiderMineCount() == 3)
 					Micro::SmartLaySpiderMine(vultureUnit, vultureUnit->getPosition());
@@ -128,7 +126,8 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			{
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(vultureUnit, vultureUnitTargets);
-				if (target->getDistance(order.getPosition()) / 32 > order.getRadius() - BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode.groundWeapon().maxRange())
+				//std::cout << " vulture target distance " << target->getDistance(order.getPosition()) << " / order Radius : " << order.getRadius() << std::endl;
+				if (target->getDistance(order.getPosition()) > order.getRadius() )
 				{					
 					vultureUnit->move(order.getPosition());
 				}
@@ -146,10 +145,20 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 					{
 						BWAPI::Position mineSetPosition = vultureUnit->getPosition();
 						//@도주남 김지훈 스파이더마인 설치를 지나가는 패스에 우선적으로 설치한다.
-						if (spiderMineCount < pathTileCount)
-							mineSetPosition = chokePointForVulture[spiderMineCount];
-						else
+						if (chokePointForVulture.size() <= chokePointCount)
 							mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % chokePointForVulture.size()];
+						else
+						{	
+							mineSetPosition = chokePointForVulture[chokePointForVulture.size() - 1 - vultureUnit->getID() % 3];
+							for (auto & ifmine : BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)))
+							{
+								if (ifmine->getType() == BWAPI::UnitTypes::Terran_Vulture_Spider_Mine)
+								{
+									chokePointForVulture.pop_back();
+									break;
+								}
+							}
+						}
 
 						while (!vultureUnit->canUseTechPosition(BWAPI::TechTypes::Spider_Mines, mineSetPosition) || BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)).size() > 1)
 						{
@@ -433,6 +442,7 @@ void VultureManager::setScoutRegions()
 {
 	if (scoutRegions.size() > 0)
 		return;
+	//std::cout << "setScoutRegions " << std::endl;
 	BWTA::Chokepoint * enemySecChokePoint = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
 
 	if (enemySecChokePoint == nullptr)
@@ -451,6 +461,15 @@ void VultureManager::setScoutRegions()
 			continue;
 		}
 		
+		for (auto & ifmine : BWAPI::Broodwar->getUnitsOnTile(startLocation->getTilePosition()))
+		{
+			if (ifmine->getType() == BWAPI::UnitTypes::Terran_Vulture_Spider_Mine)
+			{
+				insertable = false;
+				break;
+			}
+		}
+
 		for (BWTA::BaseLocation * eBaseLocation : enemayBaseLocations)
 		{
 			if (startLocation == eBaseLocation)
@@ -492,7 +511,16 @@ void VultureManager::getScoutRegions(BWAPI::Unit unit)
 	//if (BWTA::getRegion(BWAPI::TilePosition(unitPosition)) == BWTA::getRegion(BWAPI::TilePosition(scoutRegions[scoutRegions.size()-1])))
 	if (unit->getSpiderMineCount() != 0)
 	{
-		Micro::SmartLaySpiderMine(unit, scoutRegions[scoutRegions.size() - 1]);
+		if (unit->getPosition().getDistance(scoutRegions[scoutRegions.size() - 1]) > 100)
+			Micro::SmartLaySpiderMine(unit, scoutRegions[scoutRegions.size() - 1]);
+		for (auto & ifmine : BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(scoutRegions[scoutRegions.size() - 1])))
+		{
+			if (ifmine->getType() == BWAPI::UnitTypes::Terran_Vulture_Spider_Mine)
+			{
+				scoutRegions.pop_back();
+				break;
+			}
+		}
 	}
 	else if (unit->getPosition().getDistance(scoutRegions[scoutRegions.size() - 1]) < 100)
 	{	

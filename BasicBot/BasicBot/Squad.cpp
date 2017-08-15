@@ -35,6 +35,8 @@ void Squad::update()
 		// update all necessary unit information within this squad
 		_order.setCenterPosition(BWAPI::Position(0, 0));
 
+		BWAPI::Broodwar->drawCircleMap(_order.getPosition(), _order.getRadius(), BWAPI::Colors::Cyan, false);
+
 		std::vector<BWAPI::Unitset> ud = _units_divided(2);
 		int tmpCnt = 0;
 		BWAPI::Unitset bak_units = _units;

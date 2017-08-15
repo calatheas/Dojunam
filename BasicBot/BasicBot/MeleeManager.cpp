@@ -58,6 +58,13 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				// find the best target for this meleeUnit
 				BWAPI::Unit target = getTarget(meleeUnit, meleeUnitTargets);
 
+				if (target->getDistance(order.getPosition()) > order.getRadius())
+				{
+					meleeUnit->move(order.getPosition());
+					continue;
+				}
+
+
 				//@µµÁÖ³² ±èÁöÈÆ ½ºÆÀÆÑ »ç¿ëÇÏ±â!
 				//Stim_Packs
 				if (meleeUnit->getStimTimer() == 0
