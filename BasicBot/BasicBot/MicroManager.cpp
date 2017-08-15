@@ -41,7 +41,12 @@ void MicroManager::execute(const SquadOrder & inputOrder)
 
 	order = inputOrder;
 	drawOrderText();
-
+	BWAPI::Position movePosition = order.getPosition();
+	if (order.getStatus() == "DEFCON2" || order.getStatus() == "DEFCON4")
+	{
+		if (order.getLine().first != BWAPI::Positions::None && order.getLine().second != BWAPI::Positions::None)
+			order.setPosition((order.getLine().first + order.getLine().second)/2);
+	}
 	// Discover enemies within region of interest
 	BWAPI::Unitset nearbyEnemies;
 
@@ -61,7 +66,14 @@ void MicroManager::execute(const SquadOrder & inputOrder)
 			MapGrid::Instance().getUnitsNear(nearbyEnemies, unit->getPosition(), order.getRadius(), false, true);
 		}
 	}
-	
+
+
+	if (order.getStatus() == "DEFCON2" || order.getStatus() == "DEFCON4")
+	{
+		if (movePosition.isValid())
+			order.setPosition(movePosition);
+	}
+
 	// the following block of code attacks all units on the way to the order position
 	// we want to do this if the order is attack, defend, or harass
 	if (order.getType() == SquadOrderTypes::Attack || order.getType() == SquadOrderTypes::Defend || order.getType() == SquadOrderTypes::Idle || order.getType() == SquadOrderTypes::Drop)

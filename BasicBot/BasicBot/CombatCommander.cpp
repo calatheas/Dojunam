@@ -6,8 +6,8 @@ using namespace MyBot;
 const size_t IdlePriority = 0;
 const size_t AttackPriority = 0;
 const size_t BaseDefensePriority = 0;
-const size_t ScoutPriority = 1;
-const size_t BunkerPriority = 2;
+const size_t ScoutPriority = 2;
+const size_t BunkerPriority = 1;
 //const size_t ScoutDefensePriority = 3;
 const size_t DropPriority = 4;
 
@@ -76,7 +76,7 @@ void CombatCommander::initializeSquads()
 	BWAPI::Position tmpBase(BWAPI::Broodwar->self()->getStartLocation());
 	BWAPI::Position tmpChoke(im.getFirstChokePoint(BWAPI::Broodwar->self())->getCenter());
 	
-	double tmpRatio = 0.1;
+	double tmpRatio = 0.3;
 	std::pair<int, int> vecBase2Choke;
 	vecBase2Choke.first = tmpBase.x - tmpChoke.x;
 	vecBase2Choke.second = tmpBase.y - tmpChoke.y;
@@ -117,7 +117,7 @@ void CombatCommander::initializeSquads()
 	_squadData.addSquad("scout", Squad("scout", scoutOrder, ScoutPriority));
 
     // the main attack squad that will pressure the enemy's closest base location
-	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(), 800, "Attack Enemy Base");
+	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(), 600, "Attack Enemy Base");
 	_squadData.addSquad("MainAttack", Squad("MainAttack", mainAttackOrder, AttackPriority));
 
 	SquadOrder smallAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(), 250, "Attack Enemy multi");
@@ -189,10 +189,10 @@ void CombatCommander::update()
 	//드롭스쿼드는 별도로 운영 : 우리 전장 상태와 무관
 	if (isSquadUpdateFrame())
 	{
+		updateScoutSquads();
+        updateDropSquads();
 		if (im.nowCombatStatus < InformationManager::combatStatus::DEFCON4)//초반에만 벙커를 설치한다고 가정하고,
 			updateBunkertSquads();
-        updateDropSquads();
-		updateScoutSquads();
 		if (im.nowCombatStatus <= InformationManager::combatStatus::DEFCON4)
 			saveAllSquadSecondChokePoint();
 		updateSmallAttackSquad();
@@ -339,7 +339,7 @@ void CombatCommander::updateAttackSquads()
 	}
 	else if (im.nowCombatStatus == InformationManager::combatStatus::EnemyBaseAttack)
 	{
-		SquadOrder _order(SquadOrderTypes::Attack, im.getMainBaseLocation(im.enemyPlayer)->getPosition(), radi, "Attack Enemy base");
+		SquadOrder _order(SquadOrderTypes::Attack, im.getMainBaseLocation(im.enemyPlayer)->getPosition(), 800, "Attack Enemy base");
 		mainAttackSquad.setSquadOrder(_order);
 	}
 }
@@ -641,15 +641,15 @@ void CombatCommander::drawSquadInformation(int x, int y)
 BWAPI::Position CombatCommander::getMainAttackLocationForCombat()
 {
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-	BWTA::Chokepoint * enemySecondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
+	BWTA::Chokepoint * enemyfirstCP = InformationManager::Instance().getFirstChokePoint(BWAPI::Broodwar->enemy());
 	
-	if (enemySecondCP)
+	if (enemyfirstCP)
 	{
 		if (!initMainAttackPath)
 		{
 			std::vector<BWAPI::TilePosition> tileList 
 				= BWTA::getShortestPath(BWAPI::TilePosition(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter())
-										, BWAPI::TilePosition(enemySecondCP->getCenter()));
+				, BWAPI::TilePosition(enemyfirstCP->getCenter()));
 			std::vector<std::pair<double, BWAPI::Position>> candidate_pos;
 			for (auto & t : tileList) {
 				BWAPI::Position tp(t.x * 32, t.y * 32);
@@ -657,7 +657,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat()
 					continue;
 				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()) < 50)
 					continue;
-				if (tp.getDistance(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy())->getCenter()) < 200)
+				if (tp.getDistance(enemyfirstCP->getCenter()) < 100)
 					continue;
 				
 				mainAttackPath.push_back(tp);
@@ -674,7 +674,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat()
 			{
 				//@도주남 김지훈 만약 공격 중이다가 우리의 인원수가 줄었다면 뒤로 뺀다 ?
 				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*9)
-					curIndex+=3;
+					curIndex+=2;
 				if (curIndex >= mainAttackPath.size())
 					return mainAttackPath[mainAttackPath.size()-1];
 				else
@@ -1263,6 +1263,6 @@ void CombatCommander::updateSmallAttackSquad()
 		}
 	}
 
-	SquadOrder smallAttackOrder(SquadOrderTypes::Attack, attackBaseLocation->getPosition(), 250, "Attack Enemy multi");
+	SquadOrder smallAttackOrder(SquadOrderTypes::Attack, attackBaseLocation->getPosition(), 500, "Attack Enemy multi");
 	smallAttackSquad.setSquadOrder(smallAttackOrder);
 }

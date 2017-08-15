@@ -72,6 +72,15 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			//BWAPI::Unit target = UnitUtils::canIFight(vultureUnit);
 			//if (target == nullptr)
 			//{
+			if (vultureUnit->isUnderAttack())
+			{
+				scoutRegions.clear();
+			}
+			if (vultureUnit->getHitPoints() < vultureUnit->getType().maxHitPoints())
+			{
+				vultureUnit->move(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getSides().first);
+			}
+			else
 				getScoutRegions(vultureUnit);
 			//}
 			//else
@@ -139,8 +148,8 @@ void VultureManager::assignTargetsOld(const BWAPI::Unitset & targets)
 						if (chokePointForVulture.size() <= chokePointCount)
 							mineSetPosition = chokePointForVulture[(vultureUnit->getID() + vultureUnit->getSpiderMineCount()) % chokePointForVulture.size()];
 						else
-						{
-							mineSetPosition = chokePointForVulture[chokePointForVulture.size()-1];
+						{	
+							mineSetPosition = chokePointForVulture[chokePointForVulture.size() - 1 - vultureUnit->getID() % 3];
 							for (auto & ifmine : BWAPI::Broodwar->getUnitsOnTile(BWAPI::TilePosition(mineSetPosition)))
 							{
 								if (ifmine->getType() == BWAPI::UnitTypes::Terran_Vulture_Spider_Mine)
