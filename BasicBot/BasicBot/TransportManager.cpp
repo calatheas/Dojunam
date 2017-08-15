@@ -537,6 +537,7 @@ void TransportManager::setTo(BWAPI::Position to)
 	{
 		//std::cout << "to.isValid() :" << _to.x << " " << _to.y << std::endl;
 		_to = to;
+		InformationManager::Instance().dropTo = to;
 	}
 		
 }

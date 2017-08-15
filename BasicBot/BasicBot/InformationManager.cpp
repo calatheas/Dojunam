@@ -972,3 +972,11 @@ bool InformationManager::isBlockedEnemyChoke(){
 		return true;
 	}
 }
+
+BWAPI::Position InformationManager::getDropPosition()
+{
+	if (dropTo.isValid())
+		return dropTo;
+	else
+		return BWAPI::Position(BWAPI::Broodwar->mapWidth()/16 ,BWAPI::Broodwar->mapHeight()/16);
+}

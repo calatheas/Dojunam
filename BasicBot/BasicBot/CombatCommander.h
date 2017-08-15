@@ -35,8 +35,10 @@ class CombatCommander
 	BWAPI::Position getPositionForDefenceChokePoint(BWTA::Chokepoint * chokepoint);
 	
 	//@도주남 김지훈
-	BWAPI::Position getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition);
+	BWAPI::Position getMainAttackLocationForCombat();
 	BWAPI::Position getFirstChokePoint_OrderPosition();
+	void			updateSmallAttackSquad();
+	void            saveAllSquadSecondChokePoint();
 	int				indexFirstChokePoint_OrderPosition;
 	std::vector<BWAPI::Position> firstChokePoint_OrderPositionPath;
 	bool			initMainAttackPath;

@@ -80,6 +80,11 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 			{
 				// find the best target for this zealot
 				BWAPI::Unit target = getTarget(rangedUnit, rangedUnitTargets);
+				if (target->getDistance(order.getPosition()) > order.getRadius())
+				{
+					rangedUnit->move(order.getPosition());
+					continue;
+				}
 
 				if (target && Config::Debug::DrawUnitTargetInfo)
 				{
@@ -94,11 +99,6 @@ void RangedManager::assignTargetsOld(const BWAPI::Unitset & targets)
 				{
 					rangedUnit->useTech(BWAPI::TechTypes::Stim_Packs);
 				}
-				//else if (rangedUnit->getStimTimer() > 0 && rangedUnit->getType() == BWAPI::UnitTypes::Terran_Marine)
-				//{
-				//	//std::string stimPacksUsed = "stimPacks On";
-				//	//BWAPI::Broodwar->drawTextMap(rangedUnit->getPosition().x, rangedUnit->getPosition().y + 50, "%s", stimPacksUsed.c_str());
-				//}
 
 				// attack it
 				Micro::SmartKiteTarget(rangedUnit, target);

@@ -15,7 +15,7 @@ namespace MyBot
 	public:
 		//@도주남 김지훈
 		int startPointCount = 0;
-		int pathTileCount = 0;		
+		int chokePointCount = 0;
 		std::vector<BWAPI::Position> chokePointForVulture;
 		void VultureManager::miningPositionSetting();
 		bool miningOn = false;

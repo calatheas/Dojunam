@@ -63,7 +63,7 @@ void CombatCommander::initializeSquads()
 	float dx = 0, dy = 0;
 	if (targetDepot == nullptr)
 		return;
-	std::cout << "targetDepot " << targetDepot->getPosition().x/ 32 << " " << targetDepot->getPosition().y/32 << std::endl;
+	//std::cout << "targetDepot " << targetDepot->getPosition().x/ 32 << " " << targetDepot->getPosition().y/32 << std::endl;
 	dx = (targetDepot->getPosition().x - rDefence_OrderPosition.x)*0.7f;
 	dy = (targetDepot->getPosition().y - rDefence_OrderPosition.y)*0.7f;
 	rDefence_OrderPosition = rDefence_OrderPosition + BWAPI::Position(dx, dy);// (mineralPosition + closestDepot->getPosition()) / 2;
@@ -109,19 +109,23 @@ void CombatCommander::initializeSquads()
 	SquadOrder defcon3Order(SquadOrderTypes::Idle, BWAPI::Position(expansion2choke[expansion2choke.size() / 2]), radiusScout, "DEFCON3");
 	_squadData.addSquad("DEFCON3", Squad("DEFCON3", defcon3Order, IdlePriority));
 
-	SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(), BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + radiusAttack, im.getSecondChokePoint(im.selfPlayer)->getSides(), "DEFCON4");
+	SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(), 
+		BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + radiusAttack, im.getSecondChokePoint(im.selfPlayer)->getSides(), "DEFCON4");
 	_squadData.addSquad("DEFCON4", Squad("DEFCON4", defcon4Order, IdlePriority));
 	
 	SquadOrder scoutOrder(SquadOrderTypes::Idle, im.getFirstChokePoint(im.selfPlayer)->getSides().first, 70, "scout");
 	_squadData.addSquad("scout", Squad("scout", scoutOrder, ScoutPriority));
 
     // the main attack squad that will pressure the enemy's closest base location
-    SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocation(), 800, "Attack Enemy Base");
+	SquadOrder mainAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(), 800, "Attack Enemy Base");
 	_squadData.addSquad("MainAttack", Squad("MainAttack", mainAttackOrder, AttackPriority));
+
+	SquadOrder smallAttackOrder(SquadOrderTypes::Attack, getMainAttackLocationForCombat(), 250, "Attack Enemy multi");
+	_squadData.addSquad("SMALLATTACK", Squad("SMALLATTACK", smallAttackOrder, AttackPriority));
 
     BWAPI::Position ourBasePosition = BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation());
 
-	SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 900, "Wait for transport");
+	SquadOrder zealotDrop(SquadOrderTypes::Drop, ourBasePosition, 410, "Wait for transport");
     _squadData.addSquad("Drop", Squad("Drop", zealotDrop, DropPriority));    
 
     _initialized = true;
@@ -134,10 +138,10 @@ bool CombatCommander::isSquadUpdateFrame()
 
 void CombatCommander::update()
 {
-    if (!Config::Modules::UsingCombatCommander)
-    {
-        return;
-    }
+    //if (!Config::Modules::UsingCombatCommander)
+    //{
+    //    return;
+    //}
 
     if (!_initialized)
     {
@@ -185,14 +189,17 @@ void CombatCommander::update()
 	//드롭스쿼드는 별도로 운영 : 우리 전장 상태와 무관
 	if (isSquadUpdateFrame())
 	{
-		updateBunkertSquads();
+		if (im.nowCombatStatus < InformationManager::combatStatus::DEFCON4)//초반에만 벙커를 설치한다고 가정하고,
+			updateBunkertSquads();
         updateDropSquads();
 		updateScoutSquads();
-
+		if (im.nowCombatStatus <= InformationManager::combatStatus::DEFCON4)
+			saveAllSquadSecondChokePoint();
+		updateSmallAttackSquad();
 		//어택포지션 변경
 		if (im.nowCombatStatus == InformationManager::combatStatus::EnemyBaseAttack){
 			Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
-			SquadOrder _order(SquadOrderTypes::Attack, getMainAttackLocation(), mainAttackSquad.getSquadOrder().getRadius(), "Attack Enemy base");
+			SquadOrder _order(SquadOrderTypes::Attack, getMainAttackLocationForCombat(), mainAttackSquad.getSquadOrder().getRadius(), "Attack Enemy base");
 			mainAttackSquad.setSquadOrder(_order);
 		}
 	}
@@ -323,7 +330,7 @@ void CombatCommander::updateAttackSquads()
 	}
 
 	InformationManager & im = InformationManager::Instance();
-	int radi = 400;
+	int radi = 410;
 	if (im.nowCombatStatus == InformationManager::combatStatus::CenterAttack)
 	{
 		std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(im.getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()), BWAPI::TilePosition(im.getSecondChokePoint(im.enemyPlayer)->getCenter()));
@@ -346,6 +353,14 @@ void CombatCommander::updateDropSquads()
     int transportSpotsRemaining = 8;
     auto & dropUnits = dropSquad.getUnits();
 	BWAPI::Unit dropShipUnit = nullptr;
+
+
+	if (_squadData.squadExists("Drop") && dropUnits.size() > 0)
+	{
+		SquadOrder goingDrop(SquadOrderTypes::Drop, InformationManager::Instance().getDropPosition(), 410, "Go Drop");
+		dropSquad.setSquadOrder(goingDrop);
+	}
+
 	for (auto & unit : dropUnits)
 	{
 		if (unit->isFlying() && unit->getType().spaceProvided() > 0)
@@ -401,7 +416,7 @@ void CombatCommander::updateDropSquads()
 			{
 				if (unit->getType() == BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode
 					&& _squadData.canAssignUnitToSquad(unit, dropSquad)
-					&& BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()
+					//&& BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion()
 					&& dropSquadHasTransport
 					)
 				{
@@ -413,7 +428,7 @@ void CombatCommander::updateDropSquads()
 			{
 				if (unit->getType() == BWAPI::UnitTypes::Terran_Vulture
 					&& _squadData.canAssignUnitToSquad(unit, dropSquad)
-					&& BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion() 
+					//&& BWTA::getRegion(BWAPI::TilePosition(unit->getPosition())) == InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->self())->getRegion() 
 					&& dropSquadHasTransport
 					)
 				{
@@ -623,7 +638,7 @@ void CombatCommander::drawSquadInformation(int x, int y)
 	_squadData.drawSquadInformation(x, y);
 }
 
-BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position ourCenterPosition)
+BWAPI::Position CombatCommander::getMainAttackLocationForCombat()
 {
 	BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
 	BWTA::Chokepoint * enemySecondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
@@ -632,7 +647,9 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 	{
 		if (!initMainAttackPath)
 		{
-			std::vector<BWAPI::TilePosition> tileList = BWTA::getShortestPath(BWAPI::TilePosition(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter()), BWAPI::TilePosition(enemySecondCP->getCenter()));
+			std::vector<BWAPI::TilePosition> tileList 
+				= BWTA::getShortestPath(BWAPI::TilePosition(InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->self())->getCenter())
+										, BWAPI::TilePosition(enemySecondCP->getCenter()));
 			std::vector<std::pair<double, BWAPI::Position>> candidate_pos;
 			for (auto & t : tileList) {
 				BWAPI::Position tp(t.x * 32, t.y * 32);
@@ -651,15 +668,13 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 		}
 		else{
 			Squad & mainAttackSquad = _squadData.getSquad("MainAttack");
+			if (curIndex < mainAttackPath.size() / 2)
+				curIndex = mainAttackPath.size() / 2;
 			if (curIndex < mainAttackPath.size())
 			{
 				//@도주남 김지훈 만약 공격 중이다가 우리의 인원수가 줄었다면 뒤로 뺀다 ?
-				if (InformationManager::combatStatus::EnemyBaseAttack > InformationManager::Instance().nowCombatStatus)
-				{
-					curIndex = curIndex/2;
-				}
-				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*5)
-					curIndex++;
+				if (mainAttackPath[curIndex].getDistance(mainAttackSquad.calcCenter()) < mainAttackSquad.getUnits().size()*9)
+					curIndex+=3;
 				if (curIndex >= mainAttackPath.size())
 					return mainAttackPath[mainAttackPath.size()-1];
 				else
@@ -674,14 +689,7 @@ BWAPI::Position CombatCommander::getMainAttackLocationForCombat(BWAPI::Position 
 BWAPI::Position CombatCommander::getMainAttackLocation()
 {
     BWTA::BaseLocation * enemyBaseLocation = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
-	//BWTA::Chokepoint * enemySecondCP = InformationManager::Instance().getSecondChokePoint(BWAPI::Broodwar->enemy());
-	//
-	//if (enemySecondCP)
-	//{
-	//	BWAPI::Position enemySecondChokePosition = enemySecondCP->getCenter();
-	//	
-	//}
-
+	
 	// First choice: Attack an enemy region if we can see units inside it
     if (enemyBaseLocation)
     {
@@ -1154,6 +1162,21 @@ void CombatCommander::updateBunkertSquads()
 	Squad & bunkerSquad = _squadData.getSquad("bunker");
 	bunkerSquad.setSquadOrder(bunkerOrder);
 
+
+	Squad & defcon1Squad = _squadData.getSquad("DEFCON1");
+	Squad & defcon2Squad = _squadData.getSquad("DEFCON2");
+	Squad & defcon3Squad = _squadData.getSquad("DEFCON3");
+	Squad & defcon4Squad = _squadData.getSquad("DEFCON4");
+
+
+	SquadOrder saveBunker(SquadOrderTypes::Idle, bunker->getPosition()
+		, BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + 10, "SAVEBUNKER");
+	
+	defcon1Squad.setSquadOrder(saveBunker);
+	defcon2Squad.setSquadOrder(saveBunker);
+	defcon3Squad.setSquadOrder(saveBunker);
+	defcon4Squad.setSquadOrder(saveBunker);
+
 	if (bunkerSquad.getUnits().size() >= 4)
 		return;
 	else
@@ -1166,4 +1189,80 @@ void CombatCommander::updateBunkertSquads()
 			}
 		}
 	}
+}
+
+void CombatCommander::saveAllSquadSecondChokePoint()
+{
+	Squad & defcon1Squad = _squadData.getSquad("DEFCON1");
+	Squad & defcon2Squad = _squadData.getSquad("DEFCON2");
+	Squad & defcon3Squad = _squadData.getSquad("DEFCON3");
+	Squad & defcon4Squad = _squadData.getSquad("DEFCON4");
+
+	bool goCommandCenter = false;
+	for (auto & isCommandCenter : BWAPI::Broodwar->getUnitsOnTile(InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->self())->getTilePosition()))
+	{
+		if (isCommandCenter->getType() == BWAPI::UnitTypes::Terran_Command_Center)
+		{
+			goCommandCenter = true;
+			break;
+		}
+	}
+
+	if (goCommandCenter)
+	{
+
+		InformationManager & im = InformationManager::Instance();
+
+		SquadOrder defcon4Order(SquadOrderTypes::Idle, im.getSecondChokePoint(im.selfPlayer)->getCenter(),
+			BWAPI::UnitTypes::Terran_Marine.groundWeapon().maxRange() + 30, im.getSecondChokePoint(im.selfPlayer)->getSides(), "DEFCON4");
+
+		defcon1Squad.setSquadOrder(defcon4Order);
+		defcon2Squad.setSquadOrder(defcon4Order);
+		defcon3Squad.setSquadOrder(defcon4Order);
+		defcon4Squad.setSquadOrder(defcon4Order);
+	}
+	else
+		return;
+}
+
+void CombatCommander::updateSmallAttackSquad()
+{
+	std::list<BWTA::BaseLocation *> enemayBaseLocations = InformationManager::Instance().getOccupiedBaseLocations(BWAPI::Broodwar->enemy());
+	
+	BWTA::BaseLocation * eBase = InformationManager::Instance().getMainBaseLocation(BWAPI::Broodwar->enemy());
+	BWTA::BaseLocation * eFirstMulti = InformationManager::Instance().getFirstExpansionLocation(BWAPI::Broodwar->enemy());
+	BWTA::BaseLocation * attackBaseLocation = nullptr;
+	for (BWTA::BaseLocation * startLocation : enemayBaseLocations)
+	{
+		if (startLocation == eBase || startLocation == eFirstMulti)
+			continue;
+		attackBaseLocation = startLocation;
+	}
+
+	if (attackBaseLocation == nullptr)
+	{
+		if (_squadData.squadExists("SMALLATTACK"))
+		{
+			Squad & smallAttackSquad = _squadData.getSquad("SMALLATTACK");
+			smallAttackSquad.clear();
+		}
+		return;
+	}
+
+	Squad & smallAttackSquad = _squadData.getSquad("SMALLATTACK");
+	if (smallAttackSquad.getUnits().size() > 6 && attackBaseLocation->getPosition() == smallAttackSquad.getSquadOrder().getPosition())
+		return;
+
+	for (auto & unit : _combatUnits)
+	{
+		if(smallAttackSquad.getUnits().size() > 6)
+			break;
+		if (_squadData.canAssignUnitToSquad(unit, smallAttackSquad) && unit->getType() == BWAPI::UnitTypes::Terran_Vulture)
+		{
+			_squadData.assignUnitToSquad(unit, smallAttackSquad);
+		}
+	}
+
+	SquadOrder smallAttackOrder(SquadOrderTypes::Attack, attackBaseLocation->getPosition(), 250, "Attack Enemy multi");
+	smallAttackSquad.setSquadOrder(smallAttackOrder);
 }

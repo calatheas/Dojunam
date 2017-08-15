@@ -329,7 +329,7 @@ void GameCommander::setCombatUnits()
 			continue;
 
 		if (UnitUtils::IsValidUnit(unit))
-			if (UnitUtils::IsCombatUnit(unit) && !unit->getType().isWorker())
+			if ((UnitUtils::IsCombatUnit(unit) && !unit->getType().isWorker()) || unit->getType() == BWAPI::UnitTypes::Terran_Science_Vessel)
 			{
 				//unit->getOrder
 				BWAPI::UnitCommand currentCommand(unit->getLastCommand());

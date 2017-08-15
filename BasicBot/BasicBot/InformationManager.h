@@ -204,5 +204,8 @@ namespace MyBot
 
 		BWTA::Chokepoint * enemyBlockChoke;
 		bool isBlockedEnemyChoke();
+
+		BWAPI::Position dropTo;
+		BWAPI::Position getDropPosition();
 	};
 }
