@@ -127,7 +127,7 @@ namespace Config
 		int BuildingPylonEarlyStageSpacing = 4;
 		int BuildingPylonSpacing = 2;
 		int BuildingSupplyDepotSpacing = 1;
-		int BuildingDefenseTowerSpacing = 1;
+		int BuildingDefenseTowerSpacing = 0;
 	}
 
 	/*namespace Debug

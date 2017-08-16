@@ -1109,13 +1109,25 @@ void BuildManager::consumeRemainingResource(){
 			//한번에 한개씩만 건설
 			//큐에 없을때만 추가
 			if (hasUnitInQueue(BWAPI::UnitTypes::Terran_Missile_Turret) == 0){
-				MetaType mt(BWAPI::UnitTypes::Terran_Missile_Turret);
-				if (remainingResource.first >= mt.mineralPrice()){
-					int numTurret = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret);
-					if (numTurret < StrategyManager::Instance().getUnitLimit(BWAPI::UnitTypes::Terran_Missile_Turret)){
-						addBuildOrderOneItem(mt);
-						remainingResource.first -= mt.mineralPrice();
-						std::cout << "add turret(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << std::endl;
+				bool existsInConstructionQueue = false;
+				for (auto task : *ConstructionManager::Instance().getConstructionQueue()){
+					if (task.type == BWAPI::UnitTypes::Terran_Missile_Turret && task.buildingUnit == nullptr){
+						existsInConstructionQueue = true;
+						break;
+					}
+				}
+
+				//빌드큐와 건설큐(건설 시작 전)에 없어야 한다.
+				if (existsInConstructionQueue){
+					MetaType mt(BWAPI::UnitTypes::Terran_Missile_Turret);
+					if (remainingResource.first >= mt.mineralPrice()){
+						int numTurret = UnitUtils::GetAllUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret);
+						if (numTurret < StrategyManager::Instance().getUnitLimit(BWAPI::UnitTypes::Terran_Missile_Turret)){
+							BWAPI::Position p = ExpansionManager::Instance().getExpansions()[numTurret % ExpansionManager::Instance().getExpansions().size()].cc->getPosition();
+							addBuildOrderOneItem(mt, BWAPI::TilePosition(p));
+							remainingResource.first -= mt.mineralPrice();
+							std::cout << "add turret(remainingResource:" << remainingResource.first << "," << remainingResource.second << ")" << BWAPI::TilePosition(p) << std::endl;
+						}
 					}
 				}
 			}

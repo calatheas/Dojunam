@@ -404,7 +404,28 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 	int endx;
 	int endy;
 
-	bool horizontalOnly = false;
+	auto isLeftTopOnly = [](BWAPI::UnitType ut){
+		if (ut == BWAPI::UnitTypes::Terran_Supply_Depot ||
+			ut == BWAPI::UnitTypes::Terran_Engineering_Bay ||
+			ut == BWAPI::UnitTypes::Terran_Academy ||
+			ut == BWAPI::UnitTypes::Terran_Armory){
+			return true;
+		}
+		else
+			return false;
+	};
+
+	//x,y,w,h 사각형 안에 타겟이 들어있는지 알려주는 함수
+	auto isInsidePosition = [](int x, int y, int w, int h, int target_x, int target_y){
+		for (int in_x = x; in_x < x + w; in_x++){
+			for (int in_y = y; in_y < y + h; in_y++){
+				if (target_x == in_x && target_y == in_y){
+					return true;
+				}
+			}
+		}
+		return false;
+	};
 
 	// Refinery 의 경우 GapSpace를 체크할 필요 없다
 	if (b.type.isRefinery())
@@ -437,6 +458,75 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 			}
 		}
 	}
+	//미사일터렛은 커맨드센터에만 딱 붙여서 짓고 나머지는 갭 1을 준다.
+	else if (b.type == BWAPI::UnitTypes::Terran_Missile_Turret)
+	{
+		bool existsNearBuilding_x = false;
+		bool existsNearBuilding_y = false;
+		bool existsNearBuilding_w = false;
+		bool existsNearBuilding_h = false;
+
+		for (int x = position.x - 1; x <= position.x + width; x++){
+			for (int y = position.y - 1; y <= position.y + height; y++){
+				if (isInsidePosition(position.x, position.y, width, height, x, y)) continue;
+
+				for (auto & unit : BWAPI::Broodwar->getUnitsOnTile(x, y))
+				{
+					if (unit->getType().isBuilding() && unit->getType() != BWAPI::UnitTypes::Terran_Command_Center)
+					{
+						if (x == position.x -1) existsNearBuilding_x = true;
+						if (x == position.x + width) existsNearBuilding_w = true;
+						if (y == position.y - 1) existsNearBuilding_y = true;
+						if (y == position.y + height) existsNearBuilding_h = true;
+						break;
+					}
+				}
+			}
+		}
+
+		// 상하좌우에 buildingGapSpace 만큼 간격을 띄운다. 단 건물이 있으면
+		startx = position.x - (existsNearBuilding_x ? buildingGapSpace : 0);
+		starty = position.y - (existsNearBuilding_y ? buildingGapSpace : 0);
+		endx = position.x + width + (existsNearBuilding_w ? buildingGapSpace : 0);
+		endy = position.y + height + (existsNearBuilding_h ? buildingGapSpace : 0);
+
+		//애드온 위치 확보
+		for (int y = position.y; y < position.y + height; y++)
+		{
+			if ((isTilesToAvoid(position.x - 3, y) && b.type != BWAPI::UnitTypes::Terran_Command_Center))
+			{
+				return false;
+			}
+			for (auto & unit : BWAPI::Broodwar->getUnitsOnTile(position.x - 3, y))
+			{
+				if (unit->getType() == BWAPI::UnitTypes::Terran_Command_Center ||
+					unit->getType() == BWAPI::UnitTypes::Terran_Factory ||
+					unit->getType() == BWAPI::UnitTypes::Terran_Starport ||
+					unit->getType() == BWAPI::UnitTypes::Terran_Science_Facility)
+				{
+					return false;
+				}
+
+			}
+		}
+
+		// 건물이 차지할 공간 뿐 아니라 주위의 buildingGapSpace 공간까지 다 비어있는지, 건설가능한 타일인지, 예약되어있는것은 아닌지, TilesToAvoid 에 해당하지 않는지 체크
+		for (int x = startx; x < endx; x++)
+		{
+			for (int y = starty; y < endy; y++)
+			{
+				// if we can't build here, or space is reserved, we can't build here
+				if (isBuildableTile(b, x, y) == false)
+				{
+					return false;
+				}
+
+				if (isReservedTile(x, y)) {
+					return false;
+				}
+			}
+		}
+	}
 	else
 	{
 		//make sure we leave space for add-ons. These types of units can have addon:
@@ -449,27 +539,59 @@ bool ConstructionPlaceFinder::canBuildHereWithSpace(BWAPI::TilePosition position
 		}
 
 		// 상하좌우에 buildingGapSpace 만큼 간격을 띄운다
-		if (horizontalOnly == false)
+		if (!isLeftTopOnly(b.type))
 		{
 			startx = position.x - buildingGapSpace;
 			starty = position.y - buildingGapSpace;
 			endx = position.x + width + buildingGapSpace;
 			endy = position.y + height + buildingGapSpace;
 		}
-		// 좌우로만 buildingGapSpace 만큼 간격을 띄운다
-		//else {
-		//	startx = position.x - 2;
-		//	starty = position.y - 1;
-		//	endx = position.x + width + buildingGapSpace;
-		//	endy = position.y + height + 1;
-		//}
+		else{
+			//랜덤하게 2번중 1번은 그냥 갭 준다.
+			int randomNum = 0;
+			for (int ran = 0; ran < rand() % 100; ran++){
+				randomNum = rand() % 2;
+			}
 
-		// 테란종족 건물의 경우 다른 건물의 Addon 공간을 확보해주기 위해, 왼쪽 2칸은 반드시 GapSpace가 되도록 한다
-		//if (b.type.getRace() == BWAPI::Races::Terran) {
-		//	if (buildingGapSpace < 2) {
-		//		startx = position.x - 3;
-		//	}
-		//}
+			if (randomNum > 0){
+				//비생산건물끼리는 붙여서 지을수 있도록
+				bool existsNearBuilding_x = false;
+				bool existsNearBuilding_y = false;
+				bool existsNearBuilding_w = false;
+				bool existsNearBuilding_h = false;
+
+				for (int x = position.x - 1; x <= position.x + width; x++){
+					for (int y = position.y - 1; y <= position.y + height; y++){
+						if (isInsidePosition(position.x, position.y, width, height, x, y)) continue;
+
+						for (auto & unit : BWAPI::Broodwar->getUnitsOnTile(x, y))
+						{
+							if (unit->getType().isBuilding() && !isLeftTopOnly(unit->getType()))
+							{
+								if (x == position.x - 1) existsNearBuilding_x = true;
+								if (x == position.x + width) existsNearBuilding_w = true;
+								if (y == position.y - 1) existsNearBuilding_y = true;
+								if (y == position.y + height) existsNearBuilding_h = true;
+								break;
+							}
+						}
+					}
+				}
+
+				// 상하좌우에 buildingGapSpace 만큼 간격을 띄운다. 단 건물이 있으면
+				startx = position.x - (existsNearBuilding_x ? buildingGapSpace : 0);
+				starty = position.y - (existsNearBuilding_y ? buildingGapSpace : 0);
+				endx = position.x + width + (existsNearBuilding_w ? buildingGapSpace : 0);
+				endy = position.y + height + (existsNearBuilding_h ? buildingGapSpace : 0);
+			}
+			else{
+				startx = position.x - buildingGapSpace;
+				starty = position.y - buildingGapSpace;
+				endx = position.x + width + buildingGapSpace;
+				endy = position.y + height + buildingGapSpace;
+			}
+		}
+
 		for (int y = position.y; y < position.y + height; y++)
 		{
 			if ((isTilesToAvoid(position.x - 3, y) && b.type != BWAPI::UnitTypes::Terran_Command_Center))
